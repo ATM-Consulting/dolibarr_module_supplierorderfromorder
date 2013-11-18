@@ -33,6 +33,8 @@ $langs->load("products");
 $langs->load("stocks");
 $langs->load("orders");
 
+/*echo "<form name=\"formCreateSupplierOrder\" method=\"post\" action=\"ordercustomer.php\">";*/
+
 // Security check
 if ($user->societe_id) {
     $socid = $user->societe_id;
@@ -124,12 +126,31 @@ if ($action == 'order' && isset($_POST['valid'])) {
         $i = 0;
         $orders = array();
         $suppliersid = array_keys($suppliers);
-        foreach ($suppliers as $supplier) {
+        foreach ($suppliers as $idsupplier => $supplier) {
+        	echo "<pre>";
+        	var_dump($supplier);
+			echo "</pre>";
+			
+		
+        	$sql2 = 'SELECT c.id';
+			$sql2 .= ' FROM ' . MAIN_DB_PREFIX . 'commande_fournisseur as c';
+			$sql2 .= ' WHERE c.sk_soc = '.$supplier->rowid;
+			$sql2 .= ' AND c.sk_soc = '.$idsupplier;
+			
+			$db->query($sql2);
+			echo $sql2;
+			exit;
+			
             $order = new CommandeFournisseur($db);
             $order->socid = $suppliersid[$i];
+			/*echo "<pre>";
+			echo print_r($supplier);
+			echo "</pre>";
+			exit;*/
             //trick to know which orders have been generated this way
             $order->source = 42;
             foreach ($supplier['lines'] as $line) {
+            	$line->
                 $order->lines[] = $line;
             }
             $order->cond_reglement_id = 0;
@@ -145,7 +166,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
         }
         if (!$fail && $id) {
             setEventMessage($langs->trans('OrderCreated'), 'mesgs');
-            header('Location: replenishorders.php');
+            header('Location: ordercustomer.php?id='.$_REQUEST['id']);
             exit;
         }
     }
@@ -165,9 +186,13 @@ $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte,';
 $sql .= ' SUM(COALESCE(s.reel, 0)) as stock_physique';
 $sql .= ', p.desiredstock';
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
+$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd';
+$sql .= ' ON p.rowid = cd.fk_product';
 $sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s';
 $sql .= ' ON p.rowid = s.fk_product';
 $sql.= ' WHERE p.entity IN (' . getEntity("product", 1) . ')';
+$sql .= ' AND cd.rowid = '.$_REQUEST['id'];
+
 if ($sall) {
     $sql .= ' AND (p.ref LIKE "%'.$db->escape($sall).'%" ';
     $sql .= 'OR p.label LIKE "%'.$db->escape($sall).'%" ';
@@ -227,7 +252,7 @@ if ($resql) {
     $head[0][0] = DOL_URL_ROOT.'/product/stock/replenish.php';
     $head[0][1] = $title;
     $head[0][2] = 'replenish';
-    $head[1][0] = DOL_URL_ROOT.'/product/stock/replenishorders.php';
+    $head[1][0] = DOL_URL_ROOT.'/product/stock/ordercustomer.php';
     $head[1][1] = $langs->trans("ReplenishmentOrders");
     $head[1][2] = 'replenishorders';
     dol_fiche_head($head, 'replenish', $langs->trans('Replenishment'), 0, 'stock');
@@ -262,7 +287,8 @@ if ($resql) {
         );
     }
 
-    print '<form action="replenish.php" method="post" name="formulaire">'.
+    print '<form action="ordercustomer.php" method="post" name="formulaire">'.
+         '<input type="hidden" name="id" value="' .$_REQUEST['id'] . '">'.
          '<input type="hidden" name="token" value="' .$_SESSION['newtoken'] . '">'.
          '<input type="hidden" name="sortfield" value="' . $sortfield . '">'.
          '<input type="hidden" name="sortorder" value="' . $sortorder . '">'.
@@ -429,7 +455,7 @@ if ($resql) {
             $prod->ref = $objp->ref;
             $prod->id = $objp->rowid;
             $prod->type = $objp->fk_product_type;
-            $ordered = ordered($prod->id);
+            //$ordered = ordered($prod->id);
 
             if ($conf->global->USE_VIRTUAL_STOCK) {
                 //compute virtual stock
@@ -496,7 +522,7 @@ if ($resql) {
                  $warning . $stock.
                  '</td>'.
                  '<td align="right">'.
-                 '<a href="replenishorders.php?sproduct=' . $prod->id . '">'.
+                 '<a href="ordercustomer.php?sproduct=' . $prod->id . '">'.
                  $ordered . '</a> ' . $picto.
                  '</td>'.
                  '<td align="right">'.
@@ -511,7 +537,7 @@ if ($resql) {
         }
         $i++;
     }
-    $value = $langs->trans("CreateOrders");
+    $value = $langs->trans("Générer commandes fournisseur");
     print '</table>'.
          '</div>'.
          '<table width="100%">'.
