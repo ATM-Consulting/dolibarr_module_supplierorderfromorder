@@ -80,12 +80,12 @@ if (isset($_POST['button_removefilter']) || isset($_POST['valid'])) {
 //FIXME: could go in the lib
 if ($action == 'order' && isset($_POST['valid'])) {
     $linecount = GETPOST('linecount', 'int');
-    $box = 0;
+    $box = false;
     unset($_POST['linecount']);
     if ($linecount > 0) {
         $suppliers = array();
         for ($i = 0; $i < $linecount; $i++) {
-            if(GETPOST($i, 'alpha') === 'on'
+            if(GETPOST('check'.$i, 'alpha') === 'on'
               && GETPOST('fourn' . $i, 'int') > 0) { //one line
                 $box = $i;
                 $supplierpriceid = GETPOST('fourn'.$i, 'int');
@@ -127,35 +127,70 @@ if ($action == 'order' && isset($_POST['valid'])) {
         $orders = array();
         $suppliersid = array_keys($suppliers);
         foreach ($suppliers as $idsupplier => $supplier) {
-        	echo "<pre>";
-        	var_dump($supplier);
-			echo "</pre>";
-			
-		
-        	$sql2 = 'SELECT c.id';
-			$sql2 .= ' FROM ' . MAIN_DB_PREFIX . 'commande_fournisseur as c';
-			$sql2 .= ' WHERE c.sk_soc = '.$supplier->rowid;
-			$sql2 .= ' AND c.sk_soc = '.$idsupplier;
-			
+        	$sql2 = 'SELECT rowid, ref';
+			$sql2 .= ' FROM ' . MAIN_DB_PREFIX . 'commande_fournisseur';
+			$sql2 .= ' WHERE fk_soc = '.$idsupplier;
+			$sql2 .= ' AND fk_statut = 0';
+			$sql2 .= ' ORDER BY rowid DESC';
+			$sql2 .= ' LIMIT 1';
+						
 			$db->query($sql2);
-			echo $sql2;
-			exit;
+			$obj = $db->fetch_object($sql2);
 			
-            $order = new CommandeFournisseur($db);
-            $order->socid = $suppliersid[$i];
-			/*echo "<pre>";
-			echo print_r($supplier);
-			echo "</pre>";
-			exit;*/
+			if($obj) {
+				//echo "ok !";
+				$order = new CommandeFournisseur($db);
+				$order->fetch($obj->rowid);
+				$order->socid = $suppliersid[$i]; 
+				$newCommande = false;
+				$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
+				/*echo "<pre>";
+				var_dump($commande->lines);
+				echo "</pre>";
+				exit;*/
+			} else {
+				$order = new CommandeFournisseur($db);
+				$order->socid = $suppliersid[$i];
+				$newCommande = true;
+				
+				$id = $order->create($user);
+				//echo "pas ok";
+			}
             //trick to know which orders have been generated this way
             $order->source = 42;
-            foreach ($supplier['lines'] as $line) {
-            	$line->
-                $order->lines[] = $line;
-            }
+			if ($newCommande) {
+				foreach ($supplier['lines'] as $line) {
+					$order->lines[] = $line;
+				}
+			} else {
+	            foreach ($supplier['lines'] as $line) {
+		            $done = false;	
+	            	foreach($order->lines as $lineOrderFetched) {
+	            		if($line->fk_product == $lineOrderFetched->fk_product) {
+	            			$order->updateline($lineOrderFetched->id, $lineOrderFetched->desc, $lineOrderFetched->total_ht, $lineOrderFetched->qty+$line->qty, $lineOrderFetched->remise_percent, $lineOrderFetched->tva_tx);							
+							$done = true;
+							break;
+	            			//function updateline($rowid, $desc, $pu, $qty, $remise_percent, $txtva, $txlocaltax1=0, $txlocaltax2=0, $price_base_type='HT', $info_bits=0, $type=0, $notrigger=false)
+	            		}
+	            	}
+					if(!$done) {
+						$order->addline($line->desc, $line->total_ht, 50, $line->tva_tx, 0, 0, $line->fk_product);
+						echo $order->error;
+						exit;
+						//function addline($desc, $pu_ht, $qty, $txtva, $txlocaltax1=0, $txlocaltax2=0, $fk_product=0, $fk_prod_fourn_price=0, $fourn_ref='', $remise_percent=0, $price_base_type='HT', $pu_ttc=0, $type=0, $info_bits=0, $notrigger=false)
+					}
+	            }
+	        }
+
             $order->cond_reglement_id = 0;
             $order->mode_reglement_id = 0;
-            $id = $order->create($user);
+			//function updateFromCommandeClient($user, $idc, $comclientid)
+			/*if(!$newCommande) {
+				$id = $order->updateFromCommandeClient($user, $idc, $comclientid);
+			} else {
+				$id = $order->create($user);
+			}
+            */
             if ($id < 0) {
                 $fail++;
                 $msg = $langs->trans('OrderFail') . "&nbsp;:&nbsp;";
@@ -170,7 +205,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
             exit;
         }
     }
-    if ($box == 0) {
+    if ($box === false) {
         setEventMessage($langs->trans('SelectProduct'), 'warnings');
     }
 }
@@ -495,7 +530,7 @@ if ($resql) {
                 $picto = img_picto('', './img/no', '', 1);
             }
             print '<tr ' . $bc[$var] . '>'.
-                 '<td><input type="checkbox" class="check" name="' . $i . '"' . $disabled . '></td>'.
+                 '<td><input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '></td>'.
                  '<td class="nowrap">'.
                  $prod->getNomUrl(1, '', 16).
                  '</td>'.
