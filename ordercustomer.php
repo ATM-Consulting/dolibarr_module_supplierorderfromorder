@@ -27,7 +27,28 @@ require_once DOL_DOCUMENT_ROOT.'/product/class/product.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formother.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.form.class.php';
 require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.commande.class.php';
+
+include_once(DOL_DOCUMENT_ROOT.'/core/class/hookmanager.class.php');
+$hookmanager=new HookManager($db);
+$hookmanager->initHooks(array('context'));
 //require_once './lib/replenishment.lib.php';
+
+
+$parameters=array();
+$reshook=$hookmanager->executeHooks('hookname',$parameters,$object,$action); // See description below
+// Note that $action and $object may have been modified by hook
+if (empty($reshook))
+{
+  // standard code that can be disabled/replaced by hook if return code > 0.
+}
+
+$prod = new Product($db);
+
+echo 'Module context: '.$prod->context;
+exit;
+
+
+
 
 $langs->load("products");
 $langs->load("stocks");
@@ -136,13 +157,11 @@ if ($action == 'order' && isset($_POST['valid'])) {
 						
 			$db->query($sql2);
 			$obj = $db->fetch_object($sql2);
-			
 			if($obj) {
 				//echo "ok !";
 				$order = new CommandeFournisseur($db);
 				$order->fetch($obj->rowid);
-				$order->socid = $suppliersid[$i]; 
-				$newCommande = false;
+				$order->socid = $suppliersid[$i];
 				$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
 				/*echo "<pre>";
 				var_dump($commande->lines);
@@ -151,36 +170,28 @@ if ($action == 'order' && isset($_POST['valid'])) {
 			} else {
 				$order = new CommandeFournisseur($db);
 				$order->socid = $suppliersid[$i];
-				$newCommande = true;
 				
 				$id = $order->create($user);
 				//echo "pas ok";
 			}
             //trick to know which orders have been generated this way
             $order->source = 42;
-			if ($newCommande) {
-				foreach ($supplier['lines'] as $line) {
-					$order->lines[] = $line;
+			
+            foreach ($supplier['lines'] as $line) {
+	            $done = false;	
+            	foreach($order->lines as $lineOrderFetched) {
+            		if($line->fk_product == $lineOrderFetched->fk_product) {
+            			$order->updateline($lineOrderFetched->id, $lineOrderFetched->desc, $lineOrderFetched->total_ht, $lineOrderFetched->qty+$line->qty, $lineOrderFetched->remise_percent, $lineOrderFetched->tva_tx);							
+						$done = true;
+						break;
+            			//function updateline($rowid, $desc, $pu, $qty, $remise_percent, $txtva, $txlocaltax1=0, $txlocaltax2=0, $price_base_type='HT', $info_bits=0, $type=0, $notrigger=false)
+            		}
+            	}
+				if(!$done) {
+					$order->addline($line->desc, $line->total_ht, $line->qty, $line->tva_tx, 0, 0, $line->fk_product, 0, $line->ref_fourn);
+					//function addline($desc, $pu_ht, $qty, $txtva, $txlocaltax1=0, $txlocaltax2=0, $fk_product=0, $fk_prod_fourn_price=0, $fourn_ref='', $remise_percent=0, $price_base_type='HT', $pu_ttc=0, $type=0, $info_bits=0, $notrigger=false)
 				}
-			} else {
-	            foreach ($supplier['lines'] as $line) {
-		            $done = false;	
-	            	foreach($order->lines as $lineOrderFetched) {
-	            		if($line->fk_product == $lineOrderFetched->fk_product) {
-	            			$order->updateline($lineOrderFetched->id, $lineOrderFetched->desc, $lineOrderFetched->total_ht, $lineOrderFetched->qty+$line->qty, $lineOrderFetched->remise_percent, $lineOrderFetched->tva_tx);							
-							$done = true;
-							break;
-	            			//function updateline($rowid, $desc, $pu, $qty, $remise_percent, $txtva, $txlocaltax1=0, $txlocaltax2=0, $price_base_type='HT', $info_bits=0, $type=0, $notrigger=false)
-	            		}
-	            	}
-					if(!$done) {
-						$order->addline($line->desc, $line->total_ht, 50, $line->tva_tx, 0, 0, $line->fk_product);
-						echo $order->error;
-						exit;
-						//function addline($desc, $pu_ht, $qty, $txtva, $txlocaltax1=0, $txlocaltax2=0, $fk_product=0, $fk_prod_fourn_price=0, $fourn_ref='', $remise_percent=0, $price_base_type='HT', $pu_ttc=0, $type=0, $info_bits=0, $notrigger=false)
-					}
-	            }
-	        }
+            }
 
             $order->cond_reglement_id = 0;
             $order->mode_reglement_id = 0;
