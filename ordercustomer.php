@@ -33,9 +33,8 @@ $hookmanager=new HookManager($db);
 $hookmanager->initHooks(array('context'));
 //require_once './lib/replenishment.lib.php';
 
-
 $parameters=array();
-$reshook=$hookmanager->executeHooks('hookname',$parameters,$object,$action); // See description below
+$reshook=$hookmanager->executeHooks('formObjectOptions',$parameters,$object,$action); // See description below
 // Note that $action and $object may have been modified by hook
 if (empty($reshook))
 {
@@ -43,11 +42,6 @@ if (empty($reshook))
 }
 
 $prod = new Product($db);
-
-echo 'Module context: '.$prod->context;
-exit;
-
-
 
 
 $langs->load("products");
@@ -151,7 +145,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
         	$sql2 = 'SELECT rowid, ref';
 			$sql2 .= ' FROM ' . MAIN_DB_PREFIX . 'commande_fournisseur';
 			$sql2 .= ' WHERE fk_soc = '.$idsupplier;
-			$sql2 .= ' AND fk_statut = 0';
+			$sql2 .= ' AND fk_statut = 0'; // 0 = DRAFT (Brouillon)
 			$sql2 .= ' ORDER BY rowid DESC';
 			$sql2 .= ' LIMIT 1';
 						
@@ -162,6 +156,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				$order = new CommandeFournisseur($db);
 				$order->fetch($obj->rowid);
 				$order->socid = $suppliersid[$i];
+				$order->add_object_linked('commande', $_REQUEST['id']);
 				$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
 				/*echo "<pre>";
 				var_dump($commande->lines);
@@ -170,7 +165,6 @@ if ($action == 'order' && isset($_POST['valid'])) {
 			} else {
 				$order = new CommandeFournisseur($db);
 				$order->socid = $suppliersid[$i];
-				
 				$id = $order->create($user);
 				//echo "pas ok";
 			}
@@ -212,8 +206,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
         }
         if (!$fail && $id) {
             setEventMessage($langs->trans('OrderCreated'), 'mesgs');
-            header('Location: ordercustomer.php?id='.$_REQUEST['id']);
-            exit;
+            header('Location: '.DOL_URL_ROOT.'/commande/fiche.php?id='.$_REQUEST['id']);
         }
     }
     if ($box === false) {
@@ -237,7 +230,7 @@ $sql .= ' ON p.rowid = cd.fk_product';
 $sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s';
 $sql .= ' ON p.rowid = s.fk_product';
 $sql.= ' WHERE p.entity IN (' . getEntity("product", 1) . ')';
-$sql .= ' AND cd.rowid = '.$_REQUEST['id'];
+$sql .= ' AND cd.fk_commande = '.$_REQUEST['id'];
 
 if ($sall) {
     $sql .= ' AND (p.ref LIKE "%'.$db->escape($sall).'%" ';
