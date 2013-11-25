@@ -288,12 +288,12 @@ if ($resql) {
     $helpurl .= 'ES:M&oacute;dulo_Stocks';
     llxHeader('', $title, $helpurl, $title);
     $head = array();
-    $head[0][0] = DOL_URL_ROOT.'/product/stock/replenish.php';
+    /*$head[0][0] = DOL_URL_ROOT.'/product/stock/replenish.php';
     $head[0][1] = $title;
     $head[0][2] = 'replenish';
     $head[1][0] = DOL_URL_ROOT.'/product/stock/ordercustomer.php';
     $head[1][1] = $langs->trans("ReplenishmentOrders");
-    $head[1][2] = 'replenishorders';
+    $head[1][2] = 'replenishorders';*/
     dol_fiche_head($head, 'replenish', $langs->trans('Replenishment'), 0, 'stock');
     if ($sref || $snom || $sall || $salert || GETPOST('search', 'alpha')) {
         $filters = '&sref=' . $sref . '&snom=' . $snom;

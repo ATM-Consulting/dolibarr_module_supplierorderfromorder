@@ -59,7 +59,7 @@ class modSupplierorderfromorder extends DolibarrModules
         // Module description
         // used if translation string 'ModuleXXXDesc' not found
         // (where XXX is value of numeric property 'numero' of module)
-        $this->description = "Module multiprix produit";
+        $this->description = "Module commande fournisseur à partir d'une commande client";
         // Possible values for version are: 'development', 'experimental' or version
         $this->version = '1.0';
         // Key used in llx_const table to save module status enabled/disabled
@@ -73,7 +73,7 @@ class modSupplierorderfromorder extends DolibarrModules
         // use this->picto='pictovalue'
         // If file is in module/img directory under name object_pictovalue.png
         // use this->picto='pictovalue@module'
-        $this->picto = 'multiprixcascade@multiprixcascade'; // mypicto@mymodule
+        $this->picto = 'ordersupplierfromorder@ordersupplierfromorder'; // mypicto@mymodule
         // Defined all module parts (triggers, login, substitutions, menus, css, etc...)
         // for default path (eg: /mymodule/core/xxxxx) (0=disable, 1=enable)
         // for specific path of parts (eg: /mymodule/core/modules/barcode)
@@ -105,7 +105,7 @@ class modSupplierorderfromorder extends DolibarrModules
 
         // Config pages. Put here list of php pages
         // stored into mymodule/admin directory, used to setup module.
-        $this->config_page_url = array("setup.php@multiprixcascade");
+        //$this->config_page_url = array("setup.php@ordersupplierfromorder");
 
         // Dependencies
         // List of modules id that must be enabled if this module is enabled
@@ -116,7 +116,7 @@ class modSupplierorderfromorder extends DolibarrModules
         $this->phpmin = array(5, 3);
         // Minimum version of Dolibarr required by module
         $this->need_dolibarr_version = array(3, 2);
-        $this->langfiles = array("multiprixcascade@multiprixcascade"); // langfiles@mymodule
+        $this->langfiles = array("ordersupplierfromorder@ordersupplierfromorder"); // langfiles@mymodule
         // Constants
         // List of particular constants to add when module is enabled
         // (key, 'chaine', value, desc, visible, 'current' or 'allentities', deleteonunactive)
