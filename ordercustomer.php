@@ -156,13 +156,14 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				$order = new CommandeFournisseur($db);
 				$order->fetch($obj->rowid);
 				$order->socid = $suppliersid[$i];
-				$order->add_object_linked('commande', $_REQUEST['id']);
+				//$order->add_object_linked('commande', $_REQUEST['id']);
 				$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
 				$newCommande = false;
 			} else {
 				$order = new CommandeFournisseur($db);
 				$order->socid = $suppliersid[$i];
 				$id = $order->create($user);
+				$order->add_object_linked('commande', $_REQUEST['id']);
 				$newCommande = true;
 				//echo "pas ok";
 			}
@@ -186,20 +187,6 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				
             }
 
-			/*if($newCommande) {
-				?>
-					<script language="JavaScript" type="text/JavaScript">
-						alert('Commande créée avec succès !');
-					</script>
-				<?
-			} else {
-				?>
-					<script language="JavaScript" type="text/JavaScript">
-						alert('Produits ajoutés à la commande en cours !');
-					</script>
-				<?					
-			}*/
-
             $order->cond_reglement_id = 0;
             $order->mode_reglement_id = 0;
 			//function updateFromCommandeClient($user, $idc, $comclientid)
@@ -217,6 +204,17 @@ if ($action == 'order' && isset($_POST['valid'])) {
             }
             $i++;
         }
+
+		/*if($newCommande) {
+
+			setEventMessage("Commande fournisseur créée avec succès !", 'errors');	
+			
+		} else {
+			
+			setEventMessage("Produits ajoutés à la commande en cours !", 'errors');
+								
+		}*/
+			
         if (!$fail && $id) {
             setEventMessage($langs->trans('OrderCreated'), 'mesgs');
             header('Location: '.DOL_URL_ROOT.'/commande/fiche.php?id='.$_REQUEST['id']);
