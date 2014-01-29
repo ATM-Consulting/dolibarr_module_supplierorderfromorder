@@ -80,6 +80,7 @@ if (!$sortorder) {
 $limit = $conf->liste_limit;
 $offset = $limit * $page ;
 
+
 /*
  * Actions
  */
@@ -90,6 +91,11 @@ if (isset($_POST['button_removefilter']) || isset($_POST['valid'])) {
     $sal = '';
     $salert = '';
 }
+
+/*echo "<pre>";
+print_r($_REQUEST);
+echo "</pre>";
+exit;*/
 
 //orders creation
 //FIXME: could go in the lib
@@ -126,7 +132,10 @@ if ($action == 'order' && isset($_POST['valid'])) {
                     $line->total_tva = $line->total_ht * $tva;
                     $line->total_ttc = $line->total_ht + $line->total_tva;
                     $line->ref_fourn = $obj->ref_fourn;
-                    $suppliers[$obj->fk_soc]['lines'][] = $line;
+                    if(!empty($_REQUEST['tobuy'.$i])) {
+                    	$suppliers[$obj->fk_soc]['lines'][] = $line;
+                    }					
+					
                 } else {
                     $error=$db->lasterror();
                     dol_print_error($db);
@@ -189,7 +198,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
             		
             		if($line->fk_product == $lineOrderFetched->fk_product) {
             			
-            			$order->updateline($lineOrderFetched->id, $lineOrderFetched->desc, $lineOrderFetched->total_ht, $lineOrderFetched->qty+$line->qty, $lineOrderFetched->remise_percent, $lineOrderFetched->tva_tx);							
+            			$order->updateline($lineOrderFetched->id, $lineOrderFetched->desc, $lineOrderFetched->total_ht, intval($lineOrderFetched->qty+$line->qty), $lineOrderFetched->remise_percent, $lineOrderFetched->tva_tx);							
 						$done = true;
 						break;
 
@@ -199,9 +208,9 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				
 				// On ajoute une ligne seulement si un "updateline()" n'a pas été fait et si la quantité souhaitée est supérieure à zéro
 				
-				if(!$done && $line->qty>0) {
+				if(!$done) {
 					
-					$order->addline($line->desc, $line->total_ht, $line->qty, $line->tva_tx, 0, 0, $line->fk_product, 0, $line->ref_fourn);
+					$order->addline($line->desc, $line->total_ht, intval($line->qty), $line->tva_tx, 0, 0, $line->fk_product, 0, $line->ref_fourn);
 					
 				}
 				
@@ -666,6 +675,19 @@ print ' <script type="text/javascript">
 }
 
 llxFooter();
+
+/*?>
+	<script type="text/javascript">
+	// Ici récupérer 
+		$("[name=tobuy0]").change(function() {
+			if ($("[name=tobuy0]").val()<10) {
+				$("[name=tobuy0]").val('10');
+			}
+			//alert('coucou');
+			//$("[name=tobuy0]").val('coucou');
+		});
+	</script>
+<?*/
 
 $db->close();
 ?>
