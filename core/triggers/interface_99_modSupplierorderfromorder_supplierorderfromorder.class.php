@@ -118,11 +118,8 @@ class InterfaceSupplierorderfromorder
         //dol_include_once('/product/class/product.class.php');
         if ($action == 'ORDER_SUPPLIER_DELETE') {
 
-			$sql = "DELETE FROM ".MAIN_DB_PREFIX."element_element";
-			$sql.= " WHERE targettype = 'order_supplier'";
-			$sql.= " AND sourcetype = 'commande'";
-			$sql.= " AND fk_target = ".$object->id;
-			$resql = $db->query($sql);
+
+			$object->deleteObjectLinked('', 'commande', $object->id, 'order_supplier');
 			
             dol_syslog(
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id

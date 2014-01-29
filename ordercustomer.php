@@ -152,50 +152,64 @@ if ($action == 'order' && isset($_POST['valid'])) {
 			$db->query($sql2);
 			$obj = $db->fetch_object($sql2);
 			if($obj) {
-				//echo "ok !";
+
 				$order = new CommandeFournisseur($db);
 				$order->fetch($obj->rowid);
 				$order->socid = $suppliersid[$i];
-				//$order->add_object_linked('commande', $_REQUEST['id']);
+				
+				// On vérifie qu'il n'existe pas déjà un lien entre la commande client et la commande fournisseur dans la table element_element.
+				// S'il n'y en a pas, on l'ajoute, sinon, on ne l'ajoute pas
+				$order->fetchObjectLinked('', 'commande', $order->id, 'order_supplier');
+				
+				if(count($order->linkedObjects) == 0) {
+
+					$order->add_object_linked('commande', $_REQUEST['id']);
+					
+				}
+
 				$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
 				$newCommande = false;
 			} else {
+				
 				$order = new CommandeFournisseur($db);
 				$order->socid = $suppliersid[$i];
 				$id = $order->create($user);
 				$order->add_object_linked('commande', $_REQUEST['id']);
 				$newCommande = true;
-				//echo "pas ok";
+
 			}
             //trick to know which orders have been generated this way
             $order->source = 42;
 			
             foreach ($supplier['lines'] as $line) {
-	            $done = false;	
+            	
+	            $done = false;
+					
             	foreach($order->lines as $lineOrderFetched) {
+            		
             		if($line->fk_product == $lineOrderFetched->fk_product) {
+            			
             			$order->updateline($lineOrderFetched->id, $lineOrderFetched->desc, $lineOrderFetched->total_ht, $lineOrderFetched->qty+$line->qty, $lineOrderFetched->remise_percent, $lineOrderFetched->tva_tx);							
 						$done = true;
 						break;
-            			//function updateline($rowid, $desc, $pu, $qty, $remise_percent, $txtva, $txlocaltax1=0, $txlocaltax2=0, $price_base_type='HT', $info_bits=0, $type=0, $notrigger=false)
+
             		}
+					
             	}
-				if(!$done) {
+				
+				// On ajoute une ligne seulement si un "updateline()" n'a pas été fait et si la quantité souhaitée est supérieure à zéro
+				
+				if(!$done && $line->qty>0) {
+					
 					$order->addline($line->desc, $line->total_ht, $line->qty, $line->tva_tx, 0, 0, $line->fk_product, 0, $line->ref_fourn);
-					//function addline($desc, $pu_ht, $qty, $txtva, $txlocaltax1=0, $txlocaltax2=0, $fk_product=0, $fk_prod_fourn_price=0, $fourn_ref='', $remise_percent=0, $price_base_type='HT', $pu_ttc=0, $type=0, $info_bits=0, $notrigger=false)
+					
 				}
 				
             }
 
             $order->cond_reglement_id = 0;
             $order->mode_reglement_id = 0;
-			//function updateFromCommandeClient($user, $idc, $comclientid)
-			/*if(!$newCommande) {
-				$id = $order->updateFromCommandeClient($user, $idc, $comclientid);
-			} else {
-				$id = $order->create($user);
-			}
-            */
+
             if ($id < 0) {
                 $fail++;
                 $msg = $langs->trans('OrderFail') . "&nbsp;:&nbsp;";
