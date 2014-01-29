@@ -22,14 +22,14 @@
  *  \brief      Page to list stocks to replenish
  */
 
-require '../../main.inc.php';
+require '../main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/product/class/product.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formother.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.form.class.php';
 require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.commande.class.php';
 
-include_once(DOL_DOCUMENT_ROOT.'/core/class/hookmanager.class.php');
-$hookmanager=new HookManager($db);
+//include_once(DOL_DOCUMENT_ROOT.'/core/class/hookmanager.class.php');
+/*$hookmanager=new HookManager($db);
 $hookmanager->initHooks(array('context'));
 //require_once './lib/replenishment.lib.php';
 
@@ -39,14 +39,14 @@ $reshook=$hookmanager->executeHooks('formObjectOptions',$parameters,$object,$act
 if (empty($reshook))
 {
   // standard code that can be disabled/replaced by hook if return code > 0.
-}
+}*/
 
 $prod = new Product($db);
-
 
 $langs->load("products");
 $langs->load("stocks");
 $langs->load("orders");
+$langs->load("supplierorderfromorder@supplierorderfromorder");
 
 /*echo "<form name=\"formCreateSupplierOrder\" method=\"post\" action=\"ordercustomer.php\">";*/
 
@@ -158,14 +158,12 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				$order->socid = $suppliersid[$i];
 				$order->add_object_linked('commande', $_REQUEST['id']);
 				$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
-				/*echo "<pre>";
-				var_dump($commande->lines);
-				echo "</pre>";
-				exit;*/
+				$newCommande = false;
 			} else {
 				$order = new CommandeFournisseur($db);
 				$order->socid = $suppliersid[$i];
 				$id = $order->create($user);
+				$newCommande = true;
 				//echo "pas ok";
 			}
             //trick to know which orders have been generated this way
@@ -185,7 +183,22 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$order->addline($line->desc, $line->total_ht, $line->qty, $line->tva_tx, 0, 0, $line->fk_product, 0, $line->ref_fourn);
 					//function addline($desc, $pu_ht, $qty, $txtva, $txlocaltax1=0, $txlocaltax2=0, $fk_product=0, $fk_prod_fourn_price=0, $fourn_ref='', $remise_percent=0, $price_base_type='HT', $pu_ttc=0, $type=0, $info_bits=0, $notrigger=false)
 				}
+				
             }
+
+			/*if($newCommande) {
+				?>
+					<script language="JavaScript" type="text/JavaScript">
+						alert('Commande créée avec succès !');
+					</script>
+				<?
+			} else {
+				?>
+					<script language="JavaScript" type="text/JavaScript">
+						alert('Produits ajoutés à la commande en cours !');
+					</script>
+				<?					
+			}*/
 
             $order->cond_reglement_id = 0;
             $order->mode_reglement_id = 0;
@@ -223,7 +236,7 @@ $sql = 'SELECT p.rowid, p.ref, p.label, p.price';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
 $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte,';
 $sql .= ' SUM(COALESCE(s.reel, 0)) as stock_physique';
-$sql .= ', p.desiredstock';
+//$sql .= ', p.desiredstock';
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
 $sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd';
 $sql .= ' ON p.rowid = cd.fk_product';
@@ -269,11 +282,12 @@ if (!empty($canvas)) {
 $sql .= ' GROUP BY p.rowid, p.ref, p.label, p.price';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type, p.tms';
 $sql .= ', p.duration, p.tobuy, p.seuil_stock_alerte';
-$sql .= ', p.desiredstock, s.fk_product';
-$sql .= ' HAVING p.desiredstock > SUM(COALESCE(s.reel, 0))';
-$sql .= ' AND p.desiredstock > 0';
+//$sql .= ', p.desiredstock'; 
+$sql .= ', s.fk_product';
+//$sql .= ' HAVING p.desiredstock > SUM(COALESCE(s.reel, 0))';
+//$sql .= ' HAVING p.desiredstock > 0';
 if ($salert == 'on') {
-    $sql .= ' AND SUM(COALESCE(s.reel, 0)) < p.seuil_stock_alerte AND p.seuil_stock_alerte is not NULL';
+    $sql .= ' HAVING SUM(COALESCE(s.reel, 0)) < p.seuil_stock_alerte AND p.seuil_stock_alerte is not NULL';
     $alertchecked = 'checked="checked"';
 }
 $sql .= $db->order($sortfield,$sortorder);
@@ -346,20 +360,20 @@ if ($resql) {
          '<td><input type="checkbox" onClick="toggle(this)" /></td>';
     print_liste_field_titre(
     		$langs->trans('Ref'),
-    		'replenish.php',
+    		'ordercustomer.php',
     		'p.ref',
     		$param,
-    		'',
+    		'id='.$_REQUEST['id'],
     		'',
     		$sortfield,
     		$sortorder
     );
     print_liste_field_titre(
     		$langs->trans('Label'),
-    		'replenish.php',
+    		'ordercustomer.php',
     		'p.label',
     		$param,
-    		'',
+    		'id='.$_REQUEST['id'],
     		'',
     		$sortfield,
     		$sortorder
@@ -368,10 +382,10 @@ if ($resql) {
     {
     	print_liste_field_titre(
     			$langs->trans('Duration'),
-    			'replenish.php',
+    			'ordercustomer.php',
     			'p.duration',
     			$param,
-    			'',
+    			'id='.$_REQUEST['id'],
     			'align="center"',
     			$sortfield,
     			$sortorder
@@ -379,10 +393,10 @@ if ($resql) {
     }
     print_liste_field_titre(
     		$langs->trans('DesiredStock'),
-    		'replenish.php',
+    		'ordercustomer.php',
     		'p.desiredstock',
     		$param,
-    		'',
+    		'id='.$_REQUEST['id'],
     		'align="right"',
     		$sortfield,
     		$sortorder
@@ -397,40 +411,40 @@ if ($resql) {
     }
     print_liste_field_titre(
     		$stocklabel,
-    		'replenish.php',
+    		'ordercustomer.php',
     		'stock_physique',
     		$param,
-    		'',
+    		'id='.$_REQUEST['id'],
     		'align="right"',
     		$sortfield,
     		$sortorder
     );
     print_liste_field_titre(
     		$langs->trans('Ordered'),
-    		'replenish.php',
+    		'ordercustomer.php',
     		'',
     		$param,
-    		'',
+    		'id='.$_REQUEST['id'],
     		'align="right"',
     		$sortfield,
     		$sortorder
     );
     print_liste_field_titre(
     		$langs->trans('StockToBuy'),
-    		'replenish.php',
+    		'ordercustomer.php',
     		'',
     		$param,
-    		'',
+    		'id='.$_REQUEST['id'],
     		'align="right"',
     		$sortfield,
     		$sortorder
     );
     print_liste_field_titre(
     		$langs->trans('Supplier'),
-    		'replenish.php',
+    		'ordercustomer.php',
     		'',
     		$param,
-    		'',
+    		'id='.$_REQUEST['id'],
     		'align="right"',
     		$sortfield,
     		$sortorder
@@ -576,7 +590,7 @@ if ($resql) {
         }
         $i++;
     }
-    $value = $langs->trans("Générer commandes fournisseur");
+    $value = $langs->trans("generateSupplierOrder");
     print '</table>'.
          '</div>'.
          '<table width="100%">'.
