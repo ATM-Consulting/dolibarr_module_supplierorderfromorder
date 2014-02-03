@@ -81,6 +81,7 @@ $limit = $conf->liste_limit;
 $offset = $limit * $page ;
 
 
+
 /*
  * Actions
  */
@@ -96,6 +97,8 @@ if (isset($_POST['button_removefilter']) || isset($_POST['valid'])) {
 print_r($_REQUEST);
 echo "</pre>";
 exit;*/
+
+		
 
 //orders creation
 //FIXME: could go in the lib
@@ -132,9 +135,11 @@ if ($action == 'order' && isset($_POST['valid'])) {
                     $line->total_tva = $line->total_ht * $tva;
                     $line->total_ttc = $line->total_ht + $line->total_tva;
                     $line->ref_fourn = $obj->ref_fourn;
+					
                     if(!empty($_REQUEST['tobuy'.$i])) {
                     	$suppliers[$obj->fk_soc]['lines'][] = $line;
-                    }					
+                    }
+
 					
                 } else {
                     $error=$db->lasterror();
@@ -146,11 +151,13 @@ if ($action == 'order' && isset($_POST['valid'])) {
             }
             unset($_POST[$i]);
         }
+
         //we now know how many orders we need and what lines they have
         $i = 0;
         $orders = array();
         $suppliersid = array_keys($suppliers);
         foreach ($suppliers as $idsupplier => $supplier) {
+			
         	$sql2 = 'SELECT rowid, ref';
 			$sql2 .= ' FROM ' . MAIN_DB_PREFIX . 'commande_fournisseur';
 			$sql2 .= ' WHERE fk_soc = '.$idsupplier;
@@ -190,7 +197,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
             //trick to know which orders have been generated this way
             $order->source = 42;
 			
-            foreach ($supplier['lines'] as $line) {
+            foreach ($supplier['lines'] as $line) {      	
             	
 	            $done = false;
 					
@@ -238,13 +245,70 @@ if ($action == 'order' && isset($_POST['valid'])) {
 								
 		}*/
 			
-        if (!$fail && $id) {
+        /*if (!$fail && $id) {
             setEventMessage($langs->trans('OrderCreated'), 'mesgs');
-            header('Location: '.DOL_URL_ROOT.'/commande/fiche.php?id='.$_REQUEST['id']);
-        }
+            //header('Location: '.DOL_URL_ROOT.'/commande/fiche.php?id='.$_REQUEST['id'].'');
+        } else {
+        	setEventMessage('coucou', 'mesgs');
+        }*/
     }
     if ($box === false) {
         setEventMessage($langs->trans('SelectProduct'), 'warnings');
+    } else {
+    					
+    	foreach($suppliers as $idSupplier => $lines) {
+    		$j = 0;
+    		foreach($lines as $line) {
+		    	$sql = "SELECT quantity";
+				$sql.= " FROM ".MAIN_DB_PREFIX."product_fournisseur_price";
+				$sql.= " WHERE fk_soc = ".$idSupplier;
+				$sql.= " AND fk_product = ".$line[$j]->fk_product;
+				$sql.= " ORDER BY quantity ASC";
+				$sql.= " LIMIT 1";
+				$resql = $db->query($sql);
+				$resql = $db->fetch_object($resql);
+				
+				//echo $j;
+				
+				if($line[$j]->qty < $resql->quantity) {
+					$p = new Product($db);
+					$p->fetch($line[$j]->fk_product);
+					$f = new Fournisseur($db);
+					$f->fetch($idSupplier);
+					$rates[$f->nom] = $p->label;
+				} else {
+					$p = new Product($db);
+					$p->fetch($line[$j]->fk_product);
+					$f = new Fournisseur($db);
+					$f->fetch($idSupplier);
+					$ajoutes[$f->nom] = $p->label;
+				}
+				
+				/*echo "<pre>";
+				print_r($rates);
+				echo "</pre>";
+				echo "<pre>";
+				print_r($ajoutes);
+				echo "</pre>";*/
+				$j++;
+			}
+		}
+		$mess = "";
+		if($ajoutes) {
+			foreach($ajoutes as $nomFournisseur => $nomProd) {
+				$mess.= "Produit ' ".$nomProd." ' ajouté à la commande du fournisseur ' ".$nomFournisseur." '<br />";
+			}
+		}
+		if($rates) {
+			foreach($rates as $nomFournisseur => $nomProd) {
+				$mess.= "Quantité insuffisante de ' ".$nomProd." ' pour le fournisseur ' ".$nomFournisseur." '<br />";
+			}
+		}
+		if($rates) {
+			setEventMessage($mess, 'warnings');
+		} else {
+			setEventMessage($mess, 'mesgs');
+		}
     }
 }
 
@@ -500,6 +564,8 @@ if ($resql) {
           src="'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/searchclear.png" value="'.dol_escape_htmltag($langs->trans("Search")).'" title="'.dol_escape_htmltag($langs->trans("Search")).'">'.
          '</td>'.
          '</tr>';
+		 
+		 
 
     $prod = new Product($db);
 
@@ -675,19 +741,6 @@ print ' <script type="text/javascript">
 }
 
 llxFooter();
-
-/*?>
-	<script type="text/javascript">
-	// Ici récupérer 
-		$("[name=tobuy0]").change(function() {
-			if ($("[name=tobuy0]").val()<10) {
-				$("[name=tobuy0]").val('10');
-			}
-			//alert('coucou');
-			//$("[name=tobuy0]").val('coucou');
-		});
-	</script>
-<?*/
 
 $db->close();
 ?>
