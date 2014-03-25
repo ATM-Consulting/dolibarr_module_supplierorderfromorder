@@ -671,9 +671,15 @@ if ($resql) {
                  '</td>'.
                  '<td align="right">'.
                  $form->select_product_fourn_price($prod->id, 'fourn'.$i, 1).
-                 '</td>'.
-                 '<td>&nbsp</td>'.
-                 '</tr>';
+                 '</td>';
+
+           if($conf->asset->enabled && $user->rights->asset->of->write) {
+		print '<td><a href="'.dol_buildpath('/asset/fiche_of.php',1).'?action=new&fk_product='.$prod->id.'" class="butAction">Fabriquer</a></td>';
+	   }
+	   else {
+	    	print '<td>&nbsp</td>';
+	   }
+           print '</tr>';
         }
         $i++;
     }
