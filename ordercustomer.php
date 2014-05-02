@@ -317,7 +317,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
  */
 $title = $langs->trans('Status');
 
-$sql = 'SELECT p.rowid, p.ref, p.label, p.price';
+$sql = 'SELECT p.rowid, p.ref, p.label, p.price, cd.qty';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
 $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte,';
 $sql .= ' SUM(COALESCE(s.reel, 0)) as stock_physique';
@@ -656,6 +656,9 @@ if ($resql) {
                      $duration.
                      '</td>';
             }
+
+			// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :
+			$stocktobuy = $stocktobuy + $objp->qty;
 
             print '<td align="right">' . $objp->desiredstock . '</td>'.
                  '<td align="right">'.
