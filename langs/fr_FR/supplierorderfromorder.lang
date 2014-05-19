@@ -1,4 +1,2 @@
-ModuleXXXXXXName = Name
-ModuleXXXXXXDesc = Descripion
 SelectProduct = Sélectionnez au moins un produit ainsi qu'un fournisseur
 generateSupplierOrder = Générer commandes fournisseur
