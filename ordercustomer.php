@@ -77,7 +77,8 @@ if (!$sortfield) {
 if (!$sortorder) {
     $sortorder = 'ASC';
 }
-$limit = 1000;
+$conf->liste_limit = 1000; // Pas de pagination sur cet écran
+$limit = $conf->liste_limit;
 $offset = $limit * $page ;
 
 
