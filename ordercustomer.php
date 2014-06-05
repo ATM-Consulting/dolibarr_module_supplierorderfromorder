@@ -387,7 +387,7 @@ if ($resql) {
     $helpurl .= 'ES:M&oacute;dulo_Stocks';
     llxHeader('', $title, $helpurl, $title);
     $head = array();
-    $head[0][0] = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id='.$_REQUEST['id']);
+    $head[0][0] = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id='.$_REQUEST['id'],2);
     $head[0][1] = $title;
     $head[0][2] = 'supplierorderfromorder';
 	/*$head[1][0] = DOL_URL_ROOT.'/product/stock/replenishorders.php';
