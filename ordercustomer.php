@@ -416,7 +416,7 @@ if ($resql) {
         print_barre_liste(
         		$texte,
         		$page,
-        		'replenish.php',
+        		'ordercustomer.php',
         		$filters,
         		$sortfield,
         		$sortorder,
