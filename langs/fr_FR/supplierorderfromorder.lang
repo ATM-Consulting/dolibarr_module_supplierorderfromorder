@@ -1,2 +1,4 @@
 SelectProduct = Sélectionnez au moins un produit ainsi qu'un fournisseur
-generateSupplierOrder = Générer commandes fournisseur
+ProductsToOrder = Produits à commander
+OrderToSuppliers = Passer les commandes fournisseur
+GenerateSupplierOrder = Générer commandes fournisseur

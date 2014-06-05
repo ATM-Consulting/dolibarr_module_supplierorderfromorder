@@ -77,7 +77,7 @@ if (!$sortfield) {
 if (!$sortorder) {
     $sortorder = 'ASC';
 }
-$limit = $conf->liste_limit;
+$limit = 1000;
 $offset = $limit * $page ;
 
 
@@ -315,7 +315,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 /*
  * View
  */
-$title = $langs->trans('Status');
+$title = $langs->trans('ProductsToOrder');
 
 $sql = 'SELECT p.rowid, p.ref, p.label, p.price, cd.qty';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
@@ -387,13 +387,13 @@ if ($resql) {
     $helpurl .= 'ES:M&oacute;dulo_Stocks';
     llxHeader('', $title, $helpurl, $title);
     $head = array();
-    /*$head[0][0] = DOL_URL_ROOT.'/product/stock/replenish.php';
+    $head[0][0] = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id='.$_REQUEST['id']);
     $head[0][1] = $title;
-    $head[0][2] = 'replenish';
-    $head[1][0] = DOL_URL_ROOT.'/product/stock/ordercustomer.php';
-    $head[1][1] = $langs->trans("ReplenishmentOrders");
-    $head[1][2] = 'replenishorders';*/
-    dol_fiche_head($head, 'replenish', $langs->trans('Replenishment'), 0, 'stock');
+    $head[0][2] = 'supplierorderfromorder';
+	/*$head[1][0] = DOL_URL_ROOT.'/product/stock/replenishorders.php';
+	$head[1][1] = $langs->trans("ReplenishmentOrders");
+	$head[1][2] = 'replenishorders';*/
+    dol_fiche_head($head, 'supplierorderfromorder', $langs->trans('Replenishment'), 0, 'stock');
     if ($sref || $snom || $sall || $salert || GETPOST('search', 'alpha')) {
         $filters = '&sref=' . $sref . '&snom=' . $snom;
         $filters .= '&sall=' . $sall;
@@ -401,7 +401,7 @@ if ($resql) {
         print_barre_liste(
         		$texte,
         		$page,
-        		'replenish.php',
+        		'ordercustomer.php',
         		$filters,
         		$sortfield,
         		$sortorder,
@@ -686,7 +686,7 @@ if ($resql) {
         }
         $i++;
     }
-    $value = $langs->trans("generateSupplierOrder");
+    $value = $langs->trans("GenerateSupplierOrder");
     print '</table>'.
          '</div>'.
          '<table width="100%">'.
