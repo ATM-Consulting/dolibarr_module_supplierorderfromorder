@@ -45,7 +45,7 @@ class modSupplierorderfromorder extends DolibarrModules
         // Id for module (must be unique).
         // Use a free id here
         // (See in Home -> System information -> Dolibarr for list of used modules id).
-        $this->numero = 1556501; // 104000 to 104999 for ATM CONSULTING
+        $this->numero = 104120; // 104000 to 104999 for ATM CONSULTING
         // Key text used to identify module (for permissions, menus, etc...)
         $this->rights_class = 'supplierorderfromorder';
 

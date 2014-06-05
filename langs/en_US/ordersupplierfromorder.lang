@@ -1,2 +1,4 @@
 SelectProduct = Select at least one product and one supplier
-generateSupplierOrder = Create supplier orders
+ProductsToOrder = Products to order
+OrderToSuppliers = Create supplier orders
+GenerateSupplierOrder = Generate supplier orders
