@@ -28,6 +28,7 @@ require_once DOL_DOCUMENT_ROOT.'/core/class/html.formother.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.form.class.php';
 require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.commande.class.php';
 dol_include_once("/core/lib/admin.lib.php");
+dol_include_once("/fourn/class/fournisseur.class.php");
 
 //include_once(DOL_DOCUMENT_ROOT.'/core/class/hookmanager.class.php');
 /*$hookmanager=new HookManager($db);
