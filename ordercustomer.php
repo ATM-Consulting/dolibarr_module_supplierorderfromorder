@@ -27,6 +27,7 @@ require_once DOL_DOCUMENT_ROOT.'/product/class/product.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formother.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.form.class.php';
 require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.commande.class.php';
+dol_include_once("/core/lib/admin.lib.php");
 
 //include_once(DOL_DOCUMENT_ROOT.'/core/class/hookmanager.class.php');
 /*$hookmanager=new HookManager($db);
@@ -40,13 +41,14 @@ if (empty($reshook))
 {
   // standard code that can be disabled/replaced by hook if return code > 0.
 }*/
-
 $prod = new Product($db);
 
 $langs->load("products");
 $langs->load("stocks");
 $langs->load("orders");
 $langs->load("supplierorderfromorder@supplierorderfromorder");
+
+$dolibarr_version35 = strpos(DOL_VERSION, "3.5") !== false;
 
 /*echo "<form name=\"formCreateSupplierOrder\" method=\"post\" action=\"ordercustomer.php\">";*/
 
@@ -322,7 +324,7 @@ $sql = 'SELECT p.rowid, p.ref, p.label, p.price, cd.qty';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
 $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte,';
 $sql .= ' SUM(COALESCE(s.reel, 0)) as stock_physique';
-$sql .= ', p.desiredstock';
+$sql .= $dolibarr_version35 ? ', p.desiredstock' : "";
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
 $sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd';
 $sql .= ' ON p.rowid = cd.fk_product';
@@ -477,16 +479,19 @@ if ($resql) {
     			$sortorder
     	);
     }
-    print_liste_field_titre(
-    		$langs->trans('DesiredStock'),
-    		'ordercustomer.php',
-    		'p.desiredstock',
-    		$param,
-    		'id='.$_REQUEST['id'],
-    		'align="right"',
-    		$sortfield,
-    		$sortorder
-    );
+
+	if($dolibarr_version35) {
+	    print_liste_field_titre(
+	    		$langs->trans('DesiredStock'),
+	    		'ordercustomer.php',
+	    		'p.desiredstock',
+	    		$param,
+	    		'id='.$_REQUEST['id'],
+	    		'align="right"',
+	    		$sortfield,
+	    		$sortorder
+	    );
+	}
     if ($conf->global->USE_VIRTUAL_STOCK) 
     {
         $stocklabel = $langs->trans('VirtualStock');
@@ -553,8 +558,10 @@ if ($resql) {
              '&nbsp;'.
              '</td>';
     }
-    print '<td class="liste_titre">&nbsp;</td>'.
-         '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>'.
+	
+	$liste_titre = "";
+    $liste_titre.= $dolibarr_version35 ? '<td class="liste_titre">&nbsp;</td>' : '';
+    $liste_titre.= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>'.
          '<td class="liste_titre" align="right">&nbsp;</td>'.
          '<td class="liste_titre">&nbsp;</td>'.
          '<td class="liste_titre">&nbsp;</td>'.
@@ -566,7 +573,7 @@ if ($resql) {
          '</td>'.
          '</tr>';
 		 
-		 
+	print $liste_titre;
 
     $prod = new Product($db);
 
@@ -661,8 +668,11 @@ if ($resql) {
 			// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :
 			$stocktobuy = $stocktobuy + $objp->qty;
 
-            print '<td align="right">' . $objp->desiredstock . '</td>'.
-                 '<td align="right">'.
+            //print $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : "".
+            
+            	$champs = "";
+            	$champs .= $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : '';
+                $champs.= '<td align="right">'.
                  $warning . $stock.
                  '</td>'.
                  '<td align="right">'.
@@ -676,7 +686,7 @@ if ($resql) {
                  '<td align="right">'.
                  $form->select_product_fourn_price($prod->id, 'fourn'.$i, 1).
                  '</td>';
-
+				print $champs;
            if($conf->asset->enabled && $user->rights->asset->of->write) {
 		print '<td><a href="'.dol_buildpath('/asset/fiche_of.php',1).'?action=new&fk_product='.$prod->id.'" class="butAction">Fabriquer</a></td>';
 	   }
