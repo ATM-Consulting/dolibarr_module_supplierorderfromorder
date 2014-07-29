@@ -181,11 +181,11 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				// S'il n'y en a pas, on l'ajoute, sinon, on ne l'ajoute pas
 				$order->fetchObjectLinked('', 'commande', $order->id, 'order_supplier');
 				
-				if(count($order->linkedObjects) == 0) {
+				//if(count($order->linkedObjects) == 0) {
 
 					$order->add_object_linked('commande', $_REQUEST['id']);
 					
-				}
+				//}
 
 				$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
 				$newCommande = false;
