@@ -625,7 +625,7 @@ if ($resql) {
             } else {
                 $stock = $objp->stock_physique;
             }
-		if($stock >= $objp->qty + $objp->desiredstock) {
+		if($stock >= $objp->qty - $objp->expedie + $objp->desiredstock) {
 			$i++;
 			continue;
 		}
@@ -675,6 +675,7 @@ if ($resql) {
 			// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :
 			$stocktobuy = $stocktobuy + $objp->qty - $objp->expedie;
 			$stocktobuy = $objp->qty - $stock - $objp->expedie + $objp->desiredstock;
+			if($stocktobuy < 0) $stocktobuy = 0;
 
             //print $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : "".
             
