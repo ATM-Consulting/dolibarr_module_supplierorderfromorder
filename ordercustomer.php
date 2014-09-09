@@ -74,7 +74,7 @@ $sortorder = GETPOST('sortorder','alpha');
 $page = GETPOST('page','int');
 
 if (!$sortfield) {
-    $sortfield = 'p.ref';
+    $sortfield = 'cd.rang';
 }
 
 if (!$sortorder) {
