@@ -36,7 +36,7 @@ class ActionsSupplierorderfromorder
 				})
 			</script>
 
-          <?
+          <?php
         }
  
         $this->results=array('myreturn'=>$myvalue);
