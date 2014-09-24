@@ -204,7 +204,10 @@ if ($action == 'order' && isset($_POST['valid'])) {
             foreach ($supplier['lines'] as $line) {      	
             	
 	            $done = false;
-					
+				
+				$prodfourn = new ProductFournisseur($db);
+				$prodfourn->fetch_product_fournisseur_price($_REQUEST['fourn'.$i]);
+
             	foreach($order->lines as $lineOrderFetched) {
             		
             		if($line->fk_product == $lineOrderFetched->fk_product) {
@@ -221,7 +224,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				
 				if(!$done) {
 					
-					$order->addline($line->desc, $line->total_ht, intval($line->qty), $line->tva_tx, 0, 0, $line->fk_product, 0, $line->ref_fourn);
+					$order->addline($line->desc, $line->total_ht, intval($line->qty), $line->tva_tx, 0, 0, $line->fk_product, 0, $line->ref_fourn, $prodfourn->fourn_remise_percent ? $prodfourn->fourn_remise_percent : 0);
 					
 				}
 				
