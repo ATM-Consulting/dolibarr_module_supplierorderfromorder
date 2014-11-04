@@ -625,9 +625,12 @@ if ($resql) {
                 }
                 $stock_commande_fournisseur = $prod->stats_commande_fournisseur['qty'];
                 $stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
-            } else {
+            } elseif(!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER) {
                 $stock = $objp->stock_physique;
             }
+			else{
+				$stock = $objp->qty;
+			}
 		if($stock >= $objp->qty - $objp->expedie + $objp->desiredstock) {
 			$i++;
 			continue;
