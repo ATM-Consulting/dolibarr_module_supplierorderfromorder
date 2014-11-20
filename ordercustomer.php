@@ -27,6 +27,8 @@ require_once DOL_DOCUMENT_ROOT.'/product/class/product.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formother.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.form.class.php';
 require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.commande.class.php';
+dol_include_once("/core/lib/admin.lib.php");
+dol_include_once("/fourn/class/fournisseur.class.php");
 
 //include_once(DOL_DOCUMENT_ROOT.'/core/class/hookmanager.class.php');
 /*$hookmanager=new HookManager($db);
@@ -40,13 +42,14 @@ if (empty($reshook))
 {
   // standard code that can be disabled/replaced by hook if return code > 0.
 }*/
-
 $prod = new Product($db);
 
 $langs->load("products");
 $langs->load("stocks");
 $langs->load("orders");
 $langs->load("supplierorderfromorder@supplierorderfromorder");
+
+$dolibarr_version35 = strpos(DOL_VERSION, "3.5") !== false;
 
 /*echo "<form name=\"formCreateSupplierOrder\" method=\"post\" action=\"ordercustomer.php\">";*/
 
@@ -71,12 +74,13 @@ $sortorder = GETPOST('sortorder','alpha');
 $page = GETPOST('page','int');
 
 if (!$sortfield) {
-    $sortfield = 'p.ref';
+    $sortfield = 'cd.rang';
 }
 
 if (!$sortorder) {
     $sortorder = 'ASC';
 }
+$conf->liste_limit = 1000; // Pas de pagination sur cet écran
 $limit = $conf->liste_limit;
 $offset = $limit * $page ;
 
@@ -177,11 +181,11 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				// S'il n'y en a pas, on l'ajoute, sinon, on ne l'ajoute pas
 				$order->fetchObjectLinked('', 'commande', $order->id, 'order_supplier');
 				
-				if(count($order->linkedObjects) == 0) {
+				//if(count($order->linkedObjects) == 0) {
 
 					$order->add_object_linked('commande', $_REQUEST['id']);
 					
-				}
+				//}
 
 				$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
 				$newCommande = false;
@@ -200,7 +204,10 @@ if ($action == 'order' && isset($_POST['valid'])) {
             foreach ($supplier['lines'] as $line) {      	
             	
 	            $done = false;
-					
+				
+				$prodfourn = new ProductFournisseur($db);
+				$prodfourn->fetch_product_fournisseur_price($_REQUEST['fourn'.$i]);
+
             	foreach($order->lines as $lineOrderFetched) {
             		
             		if($line->fk_product == $lineOrderFetched->fk_product) {
@@ -217,7 +224,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				
 				if(!$done) {
 					
-					$order->addline($line->desc, $line->total_ht, intval($line->qty), $line->tva_tx, 0, 0, $line->fk_product, 0, $line->ref_fourn);
+					$order->addline($line->desc, $line->total_ht, intval($line->qty), $line->tva_tx, 0, 0, $line->fk_product, 0, $line->ref_fourn, $prodfourn->fourn_remise_percent ? $prodfourn->fourn_remise_percent : 0);
 					
 				}
 				
@@ -315,19 +322,21 @@ if ($action == 'order' && isset($_POST['valid'])) {
 /*
  * View
  */
-$title = $langs->trans('Status');
+$title = $langs->trans('ProductsToOrder');
 
-$sql = 'SELECT p.rowid, p.ref, p.label, p.price, cd.qty';
+$sql = 'SELECT p.rowid, p.ref, p.label, p.price, cd.qty, SUM(ed.qty) as expedie';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
 $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte,';
 $sql .= ' SUM(COALESCE(s.reel, 0)) as stock_physique';
-$sql .= ', p.desiredstock';
+$sql .= $dolibarr_version35 ? ', p.desiredstock' : "";
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
 $sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd';
 $sql .= ' ON p.rowid = cd.fk_product';
+$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'expeditiondet as ed';
+$sql .= ' ON ed.fk_origin_line = cd.rowid';
 $sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s';
 $sql .= ' ON p.rowid = s.fk_product';
-$sql.= ' WHERE p.entity IN (' . getEntity("product", 1) . ')';
+$sql .= ' WHERE p.entity IN (' . getEntity("product", 1) . ')';
 $sql .= ' AND cd.fk_commande = '.$_REQUEST['id'];
 
 if ($sall) {
@@ -387,13 +396,13 @@ if ($resql) {
     $helpurl .= 'ES:M&oacute;dulo_Stocks';
     llxHeader('', $title, $helpurl, $title);
     $head = array();
-    /*$head[0][0] = DOL_URL_ROOT.'/product/stock/replenish.php';
+    $head[0][0] = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id='.$_REQUEST['id'],2);
     $head[0][1] = $title;
-    $head[0][2] = 'replenish';
-    $head[1][0] = DOL_URL_ROOT.'/product/stock/ordercustomer.php';
-    $head[1][1] = $langs->trans("ReplenishmentOrders");
-    $head[1][2] = 'replenishorders';*/
-    dol_fiche_head($head, 'replenish', $langs->trans('Replenishment'), 0, 'stock');
+    $head[0][2] = 'supplierorderfromorder';
+	/*$head[1][0] = DOL_URL_ROOT.'/product/stock/replenishorders.php';
+	$head[1][1] = $langs->trans("ReplenishmentOrders");
+	$head[1][2] = 'replenishorders';*/
+    dol_fiche_head($head, 'supplierorderfromorder', $langs->trans('Replenishment'), 0, 'stock');
     if ($sref || $snom || $sall || $salert || GETPOST('search', 'alpha')) {
         $filters = '&sref=' . $sref . '&snom=' . $snom;
         $filters .= '&sall=' . $sall;
@@ -401,7 +410,7 @@ if ($resql) {
         print_barre_liste(
         		$texte,
         		$page,
-        		'replenish.php',
+        		'ordercustomer.php',
         		$filters,
         		$sortfield,
         		$sortorder,
@@ -416,7 +425,7 @@ if ($resql) {
         print_barre_liste(
         		$texte,
         		$page,
-        		'replenish.php',
+        		'ordercustomer.php',
         		$filters,
         		$sortfield,
         		$sortorder,
@@ -476,16 +485,19 @@ if ($resql) {
     			$sortorder
     	);
     }
-    print_liste_field_titre(
-    		$langs->trans('DesiredStock'),
-    		'ordercustomer.php',
-    		'p.desiredstock',
-    		$param,
-    		'id='.$_REQUEST['id'],
-    		'align="right"',
-    		$sortfield,
-    		$sortorder
-    );
+
+	if($dolibarr_version35) {
+	    print_liste_field_titre(
+	    		$langs->trans('DesiredStock'),
+	    		'ordercustomer.php',
+	    		'p.desiredstock',
+	    		$param,
+	    		'id='.$_REQUEST['id'],
+	    		'align="right"',
+	    		$sortfield,
+	    		$sortorder
+	    );
+	}
     if ($conf->global->USE_VIRTUAL_STOCK) 
     {
         $stocklabel = $langs->trans('VirtualStock');
@@ -552,8 +564,10 @@ if ($resql) {
              '&nbsp;'.
              '</td>';
     }
-    print '<td class="liste_titre">&nbsp;</td>'.
-         '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>'.
+	
+	$liste_titre = "";
+    $liste_titre.= $dolibarr_version35 ? '<td class="liste_titre">&nbsp;</td>' : '';
+    $liste_titre.= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>'.
          '<td class="liste_titre" align="right">&nbsp;</td>'.
          '<td class="liste_titre">&nbsp;</td>'.
          '<td class="liste_titre">&nbsp;</td>'.
@@ -565,7 +579,7 @@ if ($resql) {
          '</td>'.
          '</tr>';
 		 
-		 
+	print $liste_titre;
 
     $prod = new Product($db);
 
@@ -614,6 +628,10 @@ if ($resql) {
             } else {
                 $stock = $objp->stock_physique;
             }
+		if($stock >= $objp->qty - $objp->expedie + $objp->desiredstock) {
+			$i++;
+			continue;
+		}
             $warning='';
             if ($objp->seuil_stock_alerte
                 && ($stock < $objp->seuil_stock_alerte)) {
@@ -658,10 +676,15 @@ if ($resql) {
             }
 
 			// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :
-			$stocktobuy = $stocktobuy + $objp->qty;
+			$stocktobuy = $stocktobuy + $objp->qty - $objp->expedie;
+			$stocktobuy = $objp->qty - $stock - $objp->expedie + $objp->desiredstock;
+			if($stocktobuy < 0) $stocktobuy = 0;
 
-            print '<td align="right">' . $objp->desiredstock . '</td>'.
-                 '<td align="right">'.
+            //print $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : "".
+            
+            	$champs = "";
+            	$champs .= $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : '';
+                $champs.= '<td align="right">'.
                  $warning . $stock.
                  '</td>'.
                  '<td align="right">'.
@@ -675,8 +698,8 @@ if ($resql) {
                  '<td align="right">'.
                  $form->select_product_fourn_price($prod->id, 'fourn'.$i, 1).
                  '</td>';
-
-       if($conf->asset->enabled && $user->rights->asset->of->write) {
+				print $champs;
+           if($conf->asset->enabled && $user->rights->asset->of->write) {
 		print '<td><a href="'.dol_buildpath('/asset/fiche_of.php',1).'?action=new&fk_product='.$prod->id.'" class="butAction">Fabriquer</a></td>';
 	   }
 	   else {
@@ -686,7 +709,7 @@ if ($resql) {
         }
         $i++;
     }
-    $value = $langs->trans("generateSupplierOrder");
+    $value = $langs->trans("GenerateSupplierOrder");
     print '</table>'.
          '</div>'.
          '<table width="100%">'.
@@ -753,3 +776,4 @@ llxFooter();
 
 $db->close();
 ?>
+
