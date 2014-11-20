@@ -614,17 +614,32 @@ if ($resql) {
             if ($conf->global->USE_VIRTUAL_STOCK) {
                 //compute virtual stock
                 $prod->fetch($prod->id);
-                $result=$prod->load_stats_commande(0, '1,2');
-                if ($result < 0) {
-                    dol_print_error($db, $prod->error);
-                }
-                $stock_commande_client = $prod->stats_commande['qty'];
-                $result=$prod->load_stats_commande_fournisseur(0, '3');
-                if ($result < 0) {
-                    dol_print_error($db,$prod->error);
-                }
-                $stock_commande_fournisseur = $prod->stats_commande_fournisseur['qty'];
+				
+				if(!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER) {
+	                $result=$prod->load_stats_commande(0, '1,2');
+	                if ($result < 0) {
+	                    dol_print_error($db, $prod->error);
+	                }
+	                $stock_commande_client = $prod->stats_commande['qty'];
+					
+				}
+				else{
+					$stock_commande_client = 0;	
+				}
+				
+				if(!$conf->global->STOCK_CALCULATE_ON_SUPPLIER_VALIDATE_ORDER) {
+	                $result=$prod->load_stats_commande_fournisseur(0, '3');
+	                if ($result < 0) {
+	                    dol_print_error($db,$prod->error);
+	                }
+					$stock_commande_fournisseur = $prod->stats_commande_fournisseur['qty'];
+				}
+				else{
+					$stock_commande_fournisseur = 0;
+				}
+				
                 $stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
+				
             } else {
                 $stock = $objp->stock_physique;
             }
