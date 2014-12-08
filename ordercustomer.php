@@ -121,7 +121,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
                 $qty = GETPOST('tobuy'.$i, 'int');
                 $desc = GETPOST('desc'.$i, 'alpha');
                 $sql = 'SELECT fk_product, fk_soc, ref_fourn';
-                $sql .= ', tva_tx, unitprice FROM ';
+                $sql .= ', tva_tx, unitprice, remise_percent FROM ';
                 $sql .= MAIN_DB_PREFIX . 'product_fournisseur_price';
                 $sql .= ' WHERE rowid = ' . $supplierpriceid;
                 $resql = $db->query($sql);
@@ -139,6 +139,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
                     $line->total_tva = $line->total_ht * $tva;
                     $line->total_ttc = $line->total_ht + $line->total_tva;
                     $line->ref_fourn = $obj->ref_fourn;
+					$line->remise_percent = $obj->remise_percent;
 					
                     if(!empty($_REQUEST['tobuy'.$i])) {
                     	$suppliers[$obj->fk_soc]['lines'][] = $line;
@@ -204,9 +205,6 @@ if ($action == 'order' && isset($_POST['valid'])) {
             foreach ($supplier['lines'] as $line) {      	
             	
 	            $done = false;
-				
-				$prodfourn = new ProductFournisseur($db);
-				$prodfourn->fetch_product_fournisseur_price($_REQUEST['fourn'.$i]);
 
             	foreach($order->lines as $lineOrderFetched) {
             		
@@ -224,7 +222,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				
 				if(!$done) {
 					
-					$order->addline($line->desc, $line->total_ht, intval($line->qty), $line->tva_tx, 0, 0, $line->fk_product, 0, $line->ref_fourn, $prodfourn->fourn_remise_percent ? $prodfourn->fourn_remise_percent : 0);
+					$order->addline($line->desc, $line->total_ht, intval($line->qty), $line->tva_tx, 0, 0, $line->fk_product, 0, $line->ref_fourn, $line->remise_percent);
 					
 				}
 				
