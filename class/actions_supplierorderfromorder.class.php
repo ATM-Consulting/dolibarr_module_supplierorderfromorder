@@ -1,6 +1,22 @@
 <?php
+
+/**
+ * Class ActionsSupplierorderfromorder
+ *
+ * Hook actions
+ */
 class ActionsSupplierorderfromorder
-{	
+{
+	/**
+	 * Add options to the order form
+	 *
+	 * @param array $parameters Hook context
+	 * @param Commande $object The current order
+	 * @param string $action The current action
+	 * @param HookManager $hookmanager The current hookmanager
+	 *
+	 * @return int Status
+	 */
 	function formObjectOptions($parameters, &$object, &$action, $hookmanager) 
     {
     	global $langs;
