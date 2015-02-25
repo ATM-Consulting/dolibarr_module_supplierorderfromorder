@@ -1,3 +1,5 @@
+Module104130Name = Supplier orders from order
+Module104130Desc = Create supplier orders from a customer order
 SelectProduct = Select at least one product and one supplier
 ProductsToOrder = Products to order
 OrderToSuppliers = Create supplier orders

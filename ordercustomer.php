@@ -42,6 +42,9 @@ if (empty($reshook))
 {
   // standard code that can be disabled/replaced by hook if return code > 0.
 }*/
+
+global $bc, $conf, $db, $langs, $user;
+
 $prod = new Product($db);
 
 $langs->load("products");
@@ -170,8 +173,8 @@ if ($action == 'order' && isset($_POST['valid'])) {
 			$sql2 .= ' ORDER BY rowid DESC';
 			$sql2 .= ' LIMIT 1';
 						
-			$db->query($sql2);
-			$obj = $db->fetch_object($sql2);
+			$res = $db->query($sql2);
+			$obj = $db->fetch_object($res);
 			if($obj) {
 
 				$order = new CommandeFournisseur($db);
@@ -232,7 +235,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
             $order->mode_reglement_id = 0;
 
             if ($id < 0) {
-                $fail++;
+                $fail++; // FIXME: declare somewhere and use, or get rid of it!
                 $msg = $langs->trans('OrderFail') . "&nbsp;:&nbsp;";
                 $msg .= $order->error;
                 setEventMessage($msg, 'errors');
@@ -280,13 +283,13 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$p->fetch($line[$j]->fk_product);
 					$f = new Fournisseur($db);
 					$f->fetch($idSupplier);
-					$rates[$f->nom] = $p->label;
+					$rates[$f->name] = $p->label;
 				} else {
 					$p = new Product($db);
 					$p->fetch($line[$j]->fk_product);
 					$f = new Fournisseur($db);
 					$f->fetch($idSupplier);
-					$ajoutes[$f->nom] = $p->label;
+					$ajoutes[$f->name] = $p->label;
 				}
 				
 				/*echo "<pre>";
@@ -299,11 +302,13 @@ if ($action == 'order' && isset($_POST['valid'])) {
 			}
 		}
 		$mess = "";
+	    // FIXME: declare $ajoutes somewhere. It's unclear if it should be reinitialized or not in the interlocking loops.
 		if($ajoutes) {
 			foreach($ajoutes as $nomFournisseur => $nomProd) {
 				$mess.= "Produit ' ".$nomProd." ' ajouté à la commande du fournisseur ' ".$nomFournisseur." '<br />";
 			}
 		}
+	    // FIXME: same as $ajoutes.
 		if($rates) {
 			foreach($rates as $nomFournisseur => $nomProd) {
 				$mess.= "Quantité insuffisante de ' ".$nomProd." ' pour le fournisseur ' ".$nomFournisseur." '<br />";
@@ -652,6 +657,7 @@ if ($resql) {
             }
             //depending on conf, use either physical stock or
             //virtual stock to compute the stock to buy value
+	        // FIXME: declare $ordered somewhere.
             $stocktobuy = max($objp->desiredstock - $stock - $ordered, 0);
             $disabled = '';
             if($ordered > 0) {
@@ -774,7 +780,7 @@ if ($resql) {
 print ' <script type="text/javascript">
      function toggle(source)
      {
-       checkboxes = document.getElementsByClassName("check");
+       var checkboxes = document.getElementsByClassName("check");
        for (var i=0; i < checkboxes.length;i++) {
          if (!checkboxes[i].disabled) {
             checkboxes[i].checked = source.checked;
@@ -788,5 +794,3 @@ print ' <script type="text/javascript">
 llxFooter();
 
 $db->close();
-?>
-
