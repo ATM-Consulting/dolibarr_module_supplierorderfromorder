@@ -791,5 +791,3 @@ print ' <script type="text/javascript">
 llxFooter();
 
 $db->close();
-?>
-
