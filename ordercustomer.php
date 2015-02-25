@@ -283,13 +283,13 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$p->fetch($line[$j]->fk_product);
 					$f = new Fournisseur($db);
 					$f->fetch($idSupplier);
-					$rates[$f->nom] = $p->label;
+					$rates[$f->name] = $p->label;
 				} else {
 					$p = new Product($db);
 					$p->fetch($line[$j]->fk_product);
 					$f = new Fournisseur($db);
 					$f->fetch($idSupplier);
-					$ajoutes[$f->nom] = $p->label;
+					$ajoutes[$f->name] = $p->label;
 				}
 				
 				/*echo "<pre>";
