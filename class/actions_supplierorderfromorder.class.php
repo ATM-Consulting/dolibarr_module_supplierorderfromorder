@@ -36,10 +36,7 @@ class ActionsSupplierorderfromorder
 
           <?php
         }
- 
-        $this->results=array('myreturn'=>$myvalue);
-        $this->resprints='A text to show';
- 
+
         return 0;
     }
 }
