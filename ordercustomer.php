@@ -235,7 +235,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
             $order->mode_reglement_id = 0;
 
             if ($id < 0) {
-                $fail++;
+                $fail++; // FIXME: declare somewhere and use, or get rid of it!
                 $msg = $langs->trans('OrderFail') . "&nbsp;:&nbsp;";
                 $msg .= $order->error;
                 setEventMessage($msg, 'errors');
@@ -302,11 +302,13 @@ if ($action == 'order' && isset($_POST['valid'])) {
 			}
 		}
 		$mess = "";
+	    // FIXME: declare $ajoutes somewhere. It's unclear if it should be reinitialized or not in the interlocking loops.
 		if($ajoutes) {
 			foreach($ajoutes as $nomFournisseur => $nomProd) {
 				$mess.= "Produit ' ".$nomProd." ' ajouté à la commande du fournisseur ' ".$nomFournisseur." '<br />";
 			}
 		}
+	    // FIXME: same as $ajoutes.
 		if($rates) {
 			foreach($rates as $nomFournisseur => $nomProd) {
 				$mess.= "Quantité insuffisante de ' ".$nomProd." ' pour le fournisseur ' ".$nomFournisseur." '<br />";
@@ -655,6 +657,7 @@ if ($resql) {
             }
             //depending on conf, use either physical stock or
             //virtual stock to compute the stock to buy value
+	        // FIXME: declare $ordered somewhere.
             $stocktobuy = max($objp->desiredstock - $stock - $ordered, 0);
             $disabled = '';
             if($ordered > 0) {
