@@ -42,6 +42,9 @@ if (empty($reshook))
 {
   // standard code that can be disabled/replaced by hook if return code > 0.
 }*/
+
+global $bc, $conf, $db, $langs, $user;
+
 $prod = new Product($db);
 
 $langs->load("products");
