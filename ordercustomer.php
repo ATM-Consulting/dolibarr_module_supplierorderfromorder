@@ -170,8 +170,8 @@ if ($action == 'order' && isset($_POST['valid'])) {
 			$sql2 .= ' ORDER BY rowid DESC';
 			$sql2 .= ' LIMIT 1';
 						
-			$db->query($sql2);
-			$obj = $db->fetch_object($sql2);
+			$res = $db->query($sql2);
+			$obj = $db->fetch_object($res);
 			if($obj) {
 
 				$order = new CommandeFournisseur($db);
