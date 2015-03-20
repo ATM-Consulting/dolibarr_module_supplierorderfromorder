@@ -1,6 +1,7 @@
 <?php
 /*
  * Copyright (C) 2013   Cédric Salvador    <csalvador@gpcsolutions.fr>
+ * Copyright (C) 2014-2015   ATM Consulting   <support@atm-consulting.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -327,7 +328,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
  */
 $title = $langs->trans('ProductsToOrder');
 
-$sql = 'SELECT p.rowid, p.ref, p.label, p.price, cd.qty, SUM(ed.qty) as expedie';
+$sql = 'SELECT p.rowid, p.ref, p.label, p.price, SUM(cd.qty) as qty, SUM(ed.qty) as expedie';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
 $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte,';
 $sql .= ' SUM(COALESCE(s.reel, 0)) as stock_physique';
@@ -389,6 +390,7 @@ if ($salert == 'on') {
 }
 $sql .= $db->order($sortfield,$sortorder);
 $sql .= $db->plimit($limit + 1, $offset);
+if(isset($_REQUEST['DEBUG'])) print $sql;
 $resql = $db->query($sql);
 
 if ($resql) {
@@ -587,6 +589,7 @@ if ($resql) {
     $prod = new Product($db);
 
     $var = True;
+    
     while ($i < min($num, $limit)) {
         $objp = $db->fetch_object($resql);
         if ($conf->global->STOCK_SUPPORTS_SERVICES
@@ -646,10 +649,12 @@ if ($resql) {
             } else {
                 $stock = $objp->stock_physique;
             }
-		if($stock >= $objp->qty - $objp->expedie + $objp->desiredstock) {
-			$i++;
-			continue;
-		}
+        
+            if($stock >= $objp->qty - $objp->expedie + $objp->desiredstock) {
+    			$i++;
+    			continue; // le stock est suffisant on passe
+    		}
+            
             $warning='';
             if ($objp->seuil_stock_alerte
                 && ($stock < $objp->seuil_stock_alerte)) {
