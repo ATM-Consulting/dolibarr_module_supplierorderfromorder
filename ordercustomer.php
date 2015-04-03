@@ -214,7 +214,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
             		
             		if($line->fk_product == $lineOrderFetched->fk_product) {
             			
-            			$order->updateline($lineOrderFetched->id, $lineOrderFetched->desc, $lineOrderFetched->total_ht, intval($lineOrderFetched->qty+$line->qty), $lineOrderFetched->remise_percent, $lineOrderFetched->tva_tx);							
+            			$order->updateline($lineOrderFetched->id, $lineOrderFetched->desc, $lineOrderFetched->pu_ht, intval($lineOrderFetched->qty+$line->qty), $lineOrderFetched->remise_percent, $lineOrderFetched->tva_tx);							
 						$done = true;
 						break;
 
