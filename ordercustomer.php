@@ -1,6 +1,7 @@
 <?php
 /*
  * Copyright (C) 2013   Cédric Salvador    <csalvador@gpcsolutions.fr>
+ * Copyright (C) 2014-2015   ATM Consulting   <support@atm-consulting.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,6 +43,9 @@ if (empty($reshook))
 {
   // standard code that can be disabled/replaced by hook if return code > 0.
 }*/
+
+global $bc, $conf, $db, $langs, $user;
+
 $prod = new Product($db);
 
 $langs->load("products");
@@ -121,7 +125,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
                 $qty = GETPOST('tobuy'.$i, 'int');
                 $desc = GETPOST('desc'.$i, 'alpha');
                 $sql = 'SELECT fk_product, fk_soc, ref_fourn';
-                $sql .= ', tva_tx, unitprice FROM ';
+                $sql .= ', tva_tx, unitprice, remise_percent FROM ';
                 $sql .= MAIN_DB_PREFIX . 'product_fournisseur_price';
                 $sql .= ' WHERE rowid = ' . $supplierpriceid;
                 $resql = $db->query($sql);
@@ -139,6 +143,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
                     $line->total_tva = $line->total_ht * $tva;
                     $line->total_ttc = $line->total_ht + $line->total_tva;
                     $line->ref_fourn = $obj->ref_fourn;
+					$line->remise_percent = $obj->remise_percent;
 					
                     if(!empty($_REQUEST['tobuy'.$i])) {
                     	$suppliers[$obj->fk_soc]['lines'][] = $line;
@@ -169,8 +174,8 @@ if ($action == 'order' && isset($_POST['valid'])) {
 			$sql2 .= ' ORDER BY rowid DESC';
 			$sql2 .= ' LIMIT 1';
 						
-			$db->query($sql2);
-			$obj = $db->fetch_object($sql2);
+			$res = $db->query($sql2);
+			$obj = $db->fetch_object($res);
 			if($obj) {
 
 				$order = new CommandeFournisseur($db);
@@ -212,7 +217,10 @@ if ($action == 'order' && isset($_POST['valid'])) {
             		
             		if($line->fk_product == $lineOrderFetched->fk_product) {
             			
-            			$order->updateline($lineOrderFetched->id, $lineOrderFetched->desc, $lineOrderFetched->total_ht, intval($lineOrderFetched->qty+$line->qty), $lineOrderFetched->remise_percent, $lineOrderFetched->tva_tx);							
+                        $remise_percent = $lineOrderFetched->remise_percent;
+                        if($line->remise_percent > $remise_percent)$remise_percent = $line->remise_percent;
+                        
+            			$order->updateline($lineOrderFetched->id, $lineOrderFetched->desc, $lineOrderFetched->pu_ht, intval($lineOrderFetched->qty+$line->qty), $remise_percent, $lineOrderFetched->tva_tx);							
 						$done = true;
 						break;
 
@@ -224,7 +232,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				
 				if(!$done) {
 					
-					$order->addline($line->desc, $line->total_ht, intval($line->qty), $line->tva_tx, 0, 0, $line->fk_product, 0, $line->ref_fourn, $prodfourn->fourn_remise_percent ? $prodfourn->fourn_remise_percent : 0);
+					$order->addline($line->desc, $line->total_ht, intval($line->qty), $line->tva_tx, 0, 0, $line->fk_product, 0, $line->ref_fourn, $line->remise_percent);
 					
 				}
 				
@@ -234,7 +242,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
             $order->mode_reglement_id = 0;
 
             if ($id < 0) {
-                $fail++;
+                $fail++; // FIXME: declare somewhere and use, or get rid of it!
                 $msg = $langs->trans('OrderFail') . "&nbsp;:&nbsp;";
                 $msg .= $order->error;
                 setEventMessage($msg, 'errors');
@@ -282,13 +290,13 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$p->fetch($line[$j]->fk_product);
 					$f = new Fournisseur($db);
 					$f->fetch($idSupplier);
-					$rates[$f->nom] = $p->label;
+					$rates[$f->name] = $p->label;
 				} else {
 					$p = new Product($db);
 					$p->fetch($line[$j]->fk_product);
 					$f = new Fournisseur($db);
 					$f->fetch($idSupplier);
-					$ajoutes[$f->nom] = $p->label;
+					$ajoutes[$f->name] = $p->label;
 				}
 				
 				/*echo "<pre>";
@@ -301,11 +309,13 @@ if ($action == 'order' && isset($_POST['valid'])) {
 			}
 		}
 		$mess = "";
+	    // FIXME: declare $ajoutes somewhere. It's unclear if it should be reinitialized or not in the interlocking loops.
 		if($ajoutes) {
 			foreach($ajoutes as $nomFournisseur => $nomProd) {
 				$mess.= "Produit ' ".$nomProd." ' ajouté à la commande du fournisseur ' ".$nomFournisseur." '<br />";
 			}
 		}
+	    // FIXME: same as $ajoutes.
 		if($rates) {
 			foreach($rates as $nomFournisseur => $nomProd) {
 				$mess.= "Quantité insuffisante de ' ".$nomProd." ' pour le fournisseur ' ".$nomFournisseur." '<br />";
@@ -584,6 +594,7 @@ if ($resql) {
     $prod = new Product($db);
 
     $var = True;
+    
     while ($i < min($num, $limit)) {
         $objp = $db->fetch_object($resql);
         if ($conf->global->STOCK_SUPPORTS_SERVICES
@@ -614,27 +625,41 @@ if ($resql) {
             if ($conf->global->USE_VIRTUAL_STOCK) {
                 //compute virtual stock
                 $prod->fetch($prod->id);
-                $result=$prod->load_stats_commande(0, '1,2');
-                if ($result < 0) {
-                    dol_print_error($db, $prod->error);
-                }
-                $stock_commande_client = $prod->stats_commande['qty'];
-                $result=$prod->load_stats_commande_fournisseur(0, '3');
-                if ($result < 0) {
-                    dol_print_error($db,$prod->error);
-                }
-                $stock_commande_fournisseur = $prod->stats_commande_fournisseur['qty'];
+				
+				if(!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER) {
+	                $result=$prod->load_stats_commande(0, '1,2');
+	                if ($result < 0) {
+	                    dol_print_error($db, $prod->error);
+	                }
+	                $stock_commande_client = $prod->stats_commande['qty'];
+					
+				}
+				else{
+					$stock_commande_client = 0;	
+				}
+				
+				if(!$conf->global->STOCK_CALCULATE_ON_SUPPLIER_VALIDATE_ORDER) {
+	                $result=$prod->load_stats_commande_fournisseur(0, '3');
+	                if ($result < 0) {
+	                    dol_print_error($db,$prod->error);
+	                }
+					$stock_commande_fournisseur = $prod->stats_commande_fournisseur['qty'];
+				}
+				else{
+					$stock_commande_fournisseur = 0;
+				}
+				
                 $stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
-            } elseif(!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER) {
+				
+            } else {
                 $stock = $objp->stock_physique;
             }
-			else{
-				$stock = $objp->qty;
-			}
-		if($stock >= $objp->qty - $objp->expedie + $objp->desiredstock) {
-			$i++;
-			continue;
-		}
+        
+            if($stock >= $objp->qty - $objp->expedie + $objp->desiredstock) {
+    			$i++;
+    			continue; // le stock est suffisant on passe
+    		}
+            
             $warning='';
             if ($objp->seuil_stock_alerte
                 && ($stock < $objp->seuil_stock_alerte)) {
@@ -642,6 +667,7 @@ if ($resql) {
             }
             //depending on conf, use either physical stock or
             //virtual stock to compute the stock to buy value
+	        // FIXME: declare $ordered somewhere.
             $stocktobuy = max($objp->desiredstock - $stock - $ordered, 0);
             $disabled = '';
             if($ordered > 0) {
@@ -764,7 +790,7 @@ if ($resql) {
 print ' <script type="text/javascript">
      function toggle(source)
      {
-       checkboxes = document.getElementsByClassName("check");
+       var checkboxes = document.getElementsByClassName("check");
        for (var i=0; i < checkboxes.length;i++) {
          if (!checkboxes[i].disabled) {
             checkboxes[i].checked = source.checked;

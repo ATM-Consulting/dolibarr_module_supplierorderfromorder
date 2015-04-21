@@ -1,3 +1,5 @@
+Module104130Name = CommandeClientVersFournisseurs 
+Module104130Desc = Créer des commandes fournisseurs depuis une commande client
 SelectProduct = Sélectionnez au moins un produit ainsi qu'un fournisseur
 ProductsToOrder = Produits à commander
 OrderToSuppliers = Passer les commandes fournisseur
