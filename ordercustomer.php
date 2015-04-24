@@ -331,7 +331,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
  */
 $title = $langs->trans('ProductsToOrder');
 
-$sql = 'SELECT p.rowid, p.ref, p.label, p.price, SUM(cd.qty) as qty, SUM(ed.qty) as expedie';
+$sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty, SUM(ed.qty) as expedie';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
 $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte,';
 $sql .= ' SUM(COALESCE(s.reel, 0)) as stock_physique';
@@ -385,6 +385,10 @@ $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type, p.tms';
 $sql .= ', p.duration, p.tobuy, p.seuil_stock_alerte';
 //$sql .= ', p.desiredstock'; 
 $sql .= ', s.fk_product';
+
+if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
+	$sql.= ', cd.description';
+}
 //$sql .= ' HAVING p.desiredstock > SUM(COALESCE(s.reel, 0))';
 //$sql .= ' HAVING p.desiredstock > 0';
 if ($salert == 'on') {
@@ -684,8 +688,11 @@ if ($resql) {
                  '<td class="nowrap">'.
                  $prod->getNomUrl(1, '', 16).
                  '</td>'.
-                 '<td>' . $objp->label . '</td>'.
-                 '<input type="hidden" name="desc' . $i . '" value="' . $objp->label . '" >';
+                 '<td>' . $objp->label . '</td>';
+
+			if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
+				print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" >';
+			}
 
             if (!empty($conf->service->enabled) && $type == 1) {
                 if (preg_match('/([0-9]+)y/i', $objp->duration, $regs)) {
