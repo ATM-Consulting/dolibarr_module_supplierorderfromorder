@@ -4,3 +4,5 @@ SelectProduct = Sélectionnez au moins un produit ainsi qu'un fournisseur
 ProductsToOrder = Produits à commander
 OrderToSuppliers = Passer les commandes fournisseur
 GenerateSupplierOrder = Générer commandes fournisseur
+SupplierOrderFromOrder = Commande Frournisseur depuis Commande Client
+CreateNewSupplierOrderAnyTime = Créer une commande fournisseur brouillon pour chaque commande client

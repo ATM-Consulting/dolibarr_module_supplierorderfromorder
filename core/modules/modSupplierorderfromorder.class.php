@@ -105,7 +105,7 @@ class modSupplierorderfromorder extends DolibarrModules
 
         // Config pages. Put here list of php pages
         // stored into mymodule/admin directory, used to setup module.
-        $this->config_page_url = false;
+        $this->config_page_url = array("supplierorderfromorder_setup.php@supplierorderfromorder");
 
         // Dependencies
         // List of modules id that must be enabled if this module is enabled

@@ -176,7 +176,9 @@ if ($action == 'order' && isset($_POST['valid'])) {
 						
 			$res = $db->query($sql2);
 			$obj = $db->fetch_object($res);
-			if($obj) {
+			
+			//Si une commande au statut brouillon existe déjà et que l'option SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME
+			if($obj && !$conf->global->SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME) {
 
 				$order = new CommandeFournisseur($db);
 				$order->fetch($obj->rowid);
