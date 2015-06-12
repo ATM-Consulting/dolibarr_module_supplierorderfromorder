@@ -573,7 +573,7 @@ if ($resql) {
     $liste_titre.= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>'.
          '<td class="liste_titre" align="right">&nbsp;</td>'.
          '<td class="liste_titre">&nbsp;</td>'.
-         '<td class="liste_titre">&nbsp;</td>'.
+         '<td class="liste_titre" '.($conf->global->SOFO_USE_DELIVERY_TIME ? 'colspan="2"' : '').'>&nbsp;</td>'.
          '<td class="liste_titre" align="right">'.
          '<input type="image" class="liste_titre" name="button_search"'.
          'src="' . DOL_URL_ROOT . '/theme/' . $conf->theme . '/img/search.png" alt="' . $langs->trans("Search") . '">'.
@@ -708,6 +708,28 @@ if ($resql) {
 			// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :
 			$stocktobuy = $stocktobuy + $objp->qty - $objp->expedie;
 			$stocktobuy = $objp->qty - $stock - $objp->expedie + $objp->desiredstock;
+			$help_stock = $langs->trans('Orders').' : '.(float)($objp->qty).", "
+							.$langs->trans('Expeditions').' : '.(float)($objp->expedie).", "
+							.$langs->trans('Stock').' : '.(float)($stock);
+							
+			
+			if($conf->asset->enabled) {
+				
+				/* Si j'ai des OF je veux savoir combien cela me coûte */
+				
+				define('INC_FROM_DOLIBARR', true);
+				dol_include_once('/asset/config.php');
+				dol_include_once('/asset/class/ordre_fabrication_asset.class.php');
+				
+				$stock_of = TAssetOF::getProductNeededQty($objp->rowid);
+				$stocktobuy += $stock_of;
+							
+				$help_stock.=', '.$langs->trans('AssetOF').' : '.(float)($stock_of);
+			}
+			
+			$help_stock.=', '.$langs->trans('DesiredStock').' : '.(float)$objp->desiredstock;
+							
+			
 			if($stocktobuy < 0) $stocktobuy = 0;
 
 
@@ -724,14 +746,14 @@ if ($resql) {
                  '</td>'.
                  '<td align="right">'.
                  '<input type="text" name="tobuy' . $i .
-                 '" value="' . $stocktobuy . '" ' . $disabled . '>'.
-                 '</td>';
+                 '" value="' . $stocktobuy . '" ' . $disabled . ' size="4">'.img_help(1, $help_stock)
+                 .'</td>';
 				 
 				 if($conf->global->SOFO_USE_DELIVERY_TIME) {
 				
 					$nb_day = (int)getMinAvailability($objp->rowid,$stocktobuy);
 				
-					$champs.= '<td>'.$nb_day.' '.$langs->trans('Days').'</td>';
+					$champs.= '<td>'.($nb_day == 0 ? $langs->trans('Unknown') : $nb_day.' '.$langs->trans('Days')).'</td>';
 				
 				}
 			
@@ -742,6 +764,7 @@ if ($resql) {
                  $form->select_product_fourn_price($prod->id, 'fourn'.$i, 1).
                  '</td>';
 				print $champs;
+				
            if($conf->asset->enabled && $user->rights->asset->of->write) {
 				print '<td><a href="'.dol_buildpath('/asset/fiche_of.php',1).'?action=new&fk_product='.$prod->id.'" class="butAction">Fabriquer</a></td>';
 		   }
