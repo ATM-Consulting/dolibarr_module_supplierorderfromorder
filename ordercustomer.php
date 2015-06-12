@@ -24,25 +24,13 @@
  */
 
 require 'config.php';
-require_once DOL_DOCUMENT_ROOT.'/product/class/product.class.php';
-require_once DOL_DOCUMENT_ROOT.'/core/class/html.formother.class.php';
-require_once DOL_DOCUMENT_ROOT.'/core/class/html.form.class.php';
-require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.commande.class.php';
+dol_include_once('/product/class/product.class.php');
+dol_include_once('/core/class/html.formother.class.php');
+dol_include_once('/core/class/html.form.class.php');
+dol_include_once('/fourn/class/fournisseur.commande.class.php');
 dol_include_once("/core/lib/admin.lib.php");
 dol_include_once("/fourn/class/fournisseur.class.php");
-
-//include_once(DOL_DOCUMENT_ROOT.'/core/class/hookmanager.class.php');
-/*$hookmanager=new HookManager($db);
-$hookmanager->initHooks(array('context'));
-//require_once './lib/replenishment.lib.php';
-
-$parameters=array();
-$reshook=$hookmanager->executeHooks('formObjectOptions',$parameters,$object,$action); // See description below
-// Note that $action and $object may have been modified by hook
-if (empty($reshook))
-{
-  // standard code that can be disabled/replaced by hook if return code > 0.
-}*/
+dol_include_once('/supplierorderfromorder/lib/function.lib.php');
 
 global $bc, $conf, $db, $langs, $user;
 
@@ -342,14 +330,14 @@ $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte,';
 $sql .= ' SUM(COALESCE(s.reel, 0)) as stock_physique';
 $sql .= $dolibarr_version35 ? ', p.desiredstock' : "";
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
-$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd';
-$sql .= ' ON p.rowid = cd.fk_product';
-$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'expeditiondet as ed';
-$sql .= ' ON ed.fk_origin_line = cd.rowid';
-$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s';
-$sql .= ' ON p.rowid = s.fk_product';
+$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd ON (p.rowid = cd.fk_product)';
+$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'expeditiondet as ed ON (ed.fk_origin_line = cd.rowid)';
+$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s ON (p.rowid = s.fk_product)';
 $sql .= ' WHERE p.entity IN (' . getEntity("product", 1) . ')';
-$sql .= ' AND cd.fk_commande = '.$_REQUEST['id'];
+
+$fk_commande = GETPOST('id','int');
+
+if($fk_commande > 0) $sql .= ' AND cd.fk_commande = '.$fk_commande;
 
 if ($sall) {
     $sql .= ' AND (p.ref LIKE "%'.$db->escape($sall).'%" ';
@@ -548,6 +536,9 @@ if ($resql) {
     		$sortfield,
     		$sortorder
     );
+
+   	if (!empty($conf->global->FOURN_PRODUCT_AVAILABILITY)) print_liste_field_titre($langs->trans("Availability"));
+	
     print_liste_field_titre(
     		$langs->trans('Supplier'),
     		'ordercustomer.php',
@@ -618,6 +609,13 @@ if ($resql) {
                 }
             }
             $form = new Form($db);
+			
+			if($conf->global->SOFO_USE_DELIVERY_TIME) {
+				$form->load_cache_availability();	
+			}
+			
+			
+			
             $var =! $var;
             $prod->ref = $objp->ref;
             $prod->id = $objp->rowid;
@@ -706,10 +704,12 @@ if ($resql) {
                      '</td>';
             }
 
+
 			// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :
 			$stocktobuy = $stocktobuy + $objp->qty - $objp->expedie;
 			$stocktobuy = $objp->qty - $stock - $objp->expedie + $objp->desiredstock;
 			if($stocktobuy < 0) $stocktobuy = 0;
+
 
             //print $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : "".
             
@@ -725,14 +725,26 @@ if ($resql) {
                  '<td align="right">'.
                  '<input type="text" name="tobuy' . $i .
                  '" value="' . $stocktobuy . '" ' . $disabled . '>'.
-                 '</td>'.
-                 '<td align="right">'.
+                 '</td>';
+				 
+				 if($conf->global->SOFO_USE_DELIVERY_TIME) {
+				
+					$nb_day = (int)getMinAvailability($objp->rowid,$stocktobuy);
+				
+					$champs.= '<td>'.$nb_day.' '.$langs->trans('Days').'</td>';
+				
+				}
+			
+
+				 
+				 
+                 $champs.='<td align="right">'.
                  $form->select_product_fourn_price($prod->id, 'fourn'.$i, 1).
                  '</td>';
 				print $champs;
            if($conf->asset->enabled && $user->rights->asset->of->write) {
-		print '<td><a href="'.dol_buildpath('/asset/fiche_of.php',1).'?action=new&fk_product='.$prod->id.'" class="butAction">Fabriquer</a></td>';
-	   }
+				print '<td><a href="'.dol_buildpath('/asset/fiche_of.php',1).'?action=new&fk_product='.$prod->id.'" class="butAction">Fabriquer</a></td>';
+		   }
 	   else {
 	    	print '<td>&nbsp</td>';
 	   }
