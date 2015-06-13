@@ -6,3 +6,5 @@ OrderToSuppliers = Passer les commandes fournisseur
 GenerateSupplierOrder = Générer commandes fournisseur
 SupplierOrderFromOrder = Commande Frournisseur depuis Commande Client
 CreateNewSupplierOrderAnyTime = Créer une commande fournisseur brouillon pour chaque commande client
+NbWeekToReplenish=Nombre de semaines à réapprovisionner
+ReCalculate=Recalculer
