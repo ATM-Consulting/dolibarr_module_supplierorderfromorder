@@ -676,6 +676,9 @@ if ($resql) {
             } else {
             	$stock_commande_client = $objp->qty;
                 $stock = $objp->stock_physique - $stock_commande_client;
+				
+				$help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;
+            
             }
 			
 			$stock_expedie_client = $objp->expedie;
@@ -733,7 +736,7 @@ if ($resql) {
 				dol_include_once('/asset/config.php');
 				dol_include_once('/asset/class/ordre_fabrication_asset.class.php');
 				
-				$stock_of = TAssetOF::getProductNeededQty($prod->id, true, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ));
+				$stock_of = TAssetOF::getProductNeededQty($prod->id, true, false, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ));
 				$stocktobuy += $stock_of;
 							
 				$help_stock.=', '.$langs->trans('OF').' : '.(float)($stock_of);
