@@ -144,6 +144,9 @@ if ($action == 'order' && isset($_POST['valid'])) {
                     $line->total_ttc = $line->total_ht + $line->total_tva;
                     $line->ref_fourn = $obj->ref_fourn;
 					$line->remise_percent = $obj->remise_percent;
+                    // FIXME: Ugly hack to get the right purchase price since supplier references can collide
+                    // (eg. same supplier ref for multiple suppliers with different prices).
+                    $line->fk_prod_fourn_price = $supplierpriceid;
 					
                     if(!empty($_REQUEST['tobuy'.$i])) {
                     	$suppliers[$obj->fk_soc]['lines'][] = $line;
@@ -182,7 +185,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 
 				$order = new CommandeFournisseur($db);
 				$order->fetch($obj->rowid);
-				$order->socid = $suppliersid[$i];
+				$order->socid = $idsupplier;
 				
 				// On vérifie qu'il n'existe pas déjà un lien entre la commande client et la commande fournisseur dans la table element_element.
 				// S'il n'y en a pas, on l'ajoute, sinon, on ne l'ajoute pas
@@ -199,7 +202,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 			} else {
 				
 				$order = new CommandeFournisseur($db);
-				$order->socid = $suppliersid[$i];
+				$order->socid = $idsupplier;
 				$id = $order->create($user);
 				$order->add_object_linked('commande', $_REQUEST['id']);
 				$newCommande = true;
@@ -208,36 +211,56 @@ if ($action == 'order' && isset($_POST['valid'])) {
             //trick to know which orders have been generated this way
             $order->source = 42;
 			
-            foreach ($supplier['lines'] as $line) {      	
-            	
+            foreach ($supplier['lines'] as $line) {
+
 	            $done = false;
 				
 				$prodfourn = new ProductFournisseur($db);
 				$prodfourn->fetch_product_fournisseur_price($_REQUEST['fourn'.$i]);
 
             	foreach($order->lines as $lineOrderFetched) {
-            		
+
             		if($line->fk_product == $lineOrderFetched->fk_product) {
-            			
+
                         $remise_percent = $lineOrderFetched->remise_percent;
                         if($line->remise_percent > $remise_percent)$remise_percent = $line->remise_percent;
-                        
-            			$order->updateline($lineOrderFetched->id, $lineOrderFetched->desc, $lineOrderFetched->pu_ht, intval($lineOrderFetched->qty+$line->qty), $remise_percent, $lineOrderFetched->tva_tx);							
+
+            			$order->updateline(
+                            $lineOrderFetched->id,
+                            $lineOrderFetched->desc,
+                            // FIXME: The current existing line may very well not be at the same purchase price
+                            $lineOrderFetched->pu_ht,
+                            $lineOrderFetched->qty + $line->qty,
+                            $remise_percent,
+                            $lineOrderFetched->tva_tx
+                        );
 						$done = true;
 						break;
 
             		}
-					
+
             	}
-				
+
 				// On ajoute une ligne seulement si un "updateline()" n'a pas été fait et si la quantité souhaitée est supérieure à zéro
-				
+
 				if(!$done) {
-					
-					$order->addline($line->desc, $line->total_ht, intval($line->qty), $line->tva_tx, 0, 0, $line->fk_product, 0, $line->ref_fourn, $line->remise_percent);
-					
+
+					$order->addline(
+                        $line->desc,
+                        $line->subprice,
+                        $line->qty,
+                        $line->tva_tx,
+                        null,
+                        null,
+                        $line->fk_product,
+                        // We need to pass fk_prod_fourn_price to get the right price.
+                        $line->fk_prod_fourn_price,
+                        null,
+                        $line->remise_percent
+                    );
+
 				}
-				
+
             }
 
             $order->cond_reglement_id = 0;
