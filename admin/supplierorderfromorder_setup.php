@@ -67,7 +67,7 @@ print '<td align="center" width="20">&nbsp;</td>';
 print '<td align="center" width="100">'.$langs->trans("Value").'</td>'."\n";
 
 
-// Add shipment as titles in invoice
+// Create new order each time instead of filling existing draft one
 $var=!$var;
 print '<tr '.$bc[$var].'>';
 print '<td>'.$langs->trans("CreateNewSupplierOrderAnyTime").'</td>';
@@ -77,6 +77,20 @@ print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
 print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
 print '<input type="hidden" name="action" value="set_SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME">';
 print $form->selectyesno("SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME",$conf->global->SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME,1);
+print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
+print '</form>';
+print '</td></tr>';
+
+// Create a new line in supplier order for each line having a different description in the customer order
+$var=!$var;
+print '<tr '.$bc[$var].'>';
+print '<td>'.$langs->trans("UseOrderLineDescInSupplierOrder").'</td>';
+print '<td align="center" width="20">&nbsp;</td>';
+print '<td align="right" width="300">';
+print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
+print '<input type="hidden" name="action" value="set_SUPPORDERFROMORDER_USE_ORDER_DESC">';
+print $form->selectyesno("SUPPORDERFROMORDER_USE_ORDER_DESC",$conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC,1);
 print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
 print '</form>';
 print '</td></tr>';

@@ -4,3 +4,6 @@ SelectProduct = Select at least one product and one supplier
 ProductsToOrder = Products to order
 OrderToSuppliers = Create supplier orders
 GenerateSupplierOrder = Generate supplier orders
+SupplierOrderFromOrder = Supplier order from order
+CreateNewSupplierOrderAnyTime = Create a new supplier order for each customer order
+UseOrderLineDescInSupplierOrder = Create a line in supplier order for each different description in customer order
