@@ -7,3 +7,4 @@ GenerateSupplierOrder = Générer commandes fournisseur
 SupplierOrderFromOrder = Commande Frournisseur depuis Commande Client
 CreateNewSupplierOrderAnyTime = Créer une commande fournisseur brouillon pour chaque commande client
 UseOrderLineDescInSupplierOrder = Créer une ligne dans la commande fournisseur pour chaque descriptif différent de la commande client
+AddFreeLinesInSupplierOrder = Ajouter les lignes libres présente dans la commande client dans la commande fournisseur
