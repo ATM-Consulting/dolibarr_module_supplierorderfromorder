@@ -359,7 +359,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
  */
 $title = $langs->trans('ProductsToOrder');
 
-$sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, cd.qty, SUM(ed.qty) as expedie';
+$sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty, SUM(ed.qty) as expedie';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
 $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte,';
 $sql .= ' SUM(COALESCE(s.reel, 0)) as stock_physique';
@@ -423,11 +423,31 @@ if ($salert == 'on') {
     $sql .= ' HAVING SUM(COALESCE(s.reel, 0)) < p.seuil_stock_alerte AND p.seuil_stock_alerte is not NULL';
     $alertchecked = 'checked="checked"';
 }
+
+$sql2 = '';
+//On prend les lignes libre
+if($_REQUEST['id'] && $conf->global->SOFO_ADD_FREE_LINES){
+	$sql2 .= 'SELECT cd.rowid, cd.description, SUM(cd.qty) as qty, cd.product_type
+			 FROM '.MAIN_DB_PREFIX.'commandedet as cd
+			 	LEFT JOIN '.MAIN_DB_PREFIX.'commande as c ON (cd.fk_commande = c.rowid)
+			 WHERE c.rowid = '.$_REQUEST['id'].' AND fk_product IS NULL';
+	if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
+		$sql2 .= ' GROUP BY cd.description';
+	}
+	//echo $sql2;
+}
 $sql .= $db->order($sortfield,$sortorder);
 $sql .= $db->plimit($limit + 1, $offset);
 $resql = $db->query($sql);
+//echo $sql;
 
-if ($resql) {
+if($sql2){
+	$sql2 .= $db->order($sortfield,$sortorder);
+	$sql2 .= $db->plimit($limit + 1, $offset);
+	$resql2 = $db->query($sql2);
+}
+
+if ($resql || $resql2) {
     $num = $db->num_rows($resql);
     $i = 0;
 
@@ -770,7 +790,49 @@ if ($resql) {
         }
         $i++;
     }
+
+	$i = 0;
+	
+	//Lignes libre
+	if($resql2){
+		while ($i < min($num, $limit)) {
+	        $objp = $db->fetch_object($resql2);
+	        $picto = img_picto('', './img/no', '', 1);
+			
+            print '<tr ' . $bc[$var] . '>'.
+                 '<td><input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '></td>'.
+                 '<td class="nowrap">'.
+                 $prod->getNomUrl(1, '', 16).
+                 '</td>'.
+                 '<td>' . $objp->label . '</td>';
+
+			if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
+				print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" >';
+			}
+	
+            if (!empty($conf->service->enabled) && $type == 1) {
+                if (preg_match('/([0-9]+)y/i', $objp->duration, $regs)) {
+                    $duration =  $regs[1] . ' ' . $langs->trans('DurationYear');
+                } elseif (preg_match('/([0-9]+)m/i', $objp->duration, $regs)) {
+                    $duration =  $regs[1] . ' ' . $langs->trans('DurationMonth');
+                } elseif (preg_match('/([0-9]+)d/i', $objp->duration, $regs)) {
+                    $duration =  $regs[1] . ' ' . $langs->trans('DurationDay');
+                } else {
+                    $duration = $objp->duration;
+                }
+                print '<td align="center">'.
+                     $duration.
+                     '</td>';
+            }
+	
+		    print '<td>&nbsp</td>';  
+	        print '</tr>';
+	        $i++;
+	    }
+    }
+
     $value = $langs->trans("GenerateSupplierOrder");
+	
     print '</table>'.
          '</div>'.
          '<table width="100%">'.
