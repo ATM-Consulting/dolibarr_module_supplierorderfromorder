@@ -346,24 +346,25 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				$sql.= " ORDER BY quantity ASC";
 				$sql.= " LIMIT 1";
 				$resql = $db->query($sql);
-				$resql = $db->fetch_object($resql);
-				
-				//echo $j;
-				
-				if($line[$j]->qty < $resql->quantity) {
-					$p = new Product($db);
-					$p->fetch($line[$j]->fk_product);
-					$f = new Fournisseur($db);
-					$f->fetch($idSupplier);
-					$rates[$f->name] = $p->label;
-				} else {
-					$p = new Product($db);
-					$p->fetch($line[$j]->fk_product);
-					$f = new Fournisseur($db);
-					$f->fetch($idSupplier);
-					$ajoutes[$f->name] = $p->label;
+				if($resql){
+					$resql = $db->fetch_object($resql);
+					
+					//echo $j;
+					
+					if($line[$j]->qty < $resql->quantity) {
+						$p = new Product($db);
+						$p->fetch($line[$j]->fk_product);
+						$f = new Fournisseur($db);
+						$f->fetch($idSupplier);
+						$rates[$f->name] = $p->label;
+					} else {
+						$p = new Product($db);
+						$p->fetch($line[$j]->fk_product);
+						$f = new Fournisseur($db);
+						$f->fetch($idSupplier);
+						$ajoutes[$f->name] = $p->label;
+					}
 				}
-				
 				/*echo "<pre>";
 				print_r($rates);
 				echo "</pre>";
@@ -684,7 +685,7 @@ if ($resql || $resql2) {
     $prod = new Product($db);
 
     $var = True;
-    
+   
     while ($i < min($num, $limit)) {
         $objp = $db->fetch_object($resql);
         if ($conf->global->STOCK_SUPPORTS_SERVICES
