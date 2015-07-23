@@ -385,7 +385,7 @@ if ($salert == 'on') {
     $alertchecked = 'checked="checked"';
 }
 $sql .= $db->order($sortfield,$sortorder);
-$sql .= $db->plimit($limit + 1, $offset);
+if(!$conf->global->SOFO_USE_DELIVERY_TIME) $sql .= $db->plimit($limit + 1, $offset);
 $resql = $db->query($sql);
 
 if ($resql) {
@@ -429,7 +429,7 @@ if ($resql) {
         		$sortfield,
         		$sortorder,
         		'',
-        		$num
+        		($conf->global->SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME ? -1 : $num)
         );
     } else {
         $filters = '&sref=' . $sref . '&snom=' . $snom;
@@ -444,7 +444,7 @@ if ($resql) {
         		$sortfield,
         		$sortorder,
         		'',
-        		$num
+        		($conf->global->SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME ? -1 : $num)
         );
     }
 
@@ -595,10 +595,11 @@ if ($resql) {
 			
 	if($conf->global->SOFO_USE_DELIVERY_TIME) {
 		$form->load_cache_availability();	
+		$limit = 999999;
 	}
 	
     while ($i < min($num, $limit)) {
-        $objp = $db->fetch_object($resql);
+    	$objp = $db->fetch_object($resql);
         if ($conf->global->STOCK_SUPPORTS_SERVICES
            || $objp->fk_product_type == 0) {
             // Multilangs
@@ -683,13 +684,12 @@ if ($resql) {
 			
 			$stock_expedie_client = $objp->expedie;
 			
-        
-			if(!$conf->global->SOFO_USE_DELIVERY_TIME) {
-	            if($stock >= $objp->qty - $stock_expedie_client + $objp->desiredstock) {
-	    			$i++;
-	    			continue; // le stock est suffisant on passe
-	    		}
-			}
+        	//if($objp->rowid == 14978)	{print "$stock >= {$objp->qty} - $stock_expedie_client + {$objp->desiredstock}";exit;}
+            if($stock >= (float)$objp->qty - (float)$stock_expedie_client + (float)$objp->desiredstock) {
+    			$i++;
+    			continue; // le stock est suffisant on passe
+    		}
+		
             
             $warning='';
             if ($objp->seuil_stock_alerte
@@ -716,7 +716,7 @@ if ($resql) {
                     $duration =  $regs[1] . ' ' . $langs->trans('DurationDay');
                 } else {
                     $duration = $objp->duration;
-                }
+                }-4 >= - 
                 print '<td align="center">'.
                      $duration.
                      '</td>';
@@ -818,7 +818,7 @@ if ($resql) {
         } else {
             $filters = '&sref=' . $sref . '&snom=' . $snom;
             $filters .= '&fourn_id=' . $fourn_id;
-            $filters .= (isset($type)? '&type=' . $type : '');
+            $filters .= (isset($type)? '&type=' . $type : -4 >= - '');
             $filters .= '&salert=' . $salert;
             print_barre_liste(
             		'',
