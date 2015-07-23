@@ -24,6 +24,12 @@ if (preg_match('/set_(.*)/',$action,$reg))
 	$code=$reg[1];
 	if (dolibarr_set_const($db, $code, GETPOST($code), 'chaine', 0, '', $conf->entity) > 0)
 	{
+		
+		if($code=='SOFO_USE_DELIVERY_TIME' && GETPOST($code) == 1) {
+			
+			dolibarr_set_const($db,'FOURN_PRODUCT_AVAILABILITY',1);
+		}
+		
 		header("Location: ".$_SERVER["PHP_SELF"]);
 		exit;
 	}
@@ -67,7 +73,7 @@ print '<td align="center" width="20">&nbsp;</td>';
 print '<td align="center" width="100">'.$langs->trans("Value").'</td>'."\n";
 
 
-// Create new order each time instead of filling existing draft one
+// Add shipment as titles in invoice
 $var=!$var;
 print '<tr '.$bc[$var].'>';
 print '<td>'.$langs->trans("CreateNewSupplierOrderAnyTime").'</td>';
@@ -91,6 +97,19 @@ print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
 print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
 print '<input type="hidden" name="action" value="set_SUPPORDERFROMORDER_USE_ORDER_DESC">';
 print $form->selectyesno("SUPPORDERFROMORDER_USE_ORDER_DESC",$conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC,1);
+print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
+print '</form>';
+print '</td></tr>';
+
+$var=!$var;
+print '<tr '.$bc[$var].'>';
+print '<td>'.$langs->trans("UseDeliveryTimeToReplenish").'</td>';
+print '<td align="center" width="20">&nbsp;</td>';
+print '<td align="right" width="300">';
+print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
+print '<input type="hidden" name="action" value="set_SOFO_USE_DELIVERY_TIME">';
+print $form->selectyesno("SOFO_USE_DELIVERY_TIME",$conf->global->SOFO_USE_DELIVERY_TIME,1);
 print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
 print '</form>';
 print '</td></tr>';

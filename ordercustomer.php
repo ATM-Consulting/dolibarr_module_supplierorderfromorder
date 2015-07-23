@@ -24,25 +24,13 @@
  */
 
 require 'config.php';
-require_once DOL_DOCUMENT_ROOT.'/product/class/product.class.php';
-require_once DOL_DOCUMENT_ROOT.'/core/class/html.formother.class.php';
-require_once DOL_DOCUMENT_ROOT.'/core/class/html.form.class.php';
-require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.commande.class.php';
+dol_include_once('/product/class/product.class.php');
+dol_include_once('/core/class/html.formother.class.php');
+dol_include_once('/core/class/html.form.class.php');
+dol_include_once('/fourn/class/fournisseur.commande.class.php');
 dol_include_once("/core/lib/admin.lib.php");
 dol_include_once("/fourn/class/fournisseur.class.php");
-
-//include_once(DOL_DOCUMENT_ROOT.'/core/class/hookmanager.class.php');
-/*$hookmanager=new HookManager($db);
-$hookmanager->initHooks(array('context'));
-//require_once './lib/replenishment.lib.php';
-
-$parameters=array();
-$reshook=$hookmanager->executeHooks('formObjectOptions',$parameters,$object,$action); // See description below
-// Note that $action and $object may have been modified by hook
-if (empty($reshook))
-{
-  // standard code that can be disabled/replaced by hook if return code > 0.
-}*/
+dol_include_once('/supplierorderfromorder/lib/function.lib.php');
 
 global $bc, $conf, $db, $langs, $user;
 
@@ -359,20 +347,20 @@ if ($action == 'order' && isset($_POST['valid'])) {
  */
 $title = $langs->trans('ProductsToOrder');
 
-$sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, cd.qty, SUM(ed.qty) as expedie';
+$sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty, SUM(ed.qty) as expedie';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
 $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte,';
 $sql .= ' SUM(COALESCE(s.reel, 0)) as stock_physique';
 $sql .= $dolibarr_version35 ? ', p.desiredstock' : "";
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
-$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd';
-$sql .= ' ON p.rowid = cd.fk_product';
-$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'expeditiondet as ed';
-$sql .= ' ON ed.fk_origin_line = cd.rowid';
-$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s';
-$sql .= ' ON p.rowid = s.fk_product';
+$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd ON (p.rowid = cd.fk_product)';
+$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'expeditiondet as ed ON (ed.fk_origin_line = cd.rowid)';
+$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s ON (p.rowid = s.fk_product)';
 $sql .= ' WHERE p.entity IN (' . getEntity("product", 1) . ')';
-$sql .= ' AND cd.fk_commande = '.$_REQUEST['id'];
+
+$fk_commande = GETPOST('id','int');
+
+if($fk_commande > 0) $sql .= ' AND cd.fk_commande = '.$fk_commande;
 
 if ($sall) {
     $sql .= ' AND (p.ref LIKE "%'.$db->escape($sall).'%" ';
@@ -424,7 +412,7 @@ if ($salert == 'on') {
     $alertchecked = 'checked="checked"';
 }
 $sql .= $db->order($sortfield,$sortorder);
-$sql .= $db->plimit($limit + 1, $offset);
+if(!$conf->global->SOFO_USE_DELIVERY_TIME) $sql .= $db->plimit($limit + 1, $offset);
 $resql = $db->query($sql);
 
 if ($resql) {
@@ -442,6 +430,20 @@ if ($resql) {
 	$head[1][1] = $langs->trans("ReplenishmentOrders");
 	$head[1][2] = 'replenishorders';*/
     dol_fiche_head($head, 'supplierorderfromorder', $langs->trans('Replenishment'), 0, 'stock');
+	
+	
+	
+	if($conf->global->SOFO_USE_DELIVERY_TIME) {
+		$week_to_replenish = (int)GETPOST('week_to_replenish','int');
+		
+		echo '<form action="'.$_SERVER['PHP_SELF'].'" method="post" name="formulaire">'.
+         '<input type="hidden" name="fk_commande" value="' . GETPOST('fk_commande','int'). '">';
+         echo $langs->trans('NbWeekToReplenish').'<input type="text" name="week_to_replenish" value="'.$week_to_replenish.'" size="2"> '
+			.'<input type="submit" value="'.$langs->trans('ReCalculate').'" />';
+	 	
+		echo '</form>';
+	}
+	
     if ($sref || $snom || $sall || $salert || GETPOST('search', 'alpha')) {
         $filters = '&sref=' . $sref . '&snom=' . $snom;
         $filters .= '&sall=' . $sall;
@@ -454,7 +456,7 @@ if ($resql) {
         		$sortfield,
         		$sortorder,
         		'',
-        		$num
+        		($conf->global->SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME ? -1 : $num)
         );
     } else {
         $filters = '&sref=' . $sref . '&snom=' . $snom;
@@ -469,11 +471,11 @@ if ($resql) {
         		$sortfield,
         		$sortorder,
         		'',
-        		$num
+        		($conf->global->SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME ? -1 : $num)
         );
     }
 
-    print '<form action="ordercustomer.php" method="post" name="formulaire">'.
+    print '<form action="'.$_SERVER['PHP_SELF'].'" method="post" name="formulaire">'.
          '<input type="hidden" name="id" value="' .$_REQUEST['id'] . '">'.
          '<input type="hidden" name="token" value="' .$_SESSION['newtoken'] . '">'.
          '<input type="hidden" name="sortfield" value="' . $sortfield . '">'.
@@ -575,6 +577,9 @@ if ($resql) {
     		$sortfield,
     		$sortorder
     );
+
+   	if (!empty($conf->global->FOURN_PRODUCT_AVAILABILITY)) print_liste_field_titre($langs->trans("Availability"));
+	
     print_liste_field_titre(
     		$langs->trans('Supplier'),
     		'ordercustomer.php',
@@ -609,7 +614,7 @@ if ($resql) {
     $liste_titre.= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>'.
          '<td class="liste_titre" align="right">&nbsp;</td>'.
          '<td class="liste_titre">&nbsp;</td>'.
-         '<td class="liste_titre">&nbsp;</td>'.
+         '<td class="liste_titre" '.($conf->global->SOFO_USE_DELIVERY_TIME ? 'colspan="2"' : '').'>&nbsp;</td>'.
          '<td class="liste_titre" align="right">'.
          '<input type="image" class="liste_titre" name="button_search"'.
          'src="' . DOL_URL_ROOT . '/theme/' . $conf->theme . '/img/search.png" alt="' . $langs->trans("Search") . '">'.
@@ -623,9 +628,15 @@ if ($resql) {
     $prod = new Product($db);
 
     $var = True;
-    
+    $form = new Form($db);
+			
+	if($conf->global->SOFO_USE_DELIVERY_TIME) {
+		$form->load_cache_availability();	
+		$limit = 999999;
+	}
+	
     while ($i < min($num, $limit)) {
-        $objp = $db->fetch_object($resql);
+    	$objp = $db->fetch_object($resql);
         if ($conf->global->STOCK_SUPPORTS_SERVICES
            || $objp->fk_product_type == 0) {
             // Multilangs
@@ -644,14 +655,32 @@ if ($resql) {
                     }
                 }
             }
-            $form = new Form($db);
+            
+			
+			
+			
             $var =! $var;
             $prod->ref = $objp->ref;
             $prod->id = $objp->rowid;
             $prod->type = $objp->fk_product_type;
             //$ordered = ordered($prod->id);
 
-            if ($conf->global->USE_VIRTUAL_STOCK) {
+            $help_stock =  $langs->trans('PhysicalStock').' : '.(float)$objp->stock_physique;
+            
+							
+            if($week_to_replenish>0) {
+            	/* là ça déconne pas, on s'en fout, on dépote ! */
+            	
+            	$stock_commande_client = _load_stats_commande_date($prod->id, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ) );
+				$stock_commande_fournisseur = _load_stats_commande_fournisseur($prod->id, date('Y-m-d',strtotime('+'.$week_to_replenish.'week')), $objp->stock_physique-$stock_commande_client);
+		
+				$help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;
+            	$help_stock.=', '.$langs->trans('SupplierOrders').' : '.(float)$stock_commande_fournisseur;
+            
+		
+				$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
+            }
+			else if ($conf->global->USE_VIRTUAL_STOCK) {
                 //compute virtual stock
                 $prod->fetch($prod->id);
 				
@@ -677,43 +706,42 @@ if ($resql) {
 				else{
 					$stock_commande_fournisseur = 0;
 				}
-				
+				$help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;
+            	$help_stock.=', '.$langs->trans('SupplierOrders').' : '.(float)$stock_commande_fournisseur;
+            
                 $stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
 				
             } else {
-                $stock = $objp->stock_physique;
+            	$stock_commande_client = $objp->qty;
+                $stock = $objp->stock_physique - $stock_commande_client;
+				
+				$help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;
+            
             }
-        
-            if($stock >= $objp->qty - $objp->expedie + $objp->desiredstock) {
+			
+			$ordered = $stock_commande_client;
+			
+			$stock_expedie_client = $objp->expedie;
+			
+        	//if($objp->rowid == 14978)	{print "$stock >= {$objp->qty} - $stock_expedie_client + {$objp->desiredstock}";exit;}
+            if($stock >= (float)$objp->qty - (float)$stock_expedie_client + (float)$objp->desiredstock) {
     			$i++;
     			continue; // le stock est suffisant on passe
     		}
+		
             
             $warning='';
             if ($objp->seuil_stock_alerte
                 && ($stock < $objp->seuil_stock_alerte)) {
                     $warning = img_warning($langs->trans('StockTooLow')) . ' ';
             }
-            //depending on conf, use either physical stock or
-            //virtual stock to compute the stock to buy value
-	        // FIXME: declare $ordered somewhere.
-            $stocktobuy = max($objp->desiredstock - $stock - $ordered, 0);
-            $disabled = '';
-            if($ordered > 0) {
-                if($ordered + $stock >= $objp->desiredstock) {
-                    $picto = img_picto('', './img/yes', '', 1);
-                    $disabled = 'disabled="disabled"';
-                }
-                else {
-                    $picto = img_picto('', './img/no', '', 1);
-                }
-            } else {
-                $picto = img_picto('', './img/no', '', 1);
-            }
+				
+				
+          
             print '<tr ' . $bc[$var] . '>'.
                  '<td><input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '></td>'.
                  '<td class="nowrap">'.
-                 $prod->getNomUrl(1, '', 16).
+                 $prod->getNomUrl(1).
                  '</td>'.
                  '<td>' . $objp->label . '</td>';
 
@@ -730,16 +758,37 @@ if ($resql) {
                     $duration =  $regs[1] . ' ' . $langs->trans('DurationDay');
                 } else {
                     $duration = $objp->duration;
-                }
+                }-4 >= - 
                 print '<td align="center">'.
                      $duration.
                      '</td>';
             }
 
+
 			// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :
-			$stocktobuy = $stocktobuy + $objp->qty - $objp->expedie;
-			$stocktobuy = $objp->qty - $stock - $objp->expedie + $objp->desiredstock;
+			$stocktobuy = $objp->desiredstock - ($stock - $stock_expedie_client);
+			
+			$help_stock.=', ' .$langs->trans('Expeditions').' : '.(float)$stock_expedie_client;
+			
+			if($conf->asset->enabled) {
+				
+				/* Si j'ai des OF je veux savoir combien cela me coûte */
+				
+				define('INC_FROM_DOLIBARR', true);
+				dol_include_once('/asset/config.php');
+				dol_include_once('/asset/class/ordre_fabrication_asset.class.php');
+				
+				$stock_of = TAssetOF::getProductNeededQty($prod->id, true, false, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ));
+				$stocktobuy += $stock_of;
+							
+				$help_stock.=', '.$langs->trans('OF').' : '.(float)($stock_of);
+			}
+			
+			$help_stock.=', '.$langs->trans('DesiredStock').' : '.(float)$objp->desiredstock;
+							
+			
 			if($stocktobuy < 0) $stocktobuy = 0;
+
 
             //print $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : "".
             
@@ -749,18 +798,31 @@ if ($resql) {
                  $warning . $stock.
                  '</td>'.
                  '<td align="right">'.
-                 '<a href="ordercustomer.php?sproduct=' . $prod->id . '">'.
-                 $ordered . '</a> ' . $picto.
+                 
+                 $ordered  . $picto.
                  '</td>'.
                  '<td align="right">'.
                  '<input type="text" name="tobuy' . $i .
-                 '" value="' . $stocktobuy . '" ' . $disabled . '>'.
-                 '</td>'.
-                 '<td align="right">'.
+                 '" value="' . $stocktobuy . '" ' . $disabled . ' size="4">'.img_help(1, $help_stock)
+                 .'</td>';
+				 
+				 if($conf->global->SOFO_USE_DELIVERY_TIME) {
+				
+					$nb_day = (int)getMinAvailability($objp->rowid,$stocktobuy);
+				
+					$champs.= '<td>'.($nb_day == 0 ? $langs->trans('Unknown') : $nb_day.' '.$langs->trans('Days')).'</td>';
+				
+				}
+			
+
+				 
+				 
+                 $champs.='<td align="right">'.
                  $form->select_product_fourn_price($prod->id, 'fourn'.$i, 1).
                  '</td>';
 				print $champs;
-           if($conf->asset->enabled && $user->rights->asset->of->write) {
+				
+       if($conf->asset->enabled && $user->rights->asset->of->write) {
 		print '<td><a href="'.dol_buildpath('/asset/fiche_of.php',1).'?action=new&fk_product='.$prod->id.'" class="butAction">Fabriquer</a></td>';
 	   }
 	   else {
@@ -836,5 +898,60 @@ print ' <script type="text/javascript">
 llxFooter();
 
 $db->close();
-?>
 
+function _load_stats_commande_fournisseur($fk_product, $date,$stocktobuy=1,$filtrestatut='3') {
+	global $conf,$user,$db;
+
+	$nb_day = (int)getMinAvailability($fk_product,$stocktobuy);
+	$date = date('Y-m-d', strtotime('-'.$nb_day.'day',  strtotime($date)));
+
+	$sql = "SELECT SUM(cd.qty) as qty";
+	$sql.= " FROM ".MAIN_DB_PREFIX."commande_fournisseurdet as cd";
+	$sql.= ", ".MAIN_DB_PREFIX."commande_fournisseur as c";
+	$sql.= ", ".MAIN_DB_PREFIX."societe as s";
+	$sql.= " WHERE c.rowid = cd.fk_commande";
+	$sql.= " AND c.fk_soc = s.rowid";
+	$sql.= " AND c.entity = ".$conf->entity;
+	$sql.= " AND cd.fk_product = ".$fk_product;
+	$sql.= " AND (c.date_livraison IS NULL OR c.date_livraison<='".$date."') ";
+	if ($filtrestatut != '') $sql.= " AND c.fk_statut in (".$filtrestatut.")"; 
+	
+	$result =$db->query($sql);
+	if ( $result )
+	{
+			$obj = $db->fetch_object($result);
+			return (float)$obj->qty;
+	}
+	else
+	{
+		
+		return 0;
+	}
+}
+
+function _load_stats_commande_date($fk_product, $date,$filtrestatut='1,2') {
+		global $conf,$user,$db;
+	
+		$sql = "SELECT SUM(cd.qty) as qty";
+		$sql.= " FROM ".MAIN_DB_PREFIX."commandedet as cd";
+		$sql.= ", ".MAIN_DB_PREFIX."commande as c";
+		$sql.= ", ".MAIN_DB_PREFIX."societe as s";
+		$sql.= " WHERE c.rowid = cd.fk_commande";
+		$sql.= " AND c.fk_soc = s.rowid";
+		$sql.= " AND c.entity = ".$conf->entity;
+		$sql.= " AND cd.fk_product = ".$fk_product;
+		$sql.= " AND (c.date_livraison IS NULL OR c.date_livraison<='".$date."') ";
+		if ($filtrestatut <> '') $sql.= " AND c.fk_statut in (".$filtrestatut.")";
+		
+		$result =$db->query($sql);
+		if ( $result )
+		{
+				$obj = $db->fetch_object($result);
+				return (float)$obj->qty;
+		}
+		else
+		{
+			
+			return 0;
+		}
+}
