@@ -1,4 +1,4 @@
-Module104130Name = CommandeClientVersFournisseurs 
+Module104130Name = Commande fournisseur depuis commande client 
 Module104130Desc = Créer des commandes fournisseurs depuis une commande client
 SelectProduct = Sélectionnez au moins un produit ainsi qu'un fournisseur
 ProductsToOrder = Produits à commander
@@ -9,3 +9,5 @@ CreateNewSupplierOrderAnyTime = Créer une commande fournisseur brouillon pour c
 UseOrderLineDescInSupplierOrder = Créer une ligne dans la commande fournisseur pour chaque descriptif différent de la commande client
 NbWeekToReplenish=Nombre de semaines à réapprovisionner
 ReCalculate=Recalculer
+AddFreeLinesInSupplierOrder = Ajouter les lignes libres présente dans la commande client dans la commande fournisseur
+GetOrderPaimentInfo = Récupérer les conditions de règlements et de livraison depuis la commande client

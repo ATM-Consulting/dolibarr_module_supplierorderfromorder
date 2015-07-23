@@ -31,6 +31,7 @@ dol_include_once('/fourn/class/fournisseur.commande.class.php');
 dol_include_once("/core/lib/admin.lib.php");
 dol_include_once("/fourn/class/fournisseur.class.php");
 dol_include_once('/supplierorderfromorder/lib/function.lib.php');
+dol_include_once("/commande/class/commande.class.php");
 
 global $bc, $conf, $db, $langs, $user;
 
@@ -105,49 +106,86 @@ if ($action == 'order' && isset($_POST['valid'])) {
     if ($linecount > 0) {
         $suppliers = array();
         for ($i = 0; $i < $linecount; $i++) {
-            if(GETPOST('check'.$i, 'alpha') === 'on'
-              && GETPOST('fourn' . $i, 'int') > 0) { //one line
-                $box = $i;
-                $supplierpriceid = GETPOST('fourn'.$i, 'int');
-                //get all the parameters needed to create a line
-                $qty = GETPOST('tobuy'.$i, 'int');
-                $desc = GETPOST('desc'.$i, 'alpha');
-                $sql = 'SELECT fk_product, fk_soc, ref_fourn';
-                $sql .= ', tva_tx, unitprice, remise_percent FROM ';
-                $sql .= MAIN_DB_PREFIX . 'product_fournisseur_price';
-                $sql .= ' WHERE rowid = ' . $supplierpriceid;
-                $resql = $db->query($sql);
-                if ($resql && $db->num_rows($resql) > 0) {
-                    //might need some value checks
-                    $obj = $db->fetch_object($resql);
-                    $line = new CommandeFournisseurLigne($db);
+            if(GETPOST('check'.$i, 'alpha') === 'on' && (GETPOST('fourn' . $i, 'int') > 0 || GETPOST('fourn_free' . $i, 'int') > 0)) { //one line
+            	
+            	//echo GETPOST('tobuy_free'.$i).'<br>';
+            	//Lignes de produit
+            	if(!GETPOST('tobuy_free'.$i)){
+	                $box = $i;
+	                $supplierpriceid = GETPOST('fourn'.$i, 'int');
+	                //get all the parameters needed to create a line
+	                $qty = GETPOST('tobuy'.$i, 'int');
+	                $desc = GETPOST('desc'.$i, 'alpha');
+					
+	                $sql = 'SELECT fk_product, fk_soc, ref_fourn';
+	                $sql .= ', tva_tx, unitprice, remise_percent FROM ';
+	                $sql .= MAIN_DB_PREFIX . 'product_fournisseur_price';
+	                $sql .= ' WHERE rowid = ' . $supplierpriceid;
+					
+	                $resql = $db->query($sql);
+					
+	                if ($resql && $db->num_rows($resql) > 0) {
+	                    //might need some value checks
+	                    $obj = $db->fetch_object($resql);
+	                    $line = new CommandeFournisseurLigne($db);
+	                    $line->qty = $qty;
+	                    $line->desc = $desc;
+	                    $line->fk_product = $obj->fk_product;
+	                    $line->tva_tx = $obj->tva_tx;
+	                    $line->subprice = $obj->unitprice;
+	                    $line->total_ht = $obj->unitprice * $qty;
+	                    $tva = $line->tva_tx / 100;
+	                    $line->total_tva = $line->total_ht * $tva;
+	                    $line->total_ttc = $line->total_ht + $line->total_tva;
+	                    $line->ref_fourn = $obj->ref_fourn;
+						$line->remise_percent = $obj->remise_percent;
+	                    // FIXME: Ugly hack to get the right purchase price since supplier references can collide
+	                    // (eg. same supplier ref for multiple suppliers with different prices).
+	                    $line->fk_prod_fourn_price = $supplierpriceid;
+						
+	                    if(!empty($_REQUEST['tobuy'.$i])) {
+	                    	$suppliers[$obj->fk_soc]['lines'][] = $line;
+	                    }
+	
+						
+	                } else {
+	                    $error=$db->lasterror();
+	                    dol_print_error($db);
+	                    dol_syslog('replenish.php: '.$error, LOG_ERR);
+	                }
+	                $db->free($resql);
+	                unset($_POST['fourn' . $i]);
+	        	}
+				//Lignes libres
+				else{
+					//echo 'ok<br>';
+					$box = $i;
+					$qty = GETPOST('tobuy_free'.$i, 'int');
+	                $desc = GETPOST('desc'.$i, 'alpha');
+					$price = GETPOST('price_free'.$i, 'float');
+					$lineid = GETPOST('lineid_free'.$i, 'int');
+					$fournid = GETPOST('fourn_free'.$i, 'int');
+					
+					$commandeline = new OrderLine($db);
+					$commandeline->fetch($lineid);
+					
+					$line = new CommandeFournisseurLigne($db);
                     $line->qty = $qty;
                     $line->desc = $desc;
-                    $line->fk_product = $obj->fk_product;
-                    $line->tva_tx = $obj->tva_tx;
-                    $line->subprice = $obj->unitprice;
-                    $line->total_ht = $obj->unitprice * $qty;
+                    $line->tva_tx = $commandeline->tva_tx;
+                    $line->subprice = $price;
+                    $line->total_ht = $price * $qty;
                     $tva = $line->tva_tx / 100;
                     $line->total_tva = $line->total_ht * $tva;
                     $line->total_ttc = $line->total_ht + $line->total_tva;
-                    $line->ref_fourn = $obj->ref_fourn;
-					$line->remise_percent = $obj->remise_percent;
-                    // FIXME: Ugly hack to get the right purchase price since supplier references can collide
-                    // (eg. same supplier ref for multiple suppliers with different prices).
-                    $line->fk_prod_fourn_price = $supplierpriceid;
+                    //$line->ref_fourn = $obj->ref_fourn;
+					$line->remise_percent = $commandeline->remise_percent;
 					
-                    if(!empty($_REQUEST['tobuy'.$i])) {
-                    	$suppliers[$obj->fk_soc]['lines'][] = $line;
+                    if(!empty($_REQUEST['tobuy_free'.$i])) {
+                    	$suppliers[$fournid]['lines'][] = $line;
                     }
-
-					
-                } else {
-                    $error=$db->lasterror();
-                    dol_print_error($db);
-                    dol_syslog('replenish.php: '.$error, LOG_ERR);
-                }
-                $db->free($resql);
-                unset($_POST['fourn' . $i]);
+					unset($_POST['fourn_free' . $i]);
+				}
             }
             unset($_POST[$i]);
         }
@@ -170,7 +208,10 @@ if ($action == 'order' && isset($_POST['valid'])) {
 			
 			//Si une commande au statut brouillon existe déjà et que l'option SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME
 			if($obj && !$conf->global->SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME) {
-
+				
+				$commandeClient = new Commande($db);
+				$commandeClient->fetch($_REQUEST['id']);
+				
 				$order = new CommandeFournisseur($db);
 				$order->fetch($obj->rowid);
 				$order->socid = $idsupplier;
@@ -184,13 +225,35 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$order->add_object_linked('commande', $_REQUEST['id']);
 					
 				//}
-
+				if($conf->global->SOFO_GET_INFOS_FROM_ORDER){
+					$order->mode_reglement_code = $commandeClient->mode_reglement_code;
+					$order->mode_reglement_id = $commandeClient->mode_reglement_id;
+					$order->cond_reglement_id = $commandeClient->cond_reglement_id;
+					$order->cond_reglement_code = $commandeClient->cond_reglement_code;
+					$order->date_livraison = $commandeClient->date_livraison;
+				}
+				
 				$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
 				$newCommande = false;
 			} else {
 				
+				$commandeClient = new Commande($db);
+				$commandeClient->fetch($_REQUEST['id']);
+				
+				/*echo '<pre>';
+				print_r($commandeClient);exit;*/
+				
 				$order = new CommandeFournisseur($db);
 				$order->socid = $idsupplier;
+				
+				if($conf->global->SOFO_GET_INFOS_FROM_ORDER){
+					$order->mode_reglement_code = $commandeClient->mode_reglement_code;
+					$order->mode_reglement_id = $commandeClient->mode_reglement_id;
+					$order->cond_reglement_id = $commandeClient->cond_reglement_id;
+					$order->cond_reglement_code = $commandeClient->cond_reglement_code;
+					$order->date_livraison = $commandeClient->date_livraison;
+				}
+				
 				$id = $order->create($user);
 				$order->add_object_linked('commande', $_REQUEST['id']);
 				$newCommande = true;
@@ -294,22 +357,24 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				$sql.= " ORDER BY quantity ASC";
 				$sql.= " LIMIT 1";
 				$resql = $db->query($sql);
-				$resql = $db->fetch_object($resql);
-				
-				//echo $j;
-				
-				if($line[$j]->qty < $resql->quantity) {
-					$p = new Product($db);
-					$p->fetch($line[$j]->fk_product);
-					$f = new Fournisseur($db);
-					$f->fetch($idSupplier);
-					$rates[$f->name] = $p->label;
-				} else {
-					$p = new Product($db);
-					$p->fetch($line[$j]->fk_product);
-					$f = new Fournisseur($db);
-					$f->fetch($idSupplier);
-					$ajoutes[$f->name] = $p->label;
+				if($resql){
+					$resql = $db->fetch_object($resql);
+					
+					//echo $j;
+					
+					if($line[$j]->qty < $resql->quantity) {
+						$p = new Product($db);
+						$p->fetch($line[$j]->fk_product);
+						$f = new Fournisseur($db);
+						$f->fetch($idSupplier);
+						$rates[$f->name] = $p->label;
+					} else {
+						$p = new Product($db);
+						$p->fetch($line[$j]->fk_product);
+						$f = new Fournisseur($db);
+						$f->fetch($idSupplier);
+						$ajoutes[$f->name] = $p->label;
+					}
 				}
 				
 				/*echo "<pre>";
@@ -411,12 +476,32 @@ if ($salert == 'on') {
     $sql .= ' HAVING SUM(COALESCE(s.reel, 0)) < p.seuil_stock_alerte AND p.seuil_stock_alerte is not NULL';
     $alertchecked = 'checked="checked"';
 }
+
+$sql2 = '';
+//On prend les lignes libre
+if($_REQUEST['id'] && $conf->global->SOFO_ADD_FREE_LINES){
+	$sql2 .= 'SELECT cd.rowid, cd.description, SUM(cd.qty) as qty, cd.product_type, cd.price
+			 FROM '.MAIN_DB_PREFIX.'commandedet as cd
+			 	LEFT JOIN '.MAIN_DB_PREFIX.'commande as c ON (cd.fk_commande = c.rowid)
+			 WHERE c.rowid = '.$_REQUEST['id'].' AND fk_product IS NULL';
+	if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
+		$sql2 .= ' GROUP BY cd.description';
+	}
+	//echo $sql2;
+}
 $sql .= $db->order($sortfield,$sortorder);
 if(!$conf->global->SOFO_USE_DELIVERY_TIME) $sql .= $db->plimit($limit + 1, $offset);
 $resql = $db->query($sql);
 
-if ($resql) {
+if($sql2 && $fk_commande > 0){
+	$sql2 .= $db->order($sortfield,$sortorder);
+	$sql2 .= $db->plimit($limit + 1, $offset);
+	$resql2 = $db->query($sql2);
+}
+
+if ($resql || $resql2) {
     $num = $db->num_rows($resql);
+	$num2 = $db->num_rows($resql2);
     $i = 0;
 
     $helpurl = 'EN:Module_Stocks_En|FR:Module_Stock|';
@@ -481,7 +566,7 @@ if ($resql) {
          '<input type="hidden" name="sortfield" value="' . $sortfield . '">'.
          '<input type="hidden" name="sortorder" value="' . $sortorder . '">'.
          '<input type="hidden" name="type" value="' . $type . '">'.
-         '<input type="hidden" name="linecount" value="' . $num . '">'.
+         '<input type="hidden" name="linecount" value="' . ($num+$num2) . '">'.
          '<input type="hidden" name="action" value="order">'.
 
          '<table class="liste" width="100%">';
@@ -832,6 +917,61 @@ if ($resql) {
         }
         $i++;
     }
+	
+	//Lignes libre
+	if($resql2){
+		while ($j< min($num, $limit)) {
+	        $objp = $db->fetch_object($resql2);
+			if ($objp->product_type == 0) $picto = img_object($langs->trans("ShowProduct"),'product');
+			if ($objp->product_type == 1) $picto = img_object($langs->trans("ShowService"),'service');
+			
+            print '<tr ' . $bc[$var] . '>'.
+                 '<td><input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '></td>'.
+                 '<td class="nowrap">'.
+                 $picto." ".$objp->description.
+                 '</td>'.
+                 '<td>' . $objp->description . '</td>';
+			
+			$picto = img_picto('', './img/no', '', 1);
+			
+			if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
+				print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" >';
+			}
+		
+            if (!empty($conf->service->enabled) && $type == 1) {
+                if (preg_match('/([0-9]+)y/i', $objp->duration, $regs)) {
+                    $duration =  $regs[1] . ' ' . $langs->trans('DurationYear');
+                } elseif (preg_match('/([0-9]+)m/i', $objp->duration, $regs)) {
+                    $duration =  $regs[1] . ' ' . $langs->trans('DurationMonth');
+                } elseif (preg_match('/([0-9]+)d/i', $objp->duration, $regs)) {
+                    $duration =  $regs[1] . ' ' . $langs->trans('DurationDay');
+                } else {
+                    $duration = $objp->duration;
+                }
+                print '<td align="center">'.
+                     $duration.
+                     '</td>';
+            }
+			
+			print '<td align="right">'.$picto.'</td>';
+			print '<td align="right">'.$picto.'</td>';
+		    print '<td align="right">'.
+                 '<input type="text" name="tobuy_free' . $i .
+                 '" value="' . $objp->qty . '">'.
+                 '</td>';
+			
+			print '<input type="hidden" name="lineid_free' . $i . '" value="' . $objp->rowid . '" >';
+			
+			print '<td align="right">
+						<input type="text" name="price_free'.$i.'" value="'.$objp->price.'" size="5" style="text-align:right">€
+						'.$form->select_company((empty($socid)?'':$socid),'fourn_free'.$i,'s.fournisseur = 1',1).'
+				   </td>';
+
+	        print '</tr>';
+	        $i++; $j++;
+	    }
+    }
+
     $value = $langs->trans("GenerateSupplierOrder");
     print '</table>'.
          '</div>'.
