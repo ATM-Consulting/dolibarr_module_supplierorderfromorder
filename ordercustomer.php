@@ -556,7 +556,7 @@ if ($resql || $resql2) {
         		$sortfield,
         		$sortorder,
         		'',
-        		($conf->global->SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME ? -1 : $num)
+        		($conf->global->SOFO_USE_DELIVERY_TIME ? -1 : $num)
         );
     }
 
