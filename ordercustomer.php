@@ -533,21 +533,30 @@ if ($resql || $resql2) {
         $filters = '&sref=' . $sref . '&snom=' . $snom;
         $filters .= '&sall=' . $sall;
         $filters .= '&salert=' . $salert;
-        print_barre_liste(
-        		$texte,
-        		$page,
-        		'ordercustomer.php',
-        		$filters,
-        		$sortfield,
-        		$sortorder,
-        		'',
-        		($conf->global->SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME ? -1 : $num)
-        );
+		
+		if(!$conf->global->SOFO_USE_DELIVERY_TIME ) {
+			
+			 print_barre_liste(
+	        		$texte,
+	        		$page,
+	        		'ordercustomer.php',
+	        		$filters,
+	        		$sortfield,
+	        		$sortorder,
+	        		'',
+	        		 $num);
+	        		
+	       	
+		}
+        
     } else {
         $filters = '&sref=' . $sref . '&snom=' . $snom;
         $filters .= '&fourn_id=' . $fourn_id;
         $filters .= (isset($type)?'&type=' . $type:'');
         $filters .=  '&salert=' . $salert;
+        
+        if(!$conf->global->SOFO_USE_DELIVERY_TIME ) {
+		
         print_barre_liste(
         		$texte,
         		$page,
@@ -556,8 +565,11 @@ if ($resql || $resql2) {
         		$sortfield,
         		$sortorder,
         		'',
-        		($conf->global->SOFO_USE_DELIVERY_TIME ? -1 : $num)
+        		$num
+        		
         );
+		
+		}
     }
 
     print '<form action="'.$_SERVER['PHP_SELF'].'" method="post" name="formulaire">'.
