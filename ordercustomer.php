@@ -765,11 +765,11 @@ if ($resql || $resql2) {
 		
 				$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
             }
-			else if ($conf->global->USE_VIRTUAL_STOCK) {
+			else if ($conf->global->USE_VIRTUAL_STOCK || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
                 //compute virtual stock
                 $prod->fetch($prod->id);
 				
-				if(!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER) {
+				if(!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
 	                $result=$prod->load_stats_commande(0, '1,2');
 	                if ($result < 0) {
 	                    dol_print_error($db, $prod->error);
@@ -781,7 +781,7 @@ if ($resql || $resql2) {
 					$stock_commande_client = 0;	
 				}
 				
-				if(!$conf->global->STOCK_CALCULATE_ON_SUPPLIER_VALIDATE_ORDER) {
+				if(!$conf->global->STOCK_CALCULATE_ON_SUPPLIER_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
 	                $result=$prod->load_stats_commande_fournisseur(0, '3');
 	                if ($result < 0) {
 	                    dol_print_error($db,$prod->error);
