@@ -863,8 +863,9 @@ if ($resql || $resql2) {
 				dol_include_once('/asset/config.php');
 				dol_include_once('/asset/class/ordre_fabrication_asset.class.php');
 				
-				$stock_of = TAssetOF::getProductNeededQty($prod->id, true, false, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ));
-				$stocktobuy += $stock_of;
+				$stock_of_needed = TAssetOF::getProductNeededQty($prod->id, true, false, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ));
+				$stock_of_tomake = TAssetOF::getProductNeededQty($prod->id, true, false, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ), 'TO_MAKE');
+				$stocktobuy += $stock_of_needed - $stock_of_tomake;
 							
 				$help_stock.=', '.$langs->trans('OF').' : '.(float)($stock_of);
 			}
