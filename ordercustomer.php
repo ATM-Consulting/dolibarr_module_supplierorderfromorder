@@ -756,7 +756,7 @@ if ($resql || $resql2) {
 			
 			
 			
-            $var =! $var;
+            
             $prod->ref = $objp->ref;
             $prod->id = $objp->rowid;
             $prod->type = $objp->fk_product_type;
@@ -825,7 +825,7 @@ if ($resql || $resql2) {
     			$i++;
     			continue; // le stock est suffisant on passe
     		}
-		
+			$var =! $var;
             
             $warning='';
             if ($objp->seuil_stock_alerte
