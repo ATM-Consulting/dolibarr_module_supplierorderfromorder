@@ -415,12 +415,12 @@ $title = $langs->trans('ProductsToOrder');
 $sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty, SUM(ed.qty) as expedie';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
 $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte,';
-$sql .= ' SUM(COALESCE(s.reel, 0)) as stock_physique';
+$sql .= ' ( SELECT SUM(s.reel) FROM ' . MAIN_DB_PREFIX . 'product_stock s WHERE s.fk_product=p.rowid ) as stock_physique';
 $sql .= $dolibarr_version35 ? ', p.desiredstock' : "";
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
 $sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd ON (p.rowid = cd.fk_product)';
 $sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'expeditiondet as ed ON (ed.fk_origin_line = cd.rowid)';
-$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s ON (p.rowid = s.fk_product)';
+//$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s ON (p.rowid = s.fk_product)';
 $sql .= ' WHERE p.entity IN (' . getEntity("product", 1) . ')';
 
 $fk_commande = GETPOST('id','int');
@@ -465,7 +465,7 @@ $sql .= ' GROUP BY p.rowid, p.ref, p.label, p.price';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type, p.tms';
 $sql .= ', p.duration, p.tobuy, p.seuil_stock_alerte';
 //$sql .= ', p.desiredstock'; 
-$sql .= ', s.fk_product';
+//$sql .= ', s.fk_product';
 
 if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
 	$sql.= ', cd.description';
