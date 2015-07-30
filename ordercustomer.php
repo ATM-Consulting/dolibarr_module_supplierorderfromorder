@@ -518,18 +518,7 @@ if ($resql || $resql2) {
 	
 	
 	
-	if($conf->global->SOFO_USE_DELIVERY_TIME) {
-		$week_to_replenish = (int)GETPOST('week_to_replenish','int');
-		
-		echo '<form action="'.$_SERVER['PHP_SELF'].'" method="post" name="formulaire">'.
-         '<input type="hidden" name="fk_commande" value="' . GETPOST('fk_commande','int'). '">';
-         echo $langs->trans('NbWeekToReplenish').'<input type="text" name="week_to_replenish" value="'.$week_to_replenish.'" size="2"> '
-			.'<input type="submit" value="'.$langs->trans('ReCalculate').'" />';
-	 	
-		echo '</form>';
-	}
-	
-    if ($sref || $snom || $sall || $salert || GETPOST('search', 'alpha')) {
+	if ($sref || $snom || $sall || $salert || GETPOST('search', 'alpha')) {
         $filters = '&sref=' . $sref . '&snom=' . $snom;
         $filters .= '&sall=' . $sall;
         $filters .= '&salert=' . $salert;
@@ -580,8 +569,21 @@ if ($resql || $resql2) {
          '<input type="hidden" name="type" value="' . $type . '">'.
          '<input type="hidden" name="linecount" value="' . ($num+$num2) . '">'.
          '<input type="hidden" name="action" value="order">'.
-
+         '<input type="hidden" name="fk_commande" value="' . GETPOST('fk_commande','int'). '">'.
          '<table class="liste" width="100%">';
+
+    if($conf->global->SOFO_USE_DELIVERY_TIME) {
+            $week_to_replenish = (int)GETPOST('week_to_replenish','int');
+        
+            $colspan = empty($conf->global->FOURN_PRODUCT_AVAILABILITY) ? 7 : 8;
+            
+        print '<tr class="liste_titre">'.
+            '<td colspan="'.$colspan.'">'.$langs->trans('NbWeekToReplenish').'<input type="text" name="week_to_replenish" value="'.$week_to_replenish.'" size="2"> '
+            .'<input type="submit" value="'.$langs->trans('ReCalculate').'" /></td></tr>';
+        
+        
+    }
+
 
     $param = (isset($type)? '&type=' . $type : '');
     $param .= '&fourn_id=' . $fourn_id . '&snom='. $snom . '&salert=' . $salert;
