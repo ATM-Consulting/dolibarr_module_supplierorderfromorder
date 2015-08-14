@@ -835,12 +835,27 @@ if ($resql || $resql2) {
                     $warning = img_warning($langs->trans('StockTooLow')) . ' ';
             }
 				
+			// On regarde s'il existe une demande de prix en cours pour ce produit
+			$TDemandes = array();
+			
+			if($conf->askpricesupplier->enabled) {
 				
-          
+				$q = 'SELECT a.ref
+						FROM '.MAIN_DB_PREFIX.'askpricesupplier a
+						INNER JOIN '.MAIN_DB_PREFIX.'askpricesupplierdet d on (d.fk_askpricesupplier = a.rowid)
+						WHERE a.fk_statut = 1
+						AND fk_product = '.$prod->id;
+				
+				$qres = $db->query($q);
+				
+				while($res = $db->fetch_object($qres)) $TDemandes[] = $res->ref;
+				
+          	}
+          	
             print '<tr ' . $bc[$var] . '>'.
                  '<td><input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '></td>'.
                  '<td class="nowrap">'.
-                 $prod->getNomUrl(1).
+                 (!empty($TDemandes) ? $form->textwithpicto($prod->getNomUrl(1), 'Demande(s) de prix en cours :<br />'.implode(', ', $TDemandes), 1, 'help') : $prod->getNomUrl(1)).
                  '</td>'.
                  '<td>' . $objp->label . '</td>';
 
