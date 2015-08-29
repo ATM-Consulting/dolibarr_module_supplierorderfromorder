@@ -156,7 +156,7 @@ class modSupplierorderfromorder extends DolibarrModules
 		
 		$this->menu[]=array(   'fk_menu'=>'fk_mainmenu=asset',     // Use r=value where r is index key used for the parent menu entry (higher parent must be a top menu entry)
             'type'=>'left',         // This is a Left menu entry
-            'titre'=>$langs->trans('ProductsToOrder'),
+            'titre'=>'ProductsToOrder',
             'mainmenu'=>'replenishGPAO',
             'leftmenu'=>'replenishGPAO',
             'url'=>'/supplierorderfromorder/ordercustomer.php',
