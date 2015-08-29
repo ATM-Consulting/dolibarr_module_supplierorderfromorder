@@ -1011,45 +1011,7 @@ if ($resql || $resql2) {
          '</td></tr></table>'.
          '</form>';
 
-    if ($num > $conf->liste_limit) 
-    {
-        if ($sref || $snom || $sall || $salert || GETPOST('search', 'alpha')) 
-        {
-            $filters = '&sref=' . $sref . '&snom=' . $snom;
-            $filters .= '&sall=' . $sall;
-            $filters .= '&salert=' . $salert;
-            print_barre_liste(
-            		'',
-            		$page,
-            		'replenish.php',
-            		$filters,
-            		$sortfield,
-            		$sortorder,
-            		'',
-            		$num,
-            		0,
-            		''
-            );
-        } else {
-            $filters = '&sref=' . $sref . '&snom=' . $snom;
-            $filters .= '&fourn_id=' . $fourn_id;
-            $filters .= (isset($type)? '&type=' . $type : '');
-            $filters .= '&salert=' . $salert;
-            print_barre_liste(
-            		'',
-            		$page,
-            		'replenish.php',
-            		$filters,
-            		$sortfield,
-            		$sortorder,
-            		'',
-            		$num,
-            		0,
-            		''
-            );
-        }
-    }
-
+    
     $db->free($resql);
 print ' <script type="text/javascript">
      function toggle(source)
