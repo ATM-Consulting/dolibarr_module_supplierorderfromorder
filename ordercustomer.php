@@ -823,10 +823,10 @@ if ($resql || $resql2) {
 			$stock_expedie_client = $objp->expedie;
 			
         	//if($objp->rowid == 14978)	{print "$stock >= {$objp->qty} - $stock_expedie_client + {$objp->desiredstock}";exit;}
-            if($stock >= (float)$objp->qty - (float)$stock_expedie_client + (float)$objp->desiredstock) {
+            /*if($stock >= (float)$objp->qty - (float)$stock_expedie_client + (float)$objp->desiredstock) {
     			$i++;
     			continue; // le stock est suffisant on passe
-    		}
+    		}*/
 			$var =! $var;
             
             $warning='';
@@ -851,6 +851,37 @@ if ($resql || $resql2) {
 				while($res = $db->fetch_object($qres)) $TDemandes[] = $res->ref;
 				
           	}
+          	
+          	// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :
+			$stocktobuy = $objp->desiredstock - ($stock - $stock_expedie_client);
+			
+			$help_stock.=', ' .$langs->trans('Expeditions').' : '.(float)$stock_expedie_client;
+			
+			if($stocktobuy<=0) {
+    			$i++;
+    			continue; // le stock est suffisant on passe
+    		}
+			
+			if($conf->asset->enabled) {
+				
+				/* Si j'ai des OF je veux savoir combien cela me coûte */
+				
+				define('INC_FROM_DOLIBARR', true);
+				dol_include_once('/asset/config.php');
+				dol_include_once('/asset/class/ordre_fabrication_asset.class.php');
+				
+				$stock_of_needed = TAssetOF::getProductNeededQty($prod->id, true, false, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ));
+				$stock_of_tomake = TAssetOF::getProductNeededQty($prod->id, true, false, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ), 'TO_MAKE');
+				$stocktobuy += $stock_of_needed - $stock_of_tomake;
+							
+				$help_stock.=', '.$langs->trans('OF').' : '.(float)($stock_of);
+			}
+			
+			$help_stock.=', '.$langs->trans('DesiredStock').' : '.(float)$objp->desiredstock;
+							
+			
+			if($stocktobuy < 0) $stocktobuy = 0;
+          	
           	
             print '<tr ' . $bc[$var] . '>'.
                  '<td><input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '></td>'.
@@ -879,30 +910,7 @@ if ($resql || $resql2) {
             }
 
 
-			// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :
-			$stocktobuy = $objp->desiredstock - ($stock - $stock_expedie_client);
 			
-			$help_stock.=', ' .$langs->trans('Expeditions').' : '.(float)$stock_expedie_client;
-			
-			if($conf->asset->enabled) {
-				
-				/* Si j'ai des OF je veux savoir combien cela me coûte */
-				
-				define('INC_FROM_DOLIBARR', true);
-				dol_include_once('/asset/config.php');
-				dol_include_once('/asset/class/ordre_fabrication_asset.class.php');
-				
-				$stock_of_needed = TAssetOF::getProductNeededQty($prod->id, true, false, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ));
-				$stock_of_tomake = TAssetOF::getProductNeededQty($prod->id, true, false, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ), 'TO_MAKE');
-				$stocktobuy += $stock_of_needed - $stock_of_tomake;
-							
-				$help_stock.=', '.$langs->trans('OF').' : '.(float)($stock_of);
-			}
-			
-			$help_stock.=', '.$langs->trans('DesiredStock').' : '.(float)$objp->desiredstock;
-							
-			
-			if($stocktobuy < 0) $stocktobuy = 0;
 
 
             //print $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : "".
