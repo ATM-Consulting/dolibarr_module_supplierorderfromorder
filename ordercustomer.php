@@ -883,10 +883,6 @@ if ($resql || $resql2) {
 				}
 
 				$stocktobuy += $stock_of_needed - $stock_of_tomake;
-				if($prod->ref=='A0005003') {
-					var_dump($stock_of_tomake,$stock_of_needed);
-					exit;
-				}
 				$help_stock.=', '.$langs->trans('OF').' : '.(float)($stock_of_needed - $stock_of_tomake);
 			}
 			
