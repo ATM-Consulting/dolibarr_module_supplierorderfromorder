@@ -870,11 +870,24 @@ if ($resql || $resql2) {
 				dol_include_once('/asset/config.php');
 				dol_include_once('/asset/class/ordre_fabrication_asset.class.php');
 				
-				$stock_of_needed = TAssetOF::getProductNeededQty($prod->id, true, false, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ));
-				$stock_of_tomake = TAssetOF::getProductNeededQty($prod->id, true, false, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ), 'TO_MAKE');
+//$_REQUEST['DEBUG']=true;
+				if($week_to_replenish>0) {
+				$stock_of_needed = TAssetOF::getProductNeededQty($prod->id, false, true, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ));
+				$stock_of_tomake = TAssetOF::getProductNeededQty($prod->id, false, true, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ), 'TO_MAKE');
+
+				}
+				else {
+				$stock_of_needed = TAssetOF::getProductNeededQty($prod->id, false, true, '');
+				$stock_of_tomake = TAssetOF::getProductNeededQty($prod->id, false, true, '', 'TO_MAKE');
+
+				}
+
 				$stocktobuy += $stock_of_needed - $stock_of_tomake;
-							
-				$help_stock.=', '.$langs->trans('OF').' : '.(float)($stock_of);
+				if($prod->ref=='A0005003') {
+					var_dump($stock_of_tomake,$stock_of_needed);
+					exit;
+				}
+				$help_stock.=', '.$langs->trans('OF').' : '.(float)($stock_of_needed - $stock_of_tomake);
 			}
 			
 			$help_stock.=', '.$langs->trans('DesiredStock').' : '.(float)$objp->desiredstock;
