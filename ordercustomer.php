@@ -891,6 +891,10 @@ if ($resql || $resql2) {
 			
 			if($stocktobuy < 0) $stocktobuy = 0;
           	
+			if($stocktobuy == 0) {
+				$i++;
+				continue;
+			}
           	
             print '<tr ' . $bc[$var] . '>'.
                  '<td><input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '></td>'.
