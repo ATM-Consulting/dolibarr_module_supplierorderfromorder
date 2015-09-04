@@ -941,8 +941,8 @@ if ($resql || $resql2) {
                  '</td>'.
                  '<td align="right">'.
                  '<input type="text" name="tobuy' . $i .
-                 '" value="' . $stocktobuy . '" ' . $disabled . ' size="4">'.img_help(1, $help_stock)
-                 .'</td>';
+                 '" value="' . $stocktobuy . '" ' . $disabled . ' size="4">
+                 <span class="stock_details" prod-id="'.$prod->id.'" week-to-replenish="'.$week_to_replenish.'">'.img_help(1, $help_stock).'</span></td>';
 				 
 				 if($conf->global->SOFO_USE_DELIVERY_TIME) {
 				
@@ -1050,63 +1050,56 @@ print ' <script type="text/javascript">
     dol_print_error($db);
 }
 
+?>
+<script type="text/javascript">
+
+    var mouseX;
+    var mouseY;
+        
+    $(document).ready(function() {
+       
+        $('body').append('<div id="pop-stock" style="border:2px orange solid; position: absolute;width:300px;display:none;padding:10px;background-color:#fff;"></div>');
+        
+        $(document).mousemove( function(e) {
+           mouseX = e.pageX; 
+           mouseY = e.pageY;
+        }); 
+       
+       $('span.stock_details').each(function(i, item) {
+           
+           var prodid = $(this).attr('prod-id');
+           var nbweek = $(this).attr('week-to-replenish');
+           
+           $(this).mouseover(function() {
+               $('#pop-stock').html('Chargement...');
+               $('#pop-stock').css({'top':mouseY+20,'left':mouseX+20}).show();
+               
+               $.ajax({
+                  url : "<?php echo dol_buildpath('/supplierorderfromorder/script/interface.php',1) ?>"
+                  ,data:{
+                      get : 'stock-details'
+                      ,idprod : prodid
+                      ,nbweek : nbweek
+                  }   
+               }).done(function(data) {
+                    $('#pop-stock').html(data);     
+               });
+               
+           });
+           
+           $(this).mouseout(function(){
+              $('#pop-stock').hide();
+           });
+           
+       });
+        
+    });
+    
+    
+</script>
+<?php
+
 llxFooter();
 
 $db->close();
 
-function _load_stats_commande_fournisseur($fk_product, $date,$stocktobuy=1,$filtrestatut='3') {
-	global $conf,$user,$db;
-
-	$nb_day = (int)getMinAvailability($fk_product,$stocktobuy);
-	$date = date('Y-m-d', strtotime('-'.$nb_day.'day',  strtotime($date)));
-
-	$sql = "SELECT SUM(cd.qty) as qty";
-	$sql.= " FROM ".MAIN_DB_PREFIX."commande_fournisseurdet as cd";
-	$sql.= ", ".MAIN_DB_PREFIX."commande_fournisseur as c";
-	$sql.= ", ".MAIN_DB_PREFIX."societe as s";
-	$sql.= " WHERE c.rowid = cd.fk_commande";
-	$sql.= " AND c.fk_soc = s.rowid";
-	$sql.= " AND c.entity = ".$conf->entity;
-	$sql.= " AND cd.fk_product = ".$fk_product;
-	$sql.= " AND (c.date_livraison IS NULL OR c.date_livraison<='".$date."') ";
-	if ($filtrestatut != '') $sql.= " AND c.fk_statut in (".$filtrestatut.")"; 
-	
-	$result =$db->query($sql);
-	if ( $result )
-	{
-			$obj = $db->fetch_object($result);
-			return (float)$obj->qty;
-	}
-	else
-	{
-		
-		return 0;
-	}
-}
-
-function _load_stats_commande_date($fk_product, $date,$filtrestatut='1,2') {
-		global $conf,$user,$db;
-	
-		$sql = "SELECT SUM(cd.qty) as qty";
-		$sql.= " FROM ".MAIN_DB_PREFIX."commandedet as cd";
-		$sql.= ", ".MAIN_DB_PREFIX."commande as c";
-		$sql.= ", ".MAIN_DB_PREFIX."societe as s";
-		$sql.= " WHERE c.rowid = cd.fk_commande";
-		$sql.= " AND c.fk_soc = s.rowid";
-		$sql.= " AND c.entity = ".$conf->entity;
-		$sql.= " AND cd.fk_product = ".$fk_product;
-		$sql.= " AND (c.date_livraison IS NULL OR c.date_livraison<='".$date."') ";
-		if ($filtrestatut <> '') $sql.= " AND c.fk_statut in (".$filtrestatut.")";
-		
-		$result =$db->query($sql);
-		if ( $result )
-		{
-				$obj = $db->fetch_object($result);
-				return (float)$obj->qty;
-		}
-		else
-		{
-			
-			return 0;
-		}
-}
