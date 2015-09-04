@@ -106,7 +106,7 @@
         dol_include_once('/asset/config.php');
         dol_include_once('/asset/class/ordre_fabrication_asset.class.php');
         $PDOdb=new TPDOdb;    
-        $sql="SELECT ofe.rowid, ofe.numero, ofe.date_lancement , ofe.date_besoin, ofel.qty
+        $sql="SELECT ofe.rowid, ofe.numero, ofe.date_lancement , ofe.date_besoin, ofel.qty, ofel.qty_needed
         , ofe.status, ofe.fk_user, ofe.total_cost
           FROM ".MAIN_DB_PREFIX."assetOf as ofe 
           LEFT JOIN ".MAIN_DB_PREFIX."assetOf_line ofel ON (ofel.fk_assetOf=ofe.rowid AND ofel.type = 'TO_MAKE')
@@ -118,7 +118,7 @@
         $PDOdb->Execute($sql);
         $res = '';
         while($obj = $PDOdb->Get_line()) {
-            $res.= '<br /><a href="'.dol_buildpath('/asset/fiche_of.php?id='.$obj->rowid,1).'">'.img_picto('','object_list.png','',0).' '.$obj->numero.'</a> x '.$obj->qty;    
+            $res.= '<br /><a href="'.dol_buildpath('/asset/fiche_of.php?id='.$obj->rowid,1).'">'.img_picto('','object_list.png','',0).' '.$obj->numero.'</a> x '.($obj->qty ? $obj->qty : $obj->qty_needed );    
         }
         
         if(!empty($res)) {
@@ -130,7 +130,7 @@
             
         }
         
-        $sql="SELECT ofe.rowid, ofe.numero, ofe.date_lancement , ofe.date_besoin, ofel.qty
+        $sql="SELECT ofe.rowid, ofe.numero, ofe.date_lancement , ofe.date_besoin, ofel.qty, ofel.qty_needed
         , ofe.status, ofe.fk_user, ofe.total_cost
           FROM ".MAIN_DB_PREFIX."assetOf as ofe 
           LEFT JOIN ".MAIN_DB_PREFIX."assetOf_line ofel ON (ofel.fk_assetOf=ofe.rowid AND ofel.type = 'NEEDED')
@@ -142,7 +142,7 @@
         $PDOdb->Execute($sql);
         $res = '';
         while($obj = $PDOdb->Get_line()) {
-            $res.= '<br /><a href="'.dol_buildpath('/asset/fiche_of.php?id='.$obj->rowid,1).'">'.img_picto('','object_list.png','',0).' '.$obj->numero.'</a> x '.$obj->qty;    
+            $res.= '<br /><a href="'.dol_buildpath('/asset/fiche_of.php?id='.$obj->rowid,1).'">'.img_picto('','object_list.png','',0).' '.$obj->numero.'</a> x '.($obj->qty ? $obj->qty : $obj->qty_needed );    
         }
         
         if(!empty($res)) {

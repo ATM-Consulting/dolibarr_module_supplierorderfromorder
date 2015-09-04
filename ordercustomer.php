@@ -1081,7 +1081,7 @@ print ' <script type="text/javascript">
            
            $(this).mouseover(function() {
                $('#pop-stock').html('Chargement...');
-               $('#pop-stock').css({'top':mouseY+20,'left':mouseX+20}).show();
+               $('#pop-stock').css({'top':mouseY+20,'left':mouseX-320}).show();
                
                $.ajax({
                   url : "<?php echo dol_buildpath('/supplierorderfromorder/script/interface.php',1) ?>"
