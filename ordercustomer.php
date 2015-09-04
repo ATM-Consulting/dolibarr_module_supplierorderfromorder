@@ -819,6 +819,10 @@ if ($resql || $resql2) {
 				$help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;
             
             }
+
+		if($conf->global->SOFO_DONT_USE_CUSTOMER_ORDER_AND_OF_TO_MAKE) {
+
+		}
 			
 			$ordered = $stock_commande_client;
 			
@@ -858,11 +862,13 @@ if ($resql || $resql2) {
 			$stocktobuy = $objp->desiredstock - ($stock - $stock_expedie_client);
 			
 			$help_stock.=', ' .$langs->trans('Expeditions').' : '.(float)$stock_expedie_client;
-			
-			if($stocktobuy<=0) {
+	
+
+		
+/*			if($stocktobuy<=0 && $prod->ref!='A0000753') {
     			$i++;
     			continue; // le stock est suffisant on passe
-    		}
+	    		}*/
 			
 			if($conf->asset->enabled) {
 				
@@ -968,6 +974,9 @@ if ($resql || $resql2) {
 	   }
            print '</tr>';
         }
+
+//	if($prod->ref=='A0000753') exit;
+
         $i++;
     }
 	
