@@ -501,6 +501,8 @@ if($sql2 && $fk_commande > 0){
 	$resql2 = $db->query($sql2);
 }
 
+$justOFforNeededProduct = !empty($conf->global->SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT) && empty($fk_commande);
+
 if ($resql || $resql2) {
     $num = $db->num_rows($resql);
 	$num2 = $db->num_rows($resql2);
@@ -768,7 +770,7 @@ if ($resql || $resql2) {
 
             $help_stock =  $langs->trans('PhysicalStock').' : '.(float)$objp->stock_physique;
            
-           if(empty($conf->global->SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT)) {
+           if(!$justOFforNeededProduct) {
 			    				
                 if($week_to_replenish>0) {
                 	/* là ça déconne pas, on s'en fout, on dépote ! */
@@ -862,7 +864,7 @@ if ($resql || $resql2) {
           	
           	// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :
           	
-          	if(empty($conf->global->SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT)) {
+          	if(!$justOFforNeededProduct) {
           	
 			     $stocktobuy = $objp->desiredstock - ($stock - $stock_expedie_client);
 			     $help_stock.=', ' .$langs->trans('Expeditions').' : '.(float)$stock_expedie_client;
