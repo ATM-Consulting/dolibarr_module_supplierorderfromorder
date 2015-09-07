@@ -34,7 +34,8 @@
             
         }
     
-    $sql = "SELECT DISTINCT c.rowid, cd.qty";
+    if(empty($conf->global->SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT)) {
+     $sql = "SELECT DISTINCT c.rowid, cd.qty";
         $sql.= " FROM ".MAIN_DB_PREFIX."commandedet as cd";
         $sql.= ", ".MAIN_DB_PREFIX."commande as c";
         $sql.= ", ".MAIN_DB_PREFIX."societe as s";
@@ -88,12 +89,16 @@
     
     if(!empty($r)) {
             print '<p>';
-            print '<strong>Commande client</strong>';
+            print '<strong>Commande fournisseur</strong>';
             print $r;            
             print '</p>';
             
             
         }
+    
+        
+        
+    }
     
     
     

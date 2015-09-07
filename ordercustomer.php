@@ -767,63 +767,65 @@ if ($resql || $resql2) {
             //$ordered = ordered($prod->id);
 
             $help_stock =  $langs->trans('PhysicalStock').' : '.(float)$objp->stock_physique;
-            
-							
-            if($week_to_replenish>0) {
-            	/* là ça déconne pas, on s'en fout, on dépote ! */
-            	
-            	$stock_commande_client = _load_stats_commande_date($prod->id, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ) );
-				$stock_commande_fournisseur = _load_stats_commande_fournisseur($prod->id, date('Y-m-d',strtotime('+'.$week_to_replenish.'week')), $objp->stock_physique-$stock_commande_client);
-		
-				$help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;
-            	$help_stock.=', '.$langs->trans('SupplierOrders').' : '.(float)$stock_commande_fournisseur;
-            
-		
-				$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
+           
+           if(empty($conf->global->SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT)) {
+			    				
+                if($week_to_replenish>0) {
+                	/* là ça déconne pas, on s'en fout, on dépote ! */
+                	
+                	$stock_commande_client = _load_stats_commande_date($prod->id, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ) );
+    				$stock_commande_fournisseur = _load_stats_commande_fournisseur($prod->id, date('Y-m-d',strtotime('+'.$week_to_replenish.'week')), $objp->stock_physique-$stock_commande_client);
+    		
+    				$help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;
+                	$help_stock.=', '.$langs->trans('SupplierOrders').' : '.(float)$stock_commande_fournisseur;
+                
+    		
+    				$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
+                }
+    			else if ($conf->global->USE_VIRTUAL_STOCK || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
+                    //compute virtual stock
+                    $prod->fetch($prod->id);
+    				
+    				if(!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
+    	                $result=$prod->load_stats_commande(0, '1,2');
+    	                if ($result < 0) {
+    	                    dol_print_error($db, $prod->error);
+    	                }
+    	                $stock_commande_client = $prod->stats_commande['qty'];
+    					
+    				}
+    				else{
+    					$stock_commande_client = 0;	
+    				}
+    				
+    				if(!$conf->global->STOCK_CALCULATE_ON_SUPPLIER_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
+    	                $result=$prod->load_stats_commande_fournisseur(0, '3');
+    	                if ($result < 0) {
+    	                    dol_print_error($db,$prod->error);
+    	                }
+    					$stock_commande_fournisseur = $prod->stats_commande_fournisseur['qty'];
+    				}
+    				else{
+    					$stock_commande_fournisseur = 0;
+    				}
+    				$help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;
+                	$help_stock.=', '.$langs->trans('SupplierOrders').' : '.(float)$stock_commande_fournisseur;
+                
+                    $stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
+    				
+                } else {
+                	$stock_commande_client = $objp->qty;
+                    $stock = $objp->stock_physique - $stock_commande_client;
+    				
+    				$help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;
+                
+                }
             }
-			else if ($conf->global->USE_VIRTUAL_STOCK || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
-                //compute virtual stock
-                $prod->fetch($prod->id);
-				
-				if(!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
-	                $result=$prod->load_stats_commande(0, '1,2');
-	                if ($result < 0) {
-	                    dol_print_error($db, $prod->error);
-	                }
-	                $stock_commande_client = $prod->stats_commande['qty'];
-					
-				}
-				else{
-					$stock_commande_client = 0;	
-				}
-				
-				if(!$conf->global->STOCK_CALCULATE_ON_SUPPLIER_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
-	                $result=$prod->load_stats_commande_fournisseur(0, '3');
-	                if ($result < 0) {
-	                    dol_print_error($db,$prod->error);
-	                }
-					$stock_commande_fournisseur = $prod->stats_commande_fournisseur['qty'];
-				}
-				else{
-					$stock_commande_fournisseur = 0;
-				}
-				$help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;
-            	$help_stock.=', '.$langs->trans('SupplierOrders').' : '.(float)$stock_commande_fournisseur;
-            
-                $stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
-				
-            } else {
-            	$stock_commande_client = $objp->qty;
-                $stock = $objp->stock_physique - $stock_commande_client;
-				
-				$help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;
-            
-            }
-
-		if($conf->global->SOFO_DONT_USE_CUSTOMER_ORDER_AND_OF_TO_MAKE) {
-
-		}
-			
+            else {
+    	        $stock = $objp->stock_physique;
+                $help_stock.='(Juste OF) ';
+    		}
+    			
 			$ordered = $stock_commande_client;
 			
 			$stock_expedie_client = $objp->expedie;
@@ -859,10 +861,15 @@ if ($resql || $resql2) {
           	}
           	
           	// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :
-			$stocktobuy = $objp->desiredstock - ($stock - $stock_expedie_client);
-			
-			$help_stock.=', ' .$langs->trans('Expeditions').' : '.(float)$stock_expedie_client;
-	
+          	
+          	if(empty($conf->global->SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT)) {
+          	
+			     $stocktobuy = $objp->desiredstock - ($stock - $stock_expedie_client);
+			     $help_stock.=', ' .$langs->trans('Expeditions').' : '.(float)$stock_expedie_client;
+            }
+            else{
+                 $stocktobuy = $objp->desiredstock - $stock ;
+            }
 
 		
 /*			if($stocktobuy<=0 && $prod->ref!='A0000753') {
