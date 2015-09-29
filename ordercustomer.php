@@ -770,16 +770,21 @@ if ($resql || $resql2) {
 
             $help_stock =  $langs->trans('PhysicalStock').' : '.(float)$objp->stock_physique;
            
+           
+           $stock_commande_client = 0;
+           $stock_commande_fournisseur = 0;
+           
            if(!$justOFforNeededProduct) {
 			    				
                 if($week_to_replenish>0) {
                 	/* là ça déconne pas, on s'en fout, on dépote ! */
-                	
-                	$stock_commande_client = _load_stats_commande_date($prod->id, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ) );
+                    if(empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)) {
+                        $stock_commande_client = _load_stats_commande_date($prod->id, date('Y-m-d',strtotime('+'.$week_to_replenish.'week') ) );
+                        $help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;
+                    }    	
+            		
     				$stock_commande_fournisseur = _load_stats_commande_fournisseur($prod->id, date('Y-m-d',strtotime('+'.$week_to_replenish.'week')), $objp->stock_physique-$stock_commande_client);
-    		
-    				$help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;
-                	$help_stock.=', '.$langs->trans('SupplierOrders').' : '.(float)$stock_commande_fournisseur;
+    				$help_stock.=', '.$langs->trans('SupplierOrders').' : '.(float)$stock_commande_fournisseur;
                 
     		
     				$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
@@ -788,7 +793,8 @@ if ($resql || $resql2) {
                     //compute virtual stock
                     $prod->fetch($prod->id);
     				
-    				if(!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
+    				if((!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK)
+                            && empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)) {
     	                $result=$prod->load_stats_commande(0, '1,2');
     	                if ($result < 0) {
     	                    dol_print_error($db, $prod->error);
@@ -810,16 +816,25 @@ if ($resql || $resql2) {
     				else{
     					$stock_commande_fournisseur = 0;
     				}
-    				$help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;
+                    
+                    if($stock_commande_client>0) {
+                        $help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;    
+                    }
+    				
                 	$help_stock.=', '.$langs->trans('SupplierOrders').' : '.(float)$stock_commande_fournisseur;
                 
                     $stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
     				
                 } else {
-                	$stock_commande_client = $objp->qty;
+                	    
+                    if(empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)) {
+                        $stock_commande_client = $objp->qty;
+                        $help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;    
+                    }
+                	
                     $stock = $objp->stock_physique - $stock_commande_client;
     				
-    				$help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;
+    				
                 
                 }
             }
