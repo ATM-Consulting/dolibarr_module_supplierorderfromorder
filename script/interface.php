@@ -8,6 +8,7 @@
     dol_include_once("/fourn/class/fournisseur.class.php");
     dol_include_once("/commande/class/commande.class.php");
     dol_include_once('/product/stock/class/entrepot.class.php');
+    dol_include_once('/expedition/class/expedition.class.php');
 
     $prod = new Product($db);
     $prod->fetch(GETPOST('idprod'));
@@ -159,3 +160,34 @@
             
         }
     }
+
+    $sql = "SELECT DISTINCT e.rowid, ed.qty";
+        $sql.= " FROM ".MAIN_DB_PREFIX."expeditiondet as ed";
+        $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."expedition as e ON (e.rowid=ed.fk_expedition)";
+        $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."commandedet as cd ON (ed.fk_origin_line=cd.rowid)";
+        $sql.= " WHERE 1";
+        $sql.= " AND e.entity = ".$conf->entity;
+        $sql.= " AND cd.fk_product = ".$prod->id;
+        $sql.= " AND e.fk_statut in (1)";
+      
+        $r ='';
+        $result =$db->query($sql);
+        //var_dump($db);
+        while($obj = $db->fetch_object($result)) {
+            
+            $e=new Expedition($db);
+            $e->fetch($obj->rowid);
+            
+            $r.='<br />'.$e->getNomUrl(1).' x '.$obj->qty.'';
+            
+        }
+    
+    
+        if(!empty($r)) {
+            print '<p>';
+            print '<strong>Expéditions</strong>';
+            print $r;            
+            print '</p>';
+            
+            
+        }

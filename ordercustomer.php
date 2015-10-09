@@ -412,14 +412,14 @@ if ($action == 'order' && isset($_POST['valid'])) {
  */
 $title = $langs->trans('ProductsToOrder');
 
-$sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty, SUM(ed.qty) as expedie';
+$sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
 $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte,';
 $sql .= ' ( SELECT SUM(s.reel) FROM ' . MAIN_DB_PREFIX . 'product_stock s WHERE s.fk_product=p.rowid ) as stock_physique';
 $sql .= $dolibarr_version35 ? ', p.desiredstock' : "";
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
 $sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd ON (p.rowid = cd.fk_product)';
-$sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'expeditiondet as ed ON (ed.fk_origin_line = cd.rowid)';
+
 //$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s ON (p.rowid = s.fk_product)';
 $sql .= ' WHERE p.entity IN (' . getEntity("product", 1) . ')';
 
@@ -845,7 +845,7 @@ if ($resql || $resql2) {
     			
 			$ordered = $stock_commande_client;
 			
-			$stock_expedie_client = $objp->expedie;
+			
 			
         	//if($objp->rowid == 14978)	{print "$stock >= {$objp->qty} - $stock_expedie_client + {$objp->desiredstock}";exit;}
             /*if($stock >= (float)$objp->qty - (float)$stock_expedie_client + (float)$objp->desiredstock) {
@@ -880,7 +880,7 @@ if ($resql || $resql2) {
           	// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :
           	
           	if(!$justOFforNeededProduct) {
-          	
+          	     $stock_expedie_client = getExpedie($prod->id);
 			     $stocktobuy = $objp->desiredstock - ($stock - $stock_expedie_client);
 			     $help_stock.=', ' .$langs->trans('Expeditions').' : '.(float)$stock_expedie_client;
             }

@@ -99,3 +99,29 @@ function _load_stats_commande_date($fk_product, $date,$filtrestatut='1,2') {
             return 0;
         }
 }
+
+function getExpedie($fk_product) {
+    global $conf, $db;
+    
+    $sql = "SELECT SUM(ed.qty) as qty";
+    $sql.= " FROM ".MAIN_DB_PREFIX."expeditiondet as ed";
+    $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."expedition as e ON (e.rowid=ed.fk_expedition)";
+    $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."commandedet as cd ON (ed.fk_origin_line=cd.rowid)";
+    $sql.= " WHERE 1";
+    $sql.= " AND e.entity = ".$conf->entity;
+    $sql.= " AND cd.fk_product = ".$fk_product;
+    $sql.= " AND e.fk_statut in (1)";
+    
+    $result =$db->query($sql);
+    if ( $result )
+    {
+            $obj = $db->fetch_object($result);
+            return (float)$obj->qty;
+    }
+    else
+    {
+        
+        return 0;
+    }
+    
+}
