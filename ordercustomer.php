@@ -800,18 +800,30 @@ if ($resql || $resql2) {
     	                    dol_print_error($db, $prod->error);
     	                }
     	                $stock_commande_client = $prod->stats_commande['qty'];
-    					
     				}
     				else{
     					$stock_commande_client = 0;	
     				}
     				
     				if(!$conf->global->STOCK_CALCULATE_ON_SUPPLIER_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
-    	                $result=$prod->load_stats_commande_fournisseur(0, '3');
+    	                $result=$prod->load_stats_commande_fournisseur(0, '3,4');
     	                if ($result < 0) {
     	                    dol_print_error($db,$prod->error);
     	                }
+    					
+						//Requête qui récupère la somme des qty ventilés pour les cmd reçu partiellement
+						$sqlQ = "SELECT SUM(cfd.qty) as qty";
+						$sqlQ.= " FROM ".MAIN_DB_PREFIX."commande_fournisseur_dispatch as cfd";
+						$sqlQ.= " INNER JOIN ".MAIN_DB_PREFIX."commande_fournisseur cf ON (cf.rowid = cfd.fk_commande)";
+						$sqlQ.= " LEFT JOIN ".MAIN_DB_PREFIX."entrepot as e ON cfd.fk_entrepot = e.rowid";
+						$sqlQ.= " WHERE cf.fk_statut = 4";
+						$sqlQ.= " AND cfd.fk_product = ".$prod->id;
+						$sqlQ.= " ORDER BY cfd.rowid ASC";
+						$resqlQ = $db->query($sqlQ);
+						
     					$stock_commande_fournisseur = $prod->stats_commande_fournisseur['qty'];
+						if ($row = $db->fetch_object($resqlQ)) $stock_commande_fournisseur -= $row->qty;
+						
     				}
     				else{
     					$stock_commande_fournisseur = 0;
