@@ -583,7 +583,11 @@ if ($resql || $resql2) {
             
         print '<tr class="liste_titre">'.
             '<td colspan="'.$colspan.'">'.$langs->trans('NbWeekToReplenish').'<input type="text" name="week_to_replenish" value="'.$week_to_replenish.'" size="2"> '
-            .'<input type="submit" value="'.$langs->trans('ReCalculate').'" /></td></tr>';
+            .'<input type="submit" value="'.$langs->trans('ReCalculate').'" /></td><td></td>';
+            
+        if ($conf->asset->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) print '<td></td>';
+			
+			print '</tr>';
         
         
     }
@@ -660,6 +664,23 @@ if ($resql || $resql2) {
     		$sortfield,
     		$sortorder
     );
+	
+	if ($conf->asset->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL))
+	{
+		dol_include_once('/asset/lib/asset.lib.php');
+		//return _calcQtyOfProductInOf($db, $conf, $product);
+		print_liste_field_titre(
+	    		'Stock théo - OF',
+	    		'ordercustomer.php',
+	    		'stock_theo_of',
+	    		$param,
+	    		'id='.$_REQUEST['id'],
+	    		'align="right"',
+	    		$sortfield,
+	    		$sortorder
+	    );
+	}
+	
     print_liste_field_titre(
     		$langs->trans('Ordered'),
     		'ordercustomer.php',
@@ -714,8 +735,14 @@ if ($resql || $resql2) {
 	
 	$liste_titre = "";
     $liste_titre.= $dolibarr_version35 ? '<td class="liste_titre">&nbsp;</td>' : '';
-    $liste_titre.= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>'.
-         '<td class="liste_titre" align="right">&nbsp;</td>'.
+    $liste_titre.= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>';
+	
+	if ($conf->asset->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) 
+	{
+		$liste_titre.= '<td class="liste_titre" align="right"></td>';
+	}
+	
+    $liste_titre.= '<td class="liste_titre" align="right">&nbsp;</td>'.
          '<td class="liste_titre">&nbsp;</td>'.
          '<td class="liste_titre" '.($conf->global->SOFO_USE_DELIVERY_TIME ? 'colspan="2"' : '').'>&nbsp;</td>'.
          '<td class="liste_titre" align="right">'.
@@ -864,7 +891,7 @@ if ($resql || $resql2) {
     			$i++;
     			continue; // le stock est suffisant on passe
     		}*/
-			$var =! $var;
+			
             
             $warning='';
             if ($objp->seuil_stock_alerte
@@ -940,9 +967,10 @@ if ($resql || $resql2) {
 				continue;
 			}
           	
+			$var =! $var;
             print '<tr ' . $bc[$var] . '>'.
                  '<td><input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '></td>'.
-                 '<td class="nowrap">'.
+                 '<td style="height:35px;" class="nowrap">'.
                  (!empty($TDemandes) ? $form->textwithpicto($prod->getNomUrl(1), 'Demande(s) de prix en cours :<br />'.implode(', ', $TDemandes), 1, 'help') : $prod->getNomUrl(1)).
                  '</td>'.
                  '<td>' . $objp->label . '</td>';
@@ -976,9 +1004,19 @@ if ($resql || $resql2) {
             	$champs .= $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : '';
                 $champs.= '<td align="right">'.
                  $warning . $stock.
-                 '</td>'.
-                 '<td align="right">'.
-                 
+                 '</td>';
+				if ($conf->asset->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL))
+				{
+					dol_include_once('/asset/lib/asset.lib.php');
+					$prod->load_stock();
+					list($qty_to_make, $qty_needed) = _calcQtyOfProductInOf($db, $conf, $prod);
+					$qty = $prod->stock_theorique + $qty_to_make - $qty_needed;
+				
+					$champs.= '<td align="right">'.$qty.'</td>';
+				}
+				
+                 $champs.= '<td align="right">'.
+                
                  $ordered  . $picto.
                  '</td>'.
                  '<td align="right">'.
@@ -995,8 +1033,7 @@ if ($resql || $resql2) {
 				}
 			
 
-				 
-				 
+
                  $champs.='<td align="right">'.
                  $form->select_product_fourn_price($prod->id, 'fourn'.$i, 1).
                  '</td>';
