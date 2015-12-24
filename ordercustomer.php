@@ -668,7 +668,6 @@ if ($resql || $resql2) {
 	if ($conf->asset->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL))
 	{
 		dol_include_once('/asset/lib/asset.lib.php');
-		//return _calcQtyOfProductInOf($db, $conf, $product);
 		print_liste_field_titre(
 	    		'Stock théo - OF',
 	    		'ordercustomer.php',
