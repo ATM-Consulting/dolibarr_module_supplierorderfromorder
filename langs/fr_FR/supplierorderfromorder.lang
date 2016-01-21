@@ -11,3 +11,5 @@ NbWeekToReplenish=Nombre de semaines à réapprovisionner
 ReCalculate=Recalculer
 AddFreeLinesInSupplierOrder = Ajouter les lignes libres présente dans la commande client dans la commande fournisseur
 GetOrderPaimentInfo = Récupérer les conditions de règlements et de livraison depuis la commande client
+SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY = Importer le contact livraison de la commande cliente vers la commande fournisseur
+SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER = Rediriger vers la commande fournisseur s'il n'y a qu'un fournisseur à commander (depuis la v.3.8)

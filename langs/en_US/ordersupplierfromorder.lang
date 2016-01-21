@@ -7,3 +7,5 @@ GenerateSupplierOrder = Generate supplier orders
 SupplierOrderFromOrder = Supplier order from order
 CreateNewSupplierOrderAnyTime = Create a new supplier order for each customer order
 UseOrderLineDescInSupplierOrder = Create a line in supplier order for each different description in customer order
+SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY = Import shipping contact order to supplier order
+SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER = Redirect to the supplier order card if there is only one supplier (since v.3.8)

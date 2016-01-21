@@ -206,11 +206,18 @@ if ($action == 'order' && isset($_POST['valid'])) {
 			$res = $db->query($sql2);
 			$obj = $db->fetch_object($res);
 			
+			$commandeClient = new Commande($db);
+			$commandeClient->fetch($_REQUEST['id']);
+			
+			// Test recupération contact livraison
+			if($conf->global->SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY)
+			{
+				$contact_ship = $commandeClient->getIdContact('external', 'SHIPPING');
+				$contact_ship=$contact_ship[0];
+			}else{$contact_ship=null;}
 			//Si une commande au statut brouillon existe déjà et que l'option SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME
 			if($obj && !$conf->global->SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME) {
 				
-				$commandeClient = new Commande($db);
-				$commandeClient->fetch($_REQUEST['id']);
 				
 				$order = new CommandeFournisseur($db);
 				$order->fetch($obj->rowid);
@@ -236,11 +243,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
 				$newCommande = false;
 			} else {
-				
-				$commandeClient = new Commande($db);
-				$commandeClient->fetch($_REQUEST['id']);
-				
-				/*echo '<pre>';
+								/*echo '<pre>';
 				print_r($commandeClient);exit;*/
 				
 				$order = new CommandeFournisseur($db);
@@ -255,10 +258,12 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				}
 				
 				$id = $order->create($user);
+				if($contact_ship && $conf->global->SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY) $order->add_contact($contact_ship, 'SHIPPING');
 				$order->add_object_linked('commande', $_REQUEST['id']);
 				$newCommande = true;
 
 			}
+			$order_id = $order->id;
             //trick to know which orders have been generated this way
             $order->source = 42;
 			
@@ -322,6 +327,16 @@ if ($action == 'order' && isset($_POST['valid'])) {
                 $msg = $langs->trans('OrderFail') . "&nbsp;:&nbsp;";
                 $msg .= $order->error;
                 setEventMessage($msg, 'errors');
+            }else{
+            	// CODE de redirection s'il y a un seul fournisseur (évite de le laisser sur la page sans comprendre)
+            	if($conf->global->SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER)
+				{
+	            	if(count($suppliersid) == 1)
+					{
+						$link = dol_buildpath('/fourn/commande/card.php?id='.$order_id, 1);
+						header('Location:'.$link);
+					}
+				}
             }
             $i++;
         }
@@ -559,13 +574,12 @@ if ($resql || $resql2) {
         		$sortorder,
         		'',
         		$num
-        		
         );
 		
 		}
     }
 
-    print '<form action="'.$_SERVER['PHP_SELF'].'" method="post" name="formulaire">'.
+    print '<form action="'.$_SERVER['PHP_SELF'].'?id='.$_REQUEST['id'].'" method="post" name="formulaire">'.
          '<input type="hidden" name="id" value="' .$_REQUEST['id'] . '">'.
          '<input type="hidden" name="token" value="' .$_SESSION['newtoken'] . '">'.
          '<input type="hidden" name="sortfield" value="' . $sortfield . '">'.
@@ -713,8 +727,7 @@ if ($resql || $resql2) {
     		$sortfield,
     		$sortorder
     );
-    print '<td>&nbsp;</td>'.
-         '</tr>'.
+    print '</tr>'.
 
 	    // Lignes des champs de filtre
          '<tr class="liste_titre">'.
@@ -1108,8 +1121,7 @@ if ($resql || $resql2) {
 
     $value = $langs->trans("GenerateSupplierOrder");
     print '</table>'.
-         '</div>'.
-         '<table width="100%">'.
+         '<table width="100%" style="margin-top:15px;">'.
          '<tr><td align="right">'.
          '<input class="butAction" type="submit" name="valid" value="' . $value . '">'.
          '</td></tr></table>'.

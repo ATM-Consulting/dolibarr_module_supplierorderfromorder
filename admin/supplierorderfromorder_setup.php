@@ -115,6 +115,35 @@ print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">'
 print '</form>';
 print '</td></tr>';
 
+// Import Shipping contact in supplier order
+$var=!$var;
+print '<tr '.$bc[$var].'>';
+print '<td>'.$langs->trans("SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY").'</td>';
+print '<td align="center" width="20">&nbsp;</td>';
+print '<td align="right" width="300">';
+print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
+print '<input type="hidden" name="action" value="set_SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY">';
+print $form->selectyesno("SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY",$conf->global->SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY,1);
+print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
+print '</form>';
+print '</td></tr>';
+
+
+// Header to supplier order if only one supplier reported
+$var=!$var;
+print '<tr '.$bc[$var].'>';
+print '<td>'.$langs->trans("SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER").'</td>';
+print '<td align="center" width="20">&nbsp;</td>';
+print '<td align="right" width="300">';
+print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
+print '<input type="hidden" name="action" value="set_SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER">';
+print $form->selectyesno("SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER",$conf->global->SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER,1);
+print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
+print '</form>';
+print '</td></tr>';
+
 $var=!$var;
 print '<tr '.$bc[$var].'>';
 print '<td>'.$langs->trans("UseDeliveryTimeToReplenish").'</td>';
@@ -143,7 +172,7 @@ print '</td></tr>';
 
 $var=!$var;
 print '<tr '.$bc[$var].'>';
-print '<td>'.$langs->trans("setSOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT").'</td>';
+print '<td>'.$langs->trans("SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT").'</td>';
 print '<td align="center" width="20">&nbsp;</td>';
 print '<td align="right" width="300">';
 print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
@@ -156,7 +185,7 @@ print '</td></tr>';
 
 $var=!$var;
 print '<tr '.$bc[$var].'>';
-print '<td>'.$langs->trans("setSOFO_DO_NOT_USE_CUSTOMER_ORDER").'</td>';
+print '<td>'.$langs->trans("SOFO_DO_NOT_USE_CUSTOMER_ORDER").'</td>';
 print '<td align="center" width="20">&nbsp;</td>';
 print '<td align="right" width="300">';
 print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
