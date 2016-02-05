@@ -154,12 +154,13 @@ class modSupplierorderfromorder extends DolibarrModules
         $this->menus = array(); // List of menus to add
         $r = 0;
 		
-		$this->menu[]=array(   'fk_menu'=>'fk_mainmenu=asset',     // Use r=value where r is index key used for the parent menu entry (higher parent must be a top menu entry)
+		$this->menu[]=array(   'fk_menu'=>'fk_mainmenu=gpao',     // Use r=value where r is index key used for the parent menu entry (higher parent must be a top menu entry)
             'type'=>'left',         // This is a Left menu entry
             'titre'=>'ProductsToOrder',
             'mainmenu'=>'replenishGPAO',
             'leftmenu'=>'replenishGPAO',
             'url'=>'/supplierorderfromorder/ordercustomer.php',
+            'langs'=>'supplierorderfromorder@supplierorderfromorder',
             'position'=>300,
             'target'=>'',
             'user'=>2);
