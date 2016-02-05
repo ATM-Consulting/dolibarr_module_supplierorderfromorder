@@ -1139,6 +1139,8 @@ print ' <script type="text/javascript">
         }
        }
      } </script>';
+
+	dol_fiche_end();
 } else {
     dol_print_error($db);
 }
