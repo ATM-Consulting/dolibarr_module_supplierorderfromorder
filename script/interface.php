@@ -105,12 +105,12 @@
     
     
     
-    if(!empty($conf->asset->enabled)) {
+    if(!empty($conf->of->enabled)) {
         
         
         define('INC_FROM_DOLIBARR', true);
-        dol_include_once('/asset/config.php');
-        dol_include_once('/asset/class/ordre_fabrication_asset.class.php');
+        dol_include_once('/of/config.php');
+        dol_include_once('/of/class/ordre_fabrication_asset.class.php');
         $PDOdb=new TPDOdb;    
         $sql="SELECT ofe.rowid, ofe.numero, ofe.date_lancement , ofe.date_besoin, ofel.qty, ofel.qty_needed
         , ofe.status, ofe.fk_user, ofe.total_cost
@@ -124,7 +124,7 @@
         $PDOdb->Execute($sql);
         $res = '';
         while($obj = $PDOdb->Get_line()) {
-            $res.= '<br /><a href="'.dol_buildpath('/asset/fiche_of.php?id='.$obj->rowid,1).'">'.img_picto('','object_list.png','',0).' '.$obj->numero.'</a> x '.($obj->qty ? $obj->qty : $obj->qty_needed );    
+            $res.= '<br /><a href="'.dol_buildpath('/of/fiche_of.php?id='.$obj->rowid,1).'">'.img_picto('','object_list.png','',0).' '.$obj->numero.'</a> x '.($obj->qty ? $obj->qty : $obj->qty_needed );    
         }
         
         if(!empty($res)) {
@@ -148,7 +148,7 @@
         $PDOdb->Execute($sql);
         $res = '';
         while($obj = $PDOdb->Get_line()) {
-            $res.= '<br /><a href="'.dol_buildpath('/asset/fiche_of.php?id='.$obj->rowid,1).'">'.img_picto('','object_list.png','',0).' '.$obj->numero.'</a> x '.($obj->qty ? $obj->qty : $obj->qty_needed );    
+            $res.= '<br /><a href="'.dol_buildpath('/of/fiche_of.php?id='.$obj->rowid,1).'">'.img_picto('','object_list.png','',0).' '.$obj->numero.'</a> x '.($obj->qty ? $obj->qty : $obj->qty_needed );    
         }
         
         if(!empty($res)) {
