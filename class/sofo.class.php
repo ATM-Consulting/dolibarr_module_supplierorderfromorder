@@ -35,7 +35,7 @@ class TSOFO {
 		while($obj_availability = $db->fetch_object($res_av)) {
 			$av_code = $form->cache_availability[$obj_availability->fk_availability] ; 
 			
-			$nb_day = getDayFromAvailabilityCode($av_code['code']);
+			$nb_day = self::getDayFromAvailabilityCode($av_code['code']);
 			
 			if($min === false || $nb_day<$min) $min = $nb_day;
 			
