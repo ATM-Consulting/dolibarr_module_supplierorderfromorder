@@ -32,9 +32,13 @@ class TSOFO {
 		
 		$min = false;
 		
+		if(empty($form))$form=new Form($db);
+		if(empty($form->cache_availability)){
+			$form->load_cache_availability();	
+		}
+		
 		while($obj_availability = $db->fetch_object($res_av)) {
 			$av_code = $form->cache_availability[$obj_availability->fk_availability] ; 
-			
 			$nb_day = self::getDayFromAvailabilityCode($av_code['code']);
 			
 			if($min === false || $nb_day<$min) $min = $nb_day;
