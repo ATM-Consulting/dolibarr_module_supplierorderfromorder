@@ -599,7 +599,7 @@ if ($resql || $resql2) {
             '<td colspan="'.$colspan.'">'.$langs->trans('NbWeekToReplenish').'<input type="text" name="week_to_replenish" value="'.$week_to_replenish.'" size="2"> '
             .'<input type="submit" value="'.$langs->trans('ReCalculate').'" /></td><td></td>';
             
-        if ($conf->asset->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) print '<td></td>';
+        if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) print '<td></td>';
 			
 			print '</tr>';
         
@@ -679,9 +679,9 @@ if ($resql || $resql2) {
     		$sortorder
     );
 	
-	if ($conf->asset->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL))
+	if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL))
 	{
-		dol_include_once('/asset/lib/asset.lib.php');
+		dol_include_once('/of/lib/of.lib.php');
 		print_liste_field_titre(
 	    		'Stock théo - OF',
 	    		'ordercustomer.php',
@@ -749,7 +749,7 @@ if ($resql || $resql2) {
     $liste_titre.= $dolibarr_version35 ? '<td class="liste_titre">&nbsp;</td>' : '';
     $liste_titre.= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>';
 	
-	if ($conf->asset->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) 
+	if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) 
 	{
 		$liste_titre.= '<td class="liste_titre" align="right"></td>';
 	}
@@ -779,6 +779,8 @@ if ($resql || $resql2) {
 	
     while ($i < min($num, $limit)) {
     	$objp = $db->fetch_object($resql);
+//if($objp->rowid == 4666) { var_dump($objp); }
+
         if ($conf->global->STOCK_SUPPORTS_SERVICES
            || $objp->fk_product_type == 0) {
             // Multilangs
@@ -808,7 +810,6 @@ if ($resql || $resql2) {
             //$ordered = ordered($prod->id);
 
             $help_stock =  $langs->trans('PhysicalStock').' : '.(float)$objp->stock_physique;
-           
            
            $stock_commande_client = 0;
            $stock_commande_fournisseur = 0;
@@ -945,13 +946,13 @@ if ($resql || $resql2) {
     			continue; // le stock est suffisant on passe
 	    		}*/
 			
-			if($conf->asset->enabled) {
+			if($conf->of->enabled) {
 				
 				/* Si j'ai des OF je veux savoir combien cela me coûte */
 				
 				define('INC_FROM_DOLIBARR', true);
-				dol_include_once('/asset/config.php');
-				dol_include_once('/asset/class/ordre_fabrication_asset.class.php');
+				dol_include_once('/of/config.php');
+				dol_include_once('/of/class/ordre_fabrication_asset.class.php');
 				
 //$_REQUEST['DEBUG']=true;
 				if($week_to_replenish>0) {
@@ -1017,9 +1018,9 @@ if ($resql || $resql2) {
                 $champs.= '<td align="right">'.
                  $warning . $stock.
                  '</td>';
-				if ($conf->asset->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL))
+				if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL))
 				{
-					dol_include_once('/asset/lib/asset.lib.php');
+					dol_include_once('/of/lib/of.lib.php');
 					$prod->load_stock();
 					list($qty_to_make, $qty_needed) = _calcQtyOfProductInOf($db, $conf, $prod);
 					$qty = $prod->stock_theorique + $qty_to_make - $qty_needed;
@@ -1051,8 +1052,8 @@ if ($resql || $resql2) {
                  '</td>';
 				print $champs;
 				
-       if($conf->asset->enabled && $user->rights->asset->of->write) {
-		print '<td><a href="'.dol_buildpath('/asset/fiche_of.php',1).'?action=new&fk_product='.$prod->id.'" class="butAction">Fabriquer</a></td>';
+       if($conf->of->enabled && $user->rights->of->of->write) {
+		print '<td><a href="'.dol_buildpath('/of/fiche_of.php',1).'?action=new&fk_product='.$prod->id.'" class="butAction">Fabriquer</a></td>';
 	   }
 	   else {
 	    	print '<td>&nbsp</td>';
