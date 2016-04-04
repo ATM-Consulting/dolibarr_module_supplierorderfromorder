@@ -17,3 +17,4 @@ UseDeliveryTimeToReplenish=Utiliser une plage de temps (en semaine) pour le beso
 UseVirtualStockOfOrdersSkipDoliConfig=Utiliser le stock virtuel pour le stock des commandes indépendemment de la configuration globale
 SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT=Utiliser seulement les produits nécessaire à la fabrication pour le calcul
 SOFO_DO_NOT_USE_CUSTOMER_ORDER=Ne pas prendre en compte les commandes fournisseurs
+SOFO_DEFAUT_FILTER=Filtrer par défaut sur les produits de nature

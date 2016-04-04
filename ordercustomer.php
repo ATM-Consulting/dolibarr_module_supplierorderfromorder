@@ -429,7 +429,7 @@ $title = $langs->trans('ProductsToOrder');
 
 $sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
-$sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte,';
+$sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte, p.finished,';
 $sql .= ' ( SELECT SUM(s.reel) FROM ' . MAIN_DB_PREFIX . 'product_stock s WHERE s.fk_product=p.rowid ) as stock_physique';
 $sql .= $dolibarr_version35 ? ', p.desiredstock' : "";
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
@@ -472,6 +472,10 @@ if ($snom) {
 }
 
 $sql .= ' AND p.tobuy = 1';
+
+$finished = GETPOST('finished');
+if($finished != '' && $finished != '-1') $sql .= ' AND p.finished = '.$finished;
+elseif(!isset($_REQUEST['button_search_x']) && $conf->global->SOFO_DEFAUT_FILTER >= 0) $sql .= ' AND p.finished = '.$conf->global->SOFO_DEFAUT_FILTER;
 
 if (!empty($canvas)) {
     $sql .= ' AND p.canvas = "' . $db->escape($canvas) . '"';
@@ -517,6 +521,8 @@ if($sql2 && $fk_commande > 0){
 }
 
 $justOFforNeededProduct = !empty($conf->global->SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT) && empty($fk_commande);
+$statutarray=array('1' => $langs->trans("Finished"), '0' => $langs->trans("RowMaterial"));
+$form = new Form($db);
 
 if ($resql || $resql2) {
     $num = $db->num_rows($resql);
@@ -626,6 +632,16 @@ if ($resql || $resql2) {
     );
     print_liste_field_titre(
     		$langs->trans('Label'),
+    		'ordercustomer.php',
+    		'p.label',
+    		$param,
+    		'id='.$_REQUEST['id'],
+    		'',
+    		$sortfield,
+    		$sortorder
+    );
+    print_liste_field_titre(
+    		$langs->trans('Nature'),
     		'ordercustomer.php',
     		'p.label',
     		$param,
@@ -747,6 +763,7 @@ if ($resql || $resql2) {
 	
 	$liste_titre = "";
     $liste_titre.= $dolibarr_version35 ? '<td class="liste_titre">&nbsp;</td>' : '';
+	$liste_titre.= '<td class="liste_titre">'.$form->selectarray('finished',$statutarray,(!isset($_REQUEST['button_search_x']) && $conf->global->SOFO_DEFAUT_FILTER != -1) ? $conf->global->SOFO_DEFAUT_FILTER : GETPOST('finished'),1).'</td>';
     $liste_titre.= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>';
 	
 	if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) 
@@ -770,7 +787,6 @@ if ($resql || $resql2) {
     $prod = new Product($db);
 
     $var = True;
-    $form = new Form($db);
 			
 	if($conf->global->SOFO_USE_DELIVERY_TIME) {
 		$form->load_cache_availability();	
@@ -987,6 +1003,8 @@ if ($resql || $resql2) {
                  (!empty($TDemandes) ? $form->textwithpicto($prod->getNomUrl(1), 'Demande(s) de prix en cours :<br />'.implode(', ', $TDemandes), 1, 'help') : $prod->getNomUrl(1)).
                  '</td>'.
                  '<td>' . $objp->label . '</td>';
+
+	        print '<td>'.$statutarray[$objp->finished].'</td>';
 
 				if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
 					print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" >';
