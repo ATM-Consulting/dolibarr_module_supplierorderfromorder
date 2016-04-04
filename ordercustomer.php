@@ -475,7 +475,7 @@ $sql .= ' AND p.tobuy = 1';
 
 $finished = GETPOST('finished');
 if($finished != '' && $finished != '-1') $sql .= ' AND p.finished = '.$finished;
-elseif(!isset($_REQUEST['button_search_x']) && $conf->global->SOFO_DEFAUT_FILTER >= 0) $sql .= ' AND p.finished = '.$conf->global->SOFO_DEFAUT_FILTER;
+elseif(!isset($_REQUEST['button_search_x']) && isset($conf->global->SOFO_DEFAUT_FILTER) && $conf->global->SOFO_DEFAUT_FILTER >= 0) $sql .= ' AND p.finished = '.$conf->global->SOFO_DEFAUT_FILTER;
 
 if (!empty($canvas)) {
     $sql .= ' AND p.canvas = "' . $db->escape($canvas) . '"';
@@ -730,6 +730,8 @@ if ($resql || $resql2) {
     		$sortfield,
     		$sortorder
     );
+
+	print '<td></td>';
 
    	if (!empty($conf->global->FOURN_PRODUCT_AVAILABILITY)) print_liste_field_titre($langs->trans("Availability"));
 	
