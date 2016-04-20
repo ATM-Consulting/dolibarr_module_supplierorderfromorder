@@ -1021,7 +1021,8 @@ if ($resql || $resql2) {
                     $duration =  $regs[1] . ' ' . $langs->trans('DurationDay');
                 } else {
                     $duration = $objp->duration;
-                }-4 >= - 
+                }
+
                 print '<td align="center">'.
                      $duration.
                      '</td>';
@@ -1040,11 +1041,15 @@ if ($resql || $resql2) {
                  '</td>';
 				if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL))
 				{
-					dol_include_once('/of/lib/of.lib.php');
+/*					dol_include_once('/of/lib/of.lib.php');
 					$prod->load_stock();
 					list($qty_to_make, $qty_needed) = _calcQtyOfProductInOf($db, $conf, $prod);
 					$qty = $prod->stock_theorique + $qty_to_make - $qty_needed;
-				
+*/
+					$prod->load_stock();
+
+					$qty_of = $stock_of_needed - $stock_of_tomake;
+					$qty=$prod->stock_theorique - $qty_of;
 					$champs.= '<td align="right">'.$qty.'</td>';
 				}
 				
