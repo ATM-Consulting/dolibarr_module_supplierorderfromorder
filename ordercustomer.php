@@ -105,6 +105,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
     unset($_POST['linecount']);
     if ($linecount > 0) {
         $suppliers = array();
+		//var_dump($linecount);exit;
         for ($i = 0; $i < $linecount; $i++) {
             if(GETPOST('check'.$i, 'alpha') === 'on' && (GETPOST('fourn' . $i, 'int') > 0 || GETPOST('fourn_free' . $i, 'int') > 0)) { //one line
             	
@@ -158,6 +159,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 	        	}
 				//Lignes libres
 				else{
+					//var_dump($_REQUEST);
 					//echo 'ok<br>';
 					$box = $i;
 					$qty = GETPOST('tobuy_free'.$i, 'int');
@@ -165,7 +167,6 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$price = GETPOST('price_free'.$i, 'float');
 					$lineid = GETPOST('lineid_free'.$i, 'int');
 					$fournid = GETPOST('fourn_free'.$i, 'int');
-					
 					$commandeline = new OrderLine($db);
 					$commandeline->fetch($lineid);
 					
@@ -280,7 +281,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 
                         $remise_percent = $lineOrderFetched->remise_percent;
                         if($line->remise_percent > $remise_percent)$remise_percent = $line->remise_percent;
-
+//var_dump($line);
             			$order->updateline(
                             $lineOrderFetched->id,
                             $lineOrderFetched->desc,
@@ -499,7 +500,7 @@ if ($salert == 'on') {
 $sql2 = '';
 //On prend les lignes libre
 if($_REQUEST['id'] && $conf->global->SOFO_ADD_FREE_LINES){
-	$sql2 .= 'SELECT cd.rowid, cd.description, SUM(cd.qty) as qty, cd.product_type, cd.price
+	$sql2 .= 'SELECT cd.rowid, cd.description, cd.qty as qty, cd.product_type, cd.price
 			 FROM '.MAIN_DB_PREFIX.'commandedet as cd
 			 	LEFT JOIN '.MAIN_DB_PREFIX.'commande as c ON (cd.fk_commande = c.rowid)
 			 WHERE c.rowid = '.$_REQUEST['id'].' AND fk_product IS NULL';
@@ -1093,8 +1094,9 @@ if ($resql || $resql2) {
 	
 	//Lignes libre
 	if($resql2){
-		while ($j< min($num, $limit)) {
+		while ($j< min($num2, $limit)) {
 	        $objp = $db->fetch_object($resql2);
+			//var_dump($sql2,$resql2, $objp);
 			if ($objp->product_type == 0) $picto = img_object($langs->trans("ShowProduct"),'product');
 			if ($objp->product_type == 1) $picto = img_object($langs->trans("ShowService"),'service');
 			
@@ -1106,8 +1108,10 @@ if ($resql || $resql2) {
                  '<td>' . $objp->description . '</td>';
 			
 			$picto = img_picto('', './img/no', '', 1);
-			
+
+			//pre($conf->global,1);
 			if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
+				//var_dump('toto');
 				print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" >';
 			}
 		
