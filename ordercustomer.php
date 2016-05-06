@@ -1102,7 +1102,7 @@ if ($resql || $resql2) {
 			
             print '<tr ' . $bc[$var] . '>'.
                  '<td><input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '></td>'.
-                 '<td class="nowrap">'.
+                 '<td>'.
                  $picto." ".$objp->description.
                  '</td>'.
                  '<td>' . $objp->description . '</td>';
@@ -1129,7 +1129,7 @@ if ($resql || $resql2) {
                      $duration.
                      '</td>';
             }
-			
+			print '<td colspan=2></td>';
 			print '<td align="right">'.$picto.'</td>';
 			print '<td align="right">'.$picto.'</td>';
 		    print '<td align="right">'.
@@ -1138,13 +1138,12 @@ if ($resql || $resql2) {
                  '</td>';
 			
 			print '<input type="hidden" name="lineid_free' . $i . '" value="' . $objp->rowid . '" >';
-			print '<td colspan=2></td>';
+			
 			print '<td align="right">
 						<input type="text" name="price_free'.$i.'" value="'.$objp->price.'" size="5" style="text-align:right">€
 						'.$form->select_company((empty($socid)?'':$socid),'fourn_free'.$i,'s.fournisseur = 1',1).'
 				   </td>';
 			print '<td></td>';
-
 	        print '</tr>';
 	        $i++; $j++;
 	    }
