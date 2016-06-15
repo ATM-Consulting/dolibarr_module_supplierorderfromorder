@@ -27,7 +27,7 @@ class ActionsSupplierorderfromorder
         
         	?>
 			<a id="listeProd" class="butAction" href="<?php 
-			echo dol_buildpath('/supplierorderfromorder/ordercustomer.php?id=' . $_REQUEST['id'],2); 
+			echo dol_buildpath('/supplierorderfromorder/ordercustomer.php?id=' . $_REQUEST['id'],1); 
 			?>"><?php echo $langs->trans( 'OrderToSuppliers' ); ?></a>
 			<script type="text/javascript">
 				$(document).ready(function () {
