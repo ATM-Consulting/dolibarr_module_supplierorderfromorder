@@ -104,9 +104,11 @@ if ($action == 'order' && isset($_POST['valid'])) {
     $box = false;
     unset($_POST['linecount']);
     if ($linecount > 0) {
+    	
         $suppliers = array();
 		//var_dump($linecount);exit;
         for ($i = 0; $i < $linecount; $i++) {
+        	
             if(GETPOST('check'.$i, 'alpha') === 'on' && (GETPOST('fourn' . $i, 'int') > 0 || GETPOST('fourn_free' . $i, 'int') > 0)) { //one line
             	
             	//echo GETPOST('tobuy_free'.$i).'<br>';
@@ -164,7 +166,8 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$box = $i;
 					$qty = GETPOST('tobuy_free'.$i, 'int');
 	                $desc = GETPOST('desc'.$i, 'alpha');
-					$price = GETPOST('price_free'.$i, 'float');
+					$product_type = GETPOST('product_type'.$i, 'int');
+					$price = price2num(GETPOST('price_free'.$i));
 					$lineid = GETPOST('lineid_free'.$i, 'int');
 					$fournid = GETPOST('fourn_free'.$i, 'int');
 					$commandeline = new OrderLine($db);
@@ -173,6 +176,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$line = new CommandeFournisseurLigne($db);
                     $line->qty = $qty;
                     $line->desc = $desc;
+					$line->product_type = $product_type;
                     $line->tva_tx = $commandeline->tva_tx;
                     $line->subprice = $price;
                     $line->total_ht = $price * $qty;
@@ -314,6 +318,10 @@ if ($action == 'order' && isset($_POST['valid'])) {
                         $line->fk_prod_fourn_price,
                         null,
                         $line->remise_percent
+                        ,'HT'
+                        ,0
+                        ,$line->product_type
+                        ,$line->info_bits
                     );
 
 				}
@@ -1110,10 +1118,11 @@ if ($resql || $resql2) {
 			$picto = img_picto('', './img/no', '', 1);
 
 			//pre($conf->global,1);
-			if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
+			//if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
 				//var_dump('toto');
 				print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" >';
-			}
+				print '<input type="hidden" name="product_type' . $i . '" value="' . $objp->product_type . '" >';
+		//	}
 		
             if (!empty($conf->service->enabled) && $type == 1) {
                 if (preg_match('/([0-9]+)y/i', $objp->duration, $regs)) {
