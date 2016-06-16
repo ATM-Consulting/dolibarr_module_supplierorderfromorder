@@ -1141,7 +1141,7 @@ if ($resql || $resql2) {
 			
 			print '<td align="right">
 						<input type="text" name="price_free'.$i.'" value="'.$objp->price.'" size="5" style="text-align:right">€
-						'.$form->select_company((empty($socid)?'':$socid),'fourn_free'.$i,'s.fournisseur = 1',1).'
+						'.$form->select_company((empty($socid)?'':$socid),'fourn_free'.$i,'s.fournisseur = 1',1, 0, 0, array(), 0, 'minwidth100 maxwidth300').'
 				   </td>';
 			print '<td></td>';
 	        print '</tr>';
