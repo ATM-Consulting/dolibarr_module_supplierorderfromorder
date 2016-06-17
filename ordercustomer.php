@@ -197,6 +197,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 
         //we now know how many orders we need and what lines they have
         $i = 0;
+		$nb_orders_created = 0;
         $orders = array();
         $suppliersid = array_keys($suppliers);
         foreach ($suppliers as $idsupplier => $supplier) {
@@ -266,7 +267,8 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				if($contact_ship && $conf->global->SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY) $order->add_contact($contact_ship, 'SHIPPING');
 				$order->add_object_linked('commande', $_REQUEST['id']);
 				$newCommande = true;
-
+				
+				$nb_orders_created++;
 			}
 			$order_id = $order->id;
             //trick to know which orders have been generated this way
@@ -367,6 +369,12 @@ if ($action == 'order' && isset($_POST['valid'])) {
         	setEventMessage('coucou', 'mesgs');
         }*/
     }
+
+	if ($nb_orders_created > 0)
+	{
+		setEventMessages($langs->trans('supplierorderfromorder_nb_orders_created', $nb_orders_created), array());
+	}
+
     if ($box === false) {
         setEventMessage($langs->trans('SelectProduct'), 'warnings');
     } else {
@@ -1120,7 +1128,7 @@ if ($resql || $resql2) {
 			//pre($conf->global,1);
 			//if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
 				//var_dump('toto');
-				print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" >';
+				print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" />';
 				print '<input type="hidden" name="product_type' . $i . '" value="' . $objp->product_type . '" >';
 		//	}
 		
