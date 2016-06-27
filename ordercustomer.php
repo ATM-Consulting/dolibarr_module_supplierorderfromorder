@@ -50,7 +50,7 @@ $dolibarr_version35 = strpos(DOL_VERSION, "3.5") !== false;
 if ($user->societe_id) {
     $socid = $user->societe_id;
 }
-$result=restrictedArea($user,'produit|service');
+$result=restrictedArea($user,'produit&supplierorderfromorder');
 
 //checks if a product has been ordered
 
