@@ -19,9 +19,9 @@ class ActionsSupplierorderfromorder
 	 */
 	function formObjectOptions( $parameters, &$object, &$action, $hookmanager )
 	{
-		global $langs;
+		global $user, $langs;
 		
-		if (in_array( 'ordercard', explode( ':', $parameters['context'] ) ) && $object->statut > 0) {
+		if (in_array( 'ordercard', explode( ':', $parameters['context'] ) ) && $object->statut > 0 && !empty($user->rights->supplierorderfromorder->read)) {
 		  $langs->load( 'supplierorderfromorder@supplierorderfromorder' );
         
         
