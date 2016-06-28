@@ -206,6 +206,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 			$sql2 .= ' FROM ' . MAIN_DB_PREFIX . 'commande_fournisseur';
 			$sql2 .= ' WHERE fk_soc = '.$idsupplier;
 			$sql2 .= ' AND fk_statut = 0'; // 0 = DRAFT (Brouillon)
+			$sql2 .= ' AND entity IN('.getEntity().')';
 			$sql2 .= ' ORDER BY rowid DESC';
 			$sql2 .= ' LIMIT 1';
 						
@@ -224,10 +225,10 @@ if ($action == 'order' && isset($_POST['valid'])) {
 			//Si une commande au statut brouillon existe déjà et que l'option SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME
 			if($obj && !$conf->global->SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME) {
 				
-				
 				$order = new CommandeFournisseur($db);
 				$order->fetch($obj->rowid);
 				$order->socid = $idsupplier;
+//				var_dump($obj,$order);exit;
 				
 				// On vérifie qu'il n'existe pas déjà un lien entre la commande client et la commande fournisseur dans la table element_element.
 				// S'il n'y en a pas, on l'ajoute, sinon, on ne l'ajoute pas
@@ -453,7 +454,7 @@ $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
 $sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd ON (p.rowid = cd.fk_product)';
 
 //$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s ON (p.rowid = s.fk_product)';
-$sql .= ' WHERE p.entity IN (' . getEntity("product", 1) . ')';
+$sql .= ' WHERE p.fk_product_type IN (0,1) AND p.entity IN (' . getEntity("product", 1) . ')';
 
 $fk_commande = GETPOST('id','int');
 
@@ -519,7 +520,7 @@ if($_REQUEST['id'] && $conf->global->SOFO_ADD_FREE_LINES){
 	$sql2 .= 'SELECT cd.rowid, cd.description, cd.qty as qty, cd.product_type, cd.price
 			 FROM '.MAIN_DB_PREFIX.'commandedet as cd
 			 	LEFT JOIN '.MAIN_DB_PREFIX.'commande as c ON (cd.fk_commande = c.rowid)
-			 WHERE c.rowid = '.$_REQUEST['id'].' AND fk_product IS NULL';
+			 WHERE c.rowid = '.$_REQUEST['id'].' AND cd.product_type IN(0,1) AND fk_product IS NULL';
 	if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
 		$sql2 .= ' GROUP BY cd.description';
 	}
