@@ -612,6 +612,9 @@ if ($resql || $resql2) {
          '<input type="hidden" name="linecount" value="' . ($num+$num2) . '">'.
          '<input type="hidden" name="action" value="order">'.
          '<input type="hidden" name="fk_commande" value="' . GETPOST('fk_commande','int'). '">'.
+         '<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need'). '">'.
+         
+         '<div style="text-align:right"><a href="'.$_SERVER["PHP_SELF"].'?'.$_SERVER["QUERY_STRING"].'&show_stock_no_need=yes">'.$langs->trans('ShowLineEvenIfStockIsSuffisant').'</a></div>'.
          '<table class="liste" width="100%">';
 
     if($conf->global->SOFO_USE_DELIVERY_TIME) {
@@ -866,7 +869,7 @@ if ($resql || $resql2) {
     				$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
                 }
     			else if ($conf->global->USE_VIRTUAL_STOCK || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
-                    //compute virtual stock
+                    //compute virtual stockshow_stock_no_need
                     $prod->fetch($prod->id);
     				
     				if((!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK)
@@ -1011,7 +1014,7 @@ if ($resql || $resql2) {
 			
 			if($stocktobuy < 0) $stocktobuy = 0;
           	
-			if($stocktobuy == 0) {
+			if($stocktobuy == 0 && GETPOST('show_stock_no_need')!='yes') {
 				$i++;
 				continue;
 			}
