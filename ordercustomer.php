@@ -43,8 +43,8 @@ $langs->load("orders");
 $langs->load("supplierorderfromorder@supplierorderfromorder");
 
 $dolibarr_version35 = false;
-$version= explode('.',DOL_VERSION);
-if(($version[0]>3)||($version[0] == '3' && $version[1]>=5)){
+
+if((float)DOL_VERSION >= 3.5){
 	$dolibarr_version35 = true;
 }
 /*echo "<form name=\"formCreateSupplierOrder\" method=\"post\" action=\"ordercustomer.php\">";*/
