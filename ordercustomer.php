@@ -42,8 +42,11 @@ $langs->load("stocks");
 $langs->load("orders");
 $langs->load("supplierorderfromorder@supplierorderfromorder");
 
-$dolibarr_version35 = strpos(DOL_VERSION, "3.5") !== false;
-
+$dolibarr_version35 = false;
+$version= explode('.',DOL_VERSION);
+if(($version[0]>3)||($version[0] == '3' && $version[1]>=5)){
+	$dolibarr_version35 = true;
+}
 /*echo "<form name=\"formCreateSupplierOrder\" method=\"post\" action=\"ordercustomer.php\">";*/
 
 // Security check
@@ -510,7 +513,7 @@ if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
 //$sql .= ' HAVING p.desiredstock > SUM(COALESCE(s.reel, 0))';
 //$sql .= ' HAVING p.desiredstock > 0';
 if ($salert == 'on') {
-    $sql .= ' HAVING SUM(COALESCE(s.reel, 0)) < p.seuil_stock_alerte AND p.seuil_stock_alerte is not NULL';
+    $sql .= ' HAVING SUM(COALESCE(stock_physique, 0)) < p.seuil_stock_alerte AND p.seuil_stock_alerte is not NULL';
     $alertchecked = 'checked="checked"';
 }
 
@@ -697,7 +700,8 @@ if ($resql || $resql2) {
 	    		$sortorder
 	    );
 	}
-    if ($conf->global->USE_VIRTUAL_STOCK) 
+
+    if ($conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) 
     {
         $stocklabel = $langs->trans('VirtualStock');
     }
@@ -785,8 +789,8 @@ if ($resql || $resql2) {
     }
 	
 	$liste_titre = "";
-    $liste_titre.= $dolibarr_version35 ? '<td class="liste_titre">&nbsp;</td>' : '';
 	$liste_titre.= '<td class="liste_titre">'.$form->selectarray('finished',$statutarray,(!isset($_REQUEST['button_search_x']) && $conf->global->SOFO_DEFAUT_FILTER != -1) ? $conf->global->SOFO_DEFAUT_FILTER : GETPOST('finished'),1).'</td>';
+    $liste_titre.= $dolibarr_version35 ? '<td class="liste_titre">&nbsp;</td>' : '';
     $liste_titre.= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>';
 	
 	if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) 
@@ -871,7 +875,7 @@ if ($resql || $resql2) {
     			else if ($conf->global->USE_VIRTUAL_STOCK || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
                     //compute virtual stockshow_stock_no_need
                     $prod->fetch($prod->id);
-    				
+					$prod->load_stock();
     				if((!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK)
                             && empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)) {
     	                $result=$prod->load_stats_commande(0, '1,2');
@@ -913,9 +917,11 @@ if ($resql || $resql2) {
                     }
     				
                 	$help_stock.=', '.$langs->trans('SupplierOrders').' : '.(float)$stock_commande_fournisseur;
-                
-                    $stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
-    				
+                	if($conf->global->SOFO_INCLUDE_ENTRIES ){
+                    	$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
+					} else {
+						$stock = $prod->stock_theorique - $stock_commande_client;
+					}
                 } else {
                 	    
                     if(empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)) {
