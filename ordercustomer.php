@@ -701,7 +701,7 @@ if ($resql || $resql2) {
 	    );
 	}
 
-    if ($conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) 
+    if ($conf->global->USE_VIRTUAL_STOCK) 
     {
         $stocklabel = $langs->trans('VirtualStock');
     }
@@ -875,7 +875,6 @@ if ($resql || $resql2) {
     			else if ($conf->global->USE_VIRTUAL_STOCK || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
                     //compute virtual stockshow_stock_no_need
                     $prod->fetch($prod->id);
-					$prod->load_stock();
     				if((!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK)
                             && empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)) {
     	                $result=$prod->load_stats_commande(0, '1,2');
@@ -905,24 +904,23 @@ if ($resql || $resql2) {
 						$resqlQ = $db->query($sqlQ);
 						
     					$stock_commande_fournisseur = $prod->stats_commande_fournisseur['qty'];
+						
 						if ($row = $db->fetch_object($resqlQ)) $stock_commande_fournisseur -= $row->qty;
 						
     				}
     				else{
     					$stock_commande_fournisseur = 0;
-    				}
+						
+					}
                     
                     if($stock_commande_client>0) {
                         $help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;    
                     }
     				
                 	$help_stock.=', '.$langs->trans('SupplierOrders').' : '.(float)$stock_commande_fournisseur;
-                	if($conf->global->SOFO_INCLUDE_ENTRIES ){
+                	
                     	$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
-					} else {
-						$stock = $prod->stock_theorique - $stock_commande_client;
-					}
-                } else {
+				 } else {
                 	    
                     if(empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)) {
                         $stock_commande_client = $objp->qty;
@@ -1072,9 +1070,7 @@ if ($resql || $resql2) {
 					$prod->load_stock();
 					list($qty_to_make, $qty_needed) = _calcQtyOfProductInOf($db, $conf, $prod);
 					$qty = $prod->stock_theorique + $qty_to_make - $qty_needed;
-*/
-					$prod->load_stock();
-
+*/					$prod->load_stock();
 					$qty_of = $stock_of_needed - $stock_of_tomake;
 					$qty=$prod->stock_theorique - $qty_of;
 					$champs.= '<td align="right">'.$qty.'</td>';

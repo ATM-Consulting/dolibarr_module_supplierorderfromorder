@@ -20,4 +20,3 @@ SOFO_DO_NOT_USE_CUSTOMER_ORDER=Ne pas prendre en compte les commandes fournisseu
 SOFO_DEFAUT_FILTER=Filtrer par défaut sur les produits de nature
 ShowLineEvenIfStockIsSuffisant=Inclure les lignes avec un stock suffisant 
 supplierorderfromorder_nb_orders_created=Nombre de commandes fournisseurs créées : %s
-IncludeEntries= Tenir compte des ventilations des fournisseurs
