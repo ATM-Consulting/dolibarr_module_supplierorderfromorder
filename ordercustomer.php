@@ -42,8 +42,11 @@ $langs->load("stocks");
 $langs->load("orders");
 $langs->load("supplierorderfromorder@supplierorderfromorder");
 
-$dolibarr_version35 = strpos(DOL_VERSION, "3.5") !== false;
+$dolibarr_version35 = false;
 
+if((float)DOL_VERSION >= 3.5){
+	$dolibarr_version35 = true;
+}
 /*echo "<form name=\"formCreateSupplierOrder\" method=\"post\" action=\"ordercustomer.php\">";*/
 
 // Security check
@@ -510,7 +513,7 @@ if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
 //$sql .= ' HAVING p.desiredstock > SUM(COALESCE(s.reel, 0))';
 //$sql .= ' HAVING p.desiredstock > 0';
 if ($salert == 'on') {
-    $sql .= ' HAVING SUM(COALESCE(s.reel, 0)) < p.seuil_stock_alerte AND p.seuil_stock_alerte is not NULL';
+    $sql .= ' HAVING SUM(COALESCE(stock_physique, 0)) < p.seuil_stock_alerte AND p.seuil_stock_alerte is not NULL';
     $alertchecked = 'checked="checked"';
 }
 
@@ -697,6 +700,7 @@ if ($resql || $resql2) {
 	    		$sortorder
 	    );
 	}
+
     if ($conf->global->USE_VIRTUAL_STOCK) 
     {
         $stocklabel = $langs->trans('VirtualStock');
@@ -785,8 +789,8 @@ if ($resql || $resql2) {
     }
 	
 	$liste_titre = "";
-    $liste_titre.= $dolibarr_version35 ? '<td class="liste_titre">&nbsp;</td>' : '';
 	$liste_titre.= '<td class="liste_titre">'.$form->selectarray('finished',$statutarray,(!isset($_REQUEST['button_search_x']) && $conf->global->SOFO_DEFAUT_FILTER != -1) ? $conf->global->SOFO_DEFAUT_FILTER : GETPOST('finished'),1).'</td>';
+    $liste_titre.= $dolibarr_version35 ? '<td class="liste_titre">&nbsp;</td>' : '';
     $liste_titre.= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>';
 	
 	if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) 
@@ -871,7 +875,6 @@ if ($resql || $resql2) {
     			else if ($conf->global->USE_VIRTUAL_STOCK || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
                     //compute virtual stockshow_stock_no_need
                     $prod->fetch($prod->id);
-    				
     				if((!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK)
                             && empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)) {
     	                $result=$prod->load_stats_commande(0, '1,2');
@@ -901,22 +904,23 @@ if ($resql || $resql2) {
 						$resqlQ = $db->query($sqlQ);
 						
     					$stock_commande_fournisseur = $prod->stats_commande_fournisseur['qty'];
+						
 						if ($row = $db->fetch_object($resqlQ)) $stock_commande_fournisseur -= $row->qty;
 						
     				}
     				else{
     					$stock_commande_fournisseur = 0;
-    				}
+						
+					}
                     
                     if($stock_commande_client>0) {
                         $help_stock.=', '.$langs->trans('Orders').' : '.(float)$stock_commande_client;    
                     }
     				
                 	$help_stock.=', '.$langs->trans('SupplierOrders').' : '.(float)$stock_commande_fournisseur;
-                
-                    $stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
-    				
-                } else {
+                	
+                    	$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
+				 } else {
                 	    
                     if(empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)) {
                         $stock_commande_client = $objp->qty;
@@ -1066,9 +1070,7 @@ if ($resql || $resql2) {
 					$prod->load_stock();
 					list($qty_to_make, $qty_needed) = _calcQtyOfProductInOf($db, $conf, $prod);
 					$qty = $prod->stock_theorique + $qty_to_make - $qty_needed;
-*/
-					$prod->load_stock();
-
+*/					$prod->load_stock();
 					$qty_of = $stock_of_needed - $stock_of_tomake;
 					$qty=$prod->stock_theorique - $qty_of;
 					$champs.= '<td align="right">'.$qty.'</td>';
