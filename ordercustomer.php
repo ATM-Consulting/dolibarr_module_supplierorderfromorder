@@ -232,7 +232,9 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				$order->fetch($obj->rowid);
 				$order->socid = $idsupplier;
 //				var_dump($obj,$order);exit;
-				
+				if(!empty(GETPOST('projectid'))){
+					$order->fk_project = GETPOST('projectid');
+				}
 				// On vérifie qu'il n'existe pas déjà un lien entre la commande client et la commande fournisseur dans la table element_element.
 				// S'il n'y en a pas, on l'ajoute, sinon, on ne l'ajoute pas
 				$order->fetchObjectLinked('', 'commande', $order->id, 'order_supplier');
@@ -249,7 +251,6 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$order->cond_reglement_code = $commandeClient->cond_reglement_code;
 					$order->date_livraison = $commandeClient->date_livraison;
 				}
-				
 				$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
 				$newCommande = false;
 			} else {
@@ -258,7 +259,9 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				
 				$order = new CommandeFournisseur($db);
 				$order->socid = $idsupplier;
-				
+				if(!empty(GETPOST('projectid'))){
+					$order->fk_project = GETPOST('projectid');
+				}
 				if($conf->global->SOFO_GET_INFOS_FROM_ORDER){
 					$order->mode_reglement_code = $commandeClient->mode_reglement_code;
 					$order->mode_reglement_id = $commandeClient->mode_reglement_id;
@@ -606,7 +609,7 @@ if ($resql || $resql2) {
 		}
     }
 
-    print '<form action="'.$_SERVER['PHP_SELF'].'?id='.$_REQUEST['id'].'" method="post" name="formulaire">'.
+    print '<form action="'.$_SERVER['PHP_SELF'].'?id='.$_REQUEST['id'].'&projectid='.$_REQUEST['projectid'].'" method="post" name="formulaire">'.
          '<input type="hidden" name="id" value="' .$_REQUEST['id'] . '">'.
          '<input type="hidden" name="token" value="' .$_SESSION['newtoken'] . '">'.
          '<input type="hidden" name="sortfield" value="' . $sortfield . '">'.
