@@ -115,6 +115,20 @@ print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">'
 print '</form>';
 print '</td></tr>';
 
+// Create distinct supplier order from order depending of project 
+$var=!$var;
+print '<tr '.$bc[$var].'>';
+print '<td>'.$langs->trans("CreateDistinctSupplierOrderFromOrderDependingOfProject").'</td>';
+print '<td align="center" width="20">&nbsp;</td>';
+print '<td align="right" width="300">';
+print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
+print '<input type="hidden" name="action" value="set_SOFO_DISTINCT_ORDER_BY_PROJECT">';
+print $form->selectyesno("SOFO_DISTINCT_ORDER_BY_PROJECT",$conf->global->SOFO_DISTINCT_ORDER_BY_PROJECT,1);
+print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
+print '</form>';
+print '</td></tr>';
+
 // Import Shipping contact in supplier order
 $var=!$var;
 print '<tr '.$bc[$var].'>';

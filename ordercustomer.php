@@ -209,10 +209,14 @@ if ($action == 'order' && isset($_POST['valid'])) {
 			$sql2 .= ' FROM ' . MAIN_DB_PREFIX . 'commande_fournisseur';
 			$sql2 .= ' WHERE fk_soc = '.$idsupplier;
 			$sql2 .= ' AND fk_statut = 0'; // 0 = DRAFT (Brouillon)
+			if(!empty($conf->global->SOFO_DISTINCT_ORDER_BY_PROJECT) && !empty(GETPOST('projectid'))){
+				$sql2 .= ' AND fk_projet = '.GETPOST('projectid'); 
+			}
+			
 			$sql2 .= ' AND entity IN('.getEntity().')';
 			$sql2 .= ' ORDER BY rowid DESC';
 			$sql2 .= ' LIMIT 1';
-						
+			
 			$res = $db->query($sql2);
 			$obj = $db->fetch_object($res);
 			
