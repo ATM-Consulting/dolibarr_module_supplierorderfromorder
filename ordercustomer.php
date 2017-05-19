@@ -329,7 +329,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
                         $line->fk_product,
                         // We need to pass fk_prod_fourn_price to get the right price.
                         $line->fk_prod_fourn_price,
-                        null,
+                        $line->ref_fourn,
                         $line->remise_percent
                         ,'HT'
                         ,0
