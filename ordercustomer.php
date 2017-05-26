@@ -457,7 +457,7 @@ $title = $langs->trans('ProductsToOrder');
 
 $sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
-$sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte, p.finished,';
+$sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte, p.finished, cd.rang,';
 $sql .= ' ( SELECT SUM(s.reel) FROM ' . MAIN_DB_PREFIX . 'product_stock s WHERE s.fk_product=p.rowid ) as stock_physique';
 $sql .= $dolibarr_version35 ? ', p.desiredstock' : "";
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
@@ -508,9 +508,9 @@ elseif(!isset($_REQUEST['button_search_x']) && isset($conf->global->SOFO_DEFAUT_
 if (!empty($canvas)) {
     $sql .= ' AND p.canvas = "' . $db->escape($canvas) . '"';
 }
-$sql .= ' GROUP BY p.rowid, p.ref, p.label, p.price';
+$sql .= ' GROUP BY p.rowid, p.ref, p.label, cd.description, p.price';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type, p.tms';
-$sql .= ', p.duration, p.tobuy, p.seuil_stock_alerte';
+$sql .= ', p.duration, p.tobuy, p.seuil_stock_alerte, cd.rang';
 //$sql .= ', p.desiredstock'; 
 //$sql .= ', s.fk_product';
 
