@@ -237,7 +237,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				$order->fetch($obj->rowid);
 				$order->socid = $idsupplier;
 //				var_dump($obj,$order);exit;
-				if(!empty(GETPOST('projectid'))){
+				if(!empty($projectid)){
 					$order->fk_project = GETPOST('projectid');
 				}
 				// On vérifie qu'il n'existe pas déjà un lien entre la commande client et la commande fournisseur dans la table element_element.
@@ -264,8 +264,8 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				
 				$order = new CommandeFournisseur($db);
 				$order->socid = $idsupplier;
-				if(!empty(GETPOST('projectid'))){
-					$order->fk_project = GETPOST('projectid');
+				if(!empty($projectid)){
+					$order->fk_project = $projectid;
 				}
 				if($conf->global->SOFO_GET_INFOS_FROM_ORDER){
 					$order->mode_reglement_code = $commandeClient->mode_reglement_code;
