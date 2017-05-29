@@ -203,14 +203,15 @@ if ($action == 'order' && isset($_POST['valid'])) {
 		$nb_orders_created = 0;
         $orders = array();
         $suppliersid = array_keys($suppliers);
+		$projectid = GETPOST('projectid');
         foreach ($suppliers as $idsupplier => $supplier) {
 			
         	$sql2 = 'SELECT rowid, ref';
 			$sql2 .= ' FROM ' . MAIN_DB_PREFIX . 'commande_fournisseur';
 			$sql2 .= ' WHERE fk_soc = '.$idsupplier;
 			$sql2 .= ' AND fk_statut = 0'; // 0 = DRAFT (Brouillon)
-			if(!empty($conf->global->SOFO_DISTINCT_ORDER_BY_PROJECT) && !empty(GETPOST('projectid'))){
-				$sql2 .= ' AND fk_projet = '.GETPOST('projectid'); 
+			if(!empty($conf->global->SOFO_DISTINCT_ORDER_BY_PROJECT) && !empty($projectid)){
+				$sql2 .= ' AND fk_projet = '.$projectid; 
 			}
 			
 			$sql2 .= ' AND entity IN('.getEntity().')';
