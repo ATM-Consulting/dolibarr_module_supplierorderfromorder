@@ -62,7 +62,7 @@ class modSupplierorderfromorder extends DolibarrModules
         // (where XXX is value of numeric property 'numero' of module)
         $this->description = "Module commande fournisseur à partir d'une commande client";
         // Possible values for version are: 'development', 'experimental' or version
-        $this->version = '1.5.4';
+        $this->version = '1.5.5';
         // Key used in llx_const table to save module status enabled/disabled
         // (where MYMODULE is value of property name of module in uppercase)
         $this->const_name = 'MAIN_MODULE_' . strtoupper($this->name);
@@ -127,14 +127,14 @@ class modSupplierorderfromorder extends DolibarrModules
         // Array to add new pages in new tabs
         // Example:
         $this->tabs = array();
-       
+
         // Dictionnaries
         if (! isset($conf->ordersupplierfromorder->enabled)) {
             $conf->ordersupplierfromorder=new stdClass();
             $conf->ordersupplierfromorder->enabled = 0;
         }
         $this->dictionnaries = array();
-        
+
 
         // Boxes
         // Add here list of php file(s) stored in core/boxes that contains class to show a box.
@@ -150,7 +150,7 @@ class modSupplierorderfromorder extends DolibarrModules
         // Permissions
         $this->rights = array(); // Permission array used by this module
         $r = 0;
-		
+
         $this->rights[$r][0] = $this->numero + $r;  // Permission id (must not be already used)
         $this->rights[$r][1] = 'Convertir les commandes clients en commandes fournisseurs';  // Permission label
         $this->rights[$r][3] = 1;                   // Permission by default for new user (0/1)
@@ -160,7 +160,7 @@ class modSupplierorderfromorder extends DolibarrModules
         // Main menu entries
         $this->menus = array(); // List of menus to add
         $r = 0;
-		
+
 		$this->menu[]=array(   'fk_menu'=>'fk_mainmenu=of',     // Use r=value where r is index key used for the parent menu entry (higher parent must be a top menu entry)
             'type'=>'left',         // This is a Left menu entry
             'titre'=>'ProductsToOrder',
@@ -171,12 +171,12 @@ class modSupplierorderfromorder extends DolibarrModules
             'position'=>300,
             'target'=>'',
             'user'=>2);
-		
+
 
         // Exports
         $r = 1;
 
-      
+
     }
 
     /**
