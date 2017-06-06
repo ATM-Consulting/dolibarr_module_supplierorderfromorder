@@ -24,12 +24,12 @@ if (preg_match('/set_(.*)/',$action,$reg))
 	$code=$reg[1];
 	if (dolibarr_set_const($db, $code, GETPOST($code), 'chaine', 0, '', $conf->entity) > 0)
 	{
-		
+
 		if($code=='SOFO_USE_DELIVERY_TIME' && GETPOST($code) == 1) {
-			
+
 			dolibarr_set_const($db,'FOURN_PRODUCT_AVAILABILITY',1);
 		}
-		
+
 		header("Location: ".$_SERVER["PHP_SELF"]);
 		exit;
 	}
@@ -38,7 +38,7 @@ if (preg_match('/set_(.*)/',$action,$reg))
 		dol_print_error($db);
 	}
 }
-	
+
 if (preg_match('/del_(.*)/',$action,$reg))
 {
 	$code=$reg[1];
@@ -101,7 +101,7 @@ print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">'
 print '</form>';
 print '</td></tr>';
 
-// Create identical supplier order to order 
+// Create identical supplier order to order
 $var=!$var;
 print '<tr '.$bc[$var].'>';
 print '<td>'.$langs->trans("AddFreeLinesInSupplierOrder").'</td>';
@@ -115,7 +115,24 @@ print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">'
 print '</form>';
 print '</td></tr>';
 
-// Create distinct supplier order from order depending of project 
+if (!empty($conf->global->SOFO_ADD_FREE_LINES)) {
+	//Use cost price as buying price for free lines
+	$var=!$var;
+	print '<tr '.$bc[$var].'>';
+	print '<td>'.$langs->trans("UseCostPriceAsBuyingPrice").'</td>';
+	print '<td align="center" width="20">&nbsp;</td>';
+	print '<td align="right" width="300">';
+	print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+	print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
+	print '<input type="hidden" name="action" value="set_SOFO_COST_PRICE_AS_BUYING">';
+	print $form->selectyesno("SOFO_COST_PRICE_AS_BUYING",$conf->global->SOFO_COST_PRICE_AS_BUYING,1);
+	print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
+	print '</form>';
+	print '</td></tr>';
+}
+
+
+// Create distinct supplier order from order depending of project
 $var=!$var;
 print '<tr '.$bc[$var].'>';
 print '<td>'.$langs->trans("CreateDistinctSupplierOrderFromOrderDependingOfProject").'</td>';
