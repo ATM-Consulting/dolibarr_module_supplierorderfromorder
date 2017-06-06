@@ -21,4 +21,4 @@ SOFO_DEFAUT_FILTER=Filtrer par défaut sur les produits de nature
 ShowLineEvenIfStockIsSuffisant=Inclure les lignes avec un stock suffisant 
 supplierorderfromorder_nb_orders_created=Nombre de commandes fournisseurs créées : %s
 CreateDistinctSupplierOrderFromOrderDependingOfProject=Créer des commandes fournisseurs distinctes si les projets des commandes clients sont différents
-UseCostPriceAsBuyingPrice=Utilisé le prix de reviens comme prix d'achat pour les lignes de type libres
+UseCostPriceAsBuyingPrice=Utiliser le prix de reviens comme prix d'achat pour les lignes de type libres
