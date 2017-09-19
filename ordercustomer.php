@@ -214,7 +214,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				$sql2 .= ' AND fk_projet = '.$projectid;
 			}
 
-			$sql2 .= ' AND entity IN('.getEntity().')';
+			$sql2 .= ' AND entity IN('.getEntity('commande_fournisseur').')';
 			$sql2 .= ' ORDER BY rowid DESC';
 			$sql2 .= ' LIMIT 1';
 
