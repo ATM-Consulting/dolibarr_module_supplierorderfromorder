@@ -509,9 +509,9 @@ elseif(!isset($_REQUEST['button_search_x']) && isset($conf->global->SOFO_DEFAUT_
 if (!empty($canvas)) {
     $sql .= ' AND p.canvas = "' . $db->escape($canvas) . '"';
 }
-$sql .= ' GROUP BY p.rowid, p.ref, p.label, cd.description, p.price';
+$sql .= ' GROUP BY p.rowid, p.ref, p.label, p.price';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type, p.tms';
-$sql .= ', p.duration, p.tobuy, p.seuil_stock_alerte, cd.rang';
+$sql .= ', p.duration, p.tobuy, p.seuil_stock_alerte';
 //$sql .= ', p.desiredstock';
 //$sql .= ', s.fk_product';
 
