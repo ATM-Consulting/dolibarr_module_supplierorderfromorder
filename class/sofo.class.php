@@ -24,7 +24,7 @@ class TSOFO {
 	static function getMinAvailability($fk_product, $qty) {
 	global $db,$form;
 		
-		$sql = "SELECT fk_availability 
+		$sql = "SELECT fk_availability".((float)DOL_VERSION>5 ? ',delivery_time_days' : '')." 
 				FROM ".MAIN_DB_PREFIX."product_fournisseur_price
 				WHERE fk_product=". $fk_product ." AND quantity <= ".$qty;
 				
@@ -38,9 +38,12 @@ class TSOFO {
 		}
 		
 		while($obj_availability = $db->fetch_object($res_av)) {
-			$av_code = $form->cache_availability[$obj_availability->fk_availability] ; 
-			$nb_day = self::getDayFromAvailabilityCode($av_code['code']);
 			
+			if(!empty($obj_availability->delivery_time_days))$nb_day = $obj_availability->delivery_time_days;
+			else {
+				$av_code = $form->cache_availability[$obj_availability->fk_availability] ; 
+				$nb_day = self::getDayFromAvailabilityCode($av_code['code']);
+			}
 			if($min === false || $nb_day<$min) $min = $nb_day;
 			
 		}
