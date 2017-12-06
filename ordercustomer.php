@@ -68,6 +68,7 @@ $salert = GETPOST('salert', 'alpha');
 $sortfield = GETPOST('sortfield','alpha');
 $sortorder = GETPOST('sortorder','alpha');
 $page = GETPOST('page','int');
+$selectedFourn = GETPOST('useSameSupplier');
 
 if (!$sortfield) {
     $sortfield = 'cd.rang';
@@ -764,7 +765,6 @@ if ($resql || $resql2) {
     		$sortorder
     );
 
-	print '<td></td>';
 
    	if (!empty($conf->global->FOURN_PRODUCT_AVAILABILITY)) print_liste_field_titre($langs->trans("Availability"));
 
@@ -774,10 +774,11 @@ if ($resql || $resql2) {
     		'',
     		$param,
     		'id='.$_REQUEST['id'],
-    		'align="right"',
+    		'align="center"',
     		$sortfield,
     		$sortorder
     );
+	print '<td></td>';
     print '</tr>'.
 
 	    // Lignes des champs de filtre
@@ -827,8 +828,10 @@ if ($resql || $resql2) {
 		$form->load_cache_availability();
 		$limit = 999999;
 	}
-
-    while ($i < min($num, $limit)) {
+	
+	$TAvailableSuppliers = array();
+    
+	while ($i < min($num, $limit)) {
     	$objp = $db->fetch_object($resql);
 //if($objp->rowid == 4666) { var_dump($objp); }
 
@@ -850,10 +853,6 @@ if ($resql || $resql2) {
                     }
                 }
             }
-
-
-
-
 
             $prod->ref = $objp->ref;
             $prod->id = $objp->rowid;
@@ -1060,11 +1059,7 @@ if ($resql || $resql2) {
                      $duration.
                      '</td>';
             }
-
-
-
-
-
+			
             //print $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : "".
 
             	$champs = "";
@@ -1100,12 +1095,15 @@ if ($resql || $resql2) {
 					$champs.= '<td>'.($nb_day == 0 ? $langs->trans('Unknown') : $nb_day.' '.$langs->trans('Days')).'</td>';
 
 				}
-
-
-
-                 $champs.='<td align="right">'.
-                 $form->select_product_fourn_price($prod->id, 'fourn'.$i, 1).
-                 '</td>';
+				
+				if(empty($selectedFourn)) $selectedFourn = 1;
+				
+                $champs.='<td align="right">'.
+                $form->select_product_fourn_price($prod->id, 'fourn'.$i, $selectedFourn).
+                '</td>';
+				 
+				 $TAvailableSuppliers[] = $prod->list_suppliers();
+				 
 				print $champs;
 
        if($conf->of->enabled && $user->rights->of->of->write) {
@@ -1121,7 +1119,7 @@ if ($resql || $resql2) {
 
         $i++;
     }
-
+	
 	//Lignes libre
 	if($resql2){
 		while ($j< min($num2, $limit)) {
@@ -1179,15 +1177,41 @@ if ($resql || $resql2) {
 	        $i++; $j++;
 	    }
     }
-
-    $value = $langs->trans("GenerateSupplierOrder");
+	
+	$TCommonSupplier = $TAvailableSuppliers[0];
+	
+	$isCommonSupplier = true;
+	
+	foreach($TAvailableSuppliers as $Ttemp) {
+		$res = array_intersect($TCommonSupplier, $Ttemp);
+		if(empty($res)) $isCommonSupplier = false;
+		$TCommonSupplier = $res;
+		if(empty($TCommonSupplier)) $TCommonSupplier = $Ttemp;
+	}
+	
+	$TFourn = array(0 => '');
+	foreach($TCommonSupplier as $k => $idFourn) {
+		$fourn = new Fournisseur($db);
+		$fourn->fetch($idFourn);
+		$TFourn[$idFourn] = $fourn->nom;
+	}
+	
     print '</table>'.
-         '<table width="100%" style="margin-top:15px;">'.
-         '<tr><td align="right">'.
-         '<input class="butAction" type="submit" name="valid" value="' . $value . '">'.
+         '<table width="100%" style="margin-top:15px;">';
+	
+	if($isCommonSupplier) {
+		print '<tr><td align="right">';
+		print '<form action="?" method="POST">';
+		print $form->selectarray('useSameSupplier', $TFourn).'&nbsp;';
+		print '<input class="butAction" type="submit" id="setSupplier" name="setSupplier" value="'.$langs->trans('SelectSameSupplier').'" />';
+		print '</form></td></tr>';
+	}
+	
+	$value = $langs->trans("GenerateSupplierOrder");
+    print '<tr><td align="right">'.
+		 '<input class="butAction" type="submit" name="valid" value="' . $value . '">'.
          '</td></tr></table>'.
          '</form>';
-
 
     $db->free($resql);
 print ' <script type="text/javascript">
@@ -1250,7 +1274,6 @@ print ' <script type="text/javascript">
        });
 
     });
-
 
 </script>
 <?php
