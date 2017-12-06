@@ -24,6 +24,13 @@
  */
 
 require 'config.php';
+
+ini_set('memory_limit','1024M');
+set_time_limit(0);
+
+ini_set('display_errors', 1);
+//error_reporting(E_ALL);
+
 dol_include_once('/product/class/product.class.php');
 dol_include_once('/core/class/html.formother.class.php');
 dol_include_once('/core/class/html.form.class.php');
@@ -541,7 +548,7 @@ $sql .= $db->order($sortfield,$sortorder);
 if(!$conf->global->SOFO_USE_DELIVERY_TIME) $sql .= $db->plimit($limit + 1, $offset);
 $resql = $db->query($sql);
 
-if(isset($_REQUEST['DEBUG'])) {print $sql;exit;}
+if(isset($_REQUEST['DEBUG']) || $resql===false) {print $sql;exit;}
 
 if($sql2 && $fk_commande > 0){
 	$sql2 .= $db->order($sortfield,$sortorder);
@@ -966,6 +973,26 @@ if ($resql || $resql2) {
 			// On regarde s'il existe une demande de prix en cours pour ce produit
 			$TDemandes = array();
 
+			if(DOL_VERSION>=6) {
+
+				if(!empty($conf->supplier_proposal->enabled)) {
+
+                                $q = 'SELECT a.ref
+                                                FROM '.MAIN_DB_PREFIX.'supplier_proposal a
+                                                INNER JOIN '.MAIN_DB_PREFIX.'supplier_proposaldet d on (d.fk_supplier_proposal=a.rowid)
+                                                WHERE a.fk_statut = 1
+                                                AND d.fk_product = '.$prod->id;
+
+                                $qres = $db->query($q);
+
+                                while($res = $db->fetch_object($qres)) $TDemandes[] = $res->ref;
+                        
+                        	}
+
+
+			}
+			else {
+
 			if($conf->askpricesupplier->enabled) {
 
 				$q = 'SELECT a.ref
@@ -977,8 +1004,9 @@ if ($resql || $resql2) {
 				$qres = $db->query($q);
 
 				while($res = $db->fetch_object($qres)) $TDemandes[] = $res->ref;
-
-          	}
+			
+          		}
+			}
 
           	// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :
 
