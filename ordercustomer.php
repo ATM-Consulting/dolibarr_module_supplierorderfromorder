@@ -69,7 +69,6 @@ $sortfield = GETPOST('sortfield','alpha');
 $sortorder = GETPOST('sortorder','alpha');
 $page = GETPOST('page','int');
 $selectedFourn = GETPOST('useSameSupplier');
-if(empty($selectedFourn)) $selectedFourn = 1;
 
 if (!$sortfield) {
     $sortfield = 'cd.rang';
