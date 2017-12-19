@@ -69,6 +69,7 @@ $sortfield = GETPOST('sortfield','alpha');
 $sortorder = GETPOST('sortorder','alpha');
 $page = GETPOST('page','int');
 $selectedFourn = GETPOST('useSameSupplier');
+if(empty($selectedFourn)) $selectedFourn = 1;
 
 if (!$sortfield) {
     $sortfield = 'cd.rang';
@@ -1096,8 +1097,6 @@ if ($resql || $resql2) {
 
 				}
 				
-				if(empty($selectedFourn)) $selectedFourn = 1;
-				
                 $champs.='<td align="right">'.
                 $form->select_product_fourn_price($prod->id, 'fourn'.$i, $selectedFourn).
                 '</td>';
@@ -1184,11 +1183,12 @@ if ($resql || $resql2) {
 	
 	foreach($TAvailableSuppliers as $Ttemp) {
 		$res = array_intersect($TCommonSupplier, $Ttemp);
-		if(empty($res)) $isCommonSupplier = false;
+		if(empty($res)) $isCommonSupplier = false;	// Aucun fournisseurs communs pour ces produits
 		$TCommonSupplier = $res;
 		if(empty($TCommonSupplier)) $TCommonSupplier = $Ttemp;
 	}
 	
+	// Construction du tableau des fournisseurs communs
 	$TFourn = array(0 => '');
 	foreach($TCommonSupplier as $k => $idFourn) {
 		$fourn = new Fournisseur($db);
@@ -1198,14 +1198,19 @@ if ($resql || $resql2) {
 	
     print '</table>'.
          '<table width="100%" style="margin-top:15px;">';
+	print '<tr><td align="right">';
 	
 	if($isCommonSupplier) {
-		print '<tr><td align="right">';
 		print '<form action="?" method="POST">';
 		print $form->selectarray('useSameSupplier', $TFourn).'&nbsp;';
 		print '<input class="butAction" type="submit" id="setSupplier" name="setSupplier" value="'.$langs->trans('SelectSameSupplier').'" />';
-		print '</form></td></tr>';
+		print '</form>';
 	}
+	else {
+		print '<a href="javascript:" class="butActionRefused" title="Aucun fournisseurs en commun pour ces produits">'.$langs->trans('SelectSameSupplier').'</a>';
+	}
+
+	print '</td></tr>';
 	
 	$value = $langs->trans("GenerateSupplierOrder");
     print '<tr><td align="right">'.
