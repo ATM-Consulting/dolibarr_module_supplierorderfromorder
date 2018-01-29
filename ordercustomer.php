@@ -464,12 +464,23 @@ $sql .= $dolibarr_version35 ? ', p.desiredstock' : "";
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
 $sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd ON (p.rowid = cd.fk_product)';
 
+if (!empty($conf->categorie->enabled))
+{
+	$sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'categorie_product as cp ON (p.rowid = cp.fk_product)';
+}
+
 //$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s ON (p.rowid = s.fk_product)';
 $sql .= ' WHERE p.fk_product_type IN (0,1) AND p.entity IN (' . getEntity("product", 1) . ')';
-
+$sql .= ' AND p.rowid IN ( 751, 8831 )';
 $fk_commande = GETPOST('id','int');
 
 if($fk_commande > 0) $sql .= ' AND cd.fk_commande = '.$fk_commande;
+
+if (!empty($conf->categorie->enabled))
+{
+	$fk_categorie = GETPOST('categorie','int');
+	if($fk_categorie > 0) $sql .= ' AND cp.fk_categorie = '.intval($fk_categorie);
+}
 
 if ($sall) {
     $sql .= ' AND (p.ref LIKE "%'.$db->escape($sall).'%" ';
@@ -671,7 +682,7 @@ if ($resql || $resql2) {
     		'',
     		$sortfield,
     		$sortorder
-    );
+    		);
     print_liste_field_titre(
     		$langs->trans('Nature'),
     		'ordercustomer.php',
@@ -681,7 +692,20 @@ if ($resql || $resql2) {
     		'',
     		$sortfield,
     		$sortorder
-    );
+    		);
+    if (!empty($conf->categorie->enabled))
+    {
+	    print_liste_field_titre(
+	    		$langs->trans("Categories"),
+	    		'ordercustomer.php',
+	    		'cp.fk_categorie',
+	    		$param,
+	    		'id='.$_REQUEST['id'],
+	    		'',
+	    		$sortfield,
+	    		$sortorder
+	    		);
+    }
     if (!empty($conf->service->enabled) && $type == 1)
     {
     	print_liste_field_titre(
@@ -764,7 +788,7 @@ if ($resql || $resql2) {
     		$sortorder
     );
 
-	print '<td></td>';
+	//print '<td class="liste_titre" >fghf</td>';
 
    	if (!empty($conf->global->FOURN_PRODUCT_AVAILABILITY)) print_liste_field_titre($langs->trans("Availability"));
 
@@ -778,17 +802,18 @@ if ($resql || $resql2) {
     		$sortfield,
     		$sortorder
     );
+    
     print '</tr>'.
-
 	    // Lignes des champs de filtre
          '<tr class="liste_titre">'.
-         '<td class="liste_titre">&nbsp;</td>'.
-         '<td class="liste_titre">'.
-         '<input class="flat" type="text" name="sref" value="' . $sref . '">'.
+         	'<td class="liste_titre">&nbsp;</td>'.
+         	'<td class="liste_titre">'.
+         	'<input class="flat" type="text" name="sref" value="' . $sref . '">'.
          '</td>'.
          '<td class="liste_titre">'.
-         '<input class="flat" type="text" name="snom" value="' . $snom . '">'.
+         	'<input class="flat" type="text" name="snom" value="' . $snom . '">'.
          '</td>';
+    
     if (!empty($conf->service->enabled) && $type == 1)
     {
         print '<td class="liste_titre">'.
@@ -798,7 +823,15 @@ if ($resql || $resql2) {
 
 	$liste_titre = "";
 	$liste_titre.= '<td class="liste_titre">'.$form->selectarray('finished',$statutarray,(!isset($_REQUEST['button_search_x']) && $conf->global->SOFO_DEFAUT_FILTER != -1) ? $conf->global->SOFO_DEFAUT_FILTER : GETPOST('finished'),1).'</td>';
-    $liste_titre.= $dolibarr_version35 ? '<td class="liste_titre">&nbsp;</td>' : '';
+    
+	if (!empty($conf->categorie->enabled))
+	{
+		$liste_titre.= '<td class="liste_titre">';
+		$liste_titre.= $form->select_all_categories('product',GETPOST('categorie'), 'categorie');
+		$liste_titre.= '</td>';
+	}
+	
+	$liste_titre.= $dolibarr_version35 ? '<td class="liste_titre">&nbsp;</td>' : '';
     $liste_titre.= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>';
 
 	if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL))
@@ -1032,7 +1065,7 @@ if ($resql || $resql2) {
 			}
 
 			$var =! $var;
-            print '<tr ' . $bc[$var] . '>'.
+            print '<tr ' . $bc[$var] . ' data-productid="'.$objp->rowid.'" >'.
                  '<td><input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '></td>'.
                  '<td style="height:35px;" class="nowrap">'.
                  (!empty($TDemandes) ? $form->textwithpicto($prod->getNomUrl(1), 'Demande(s) de prix en cours :<br />'.implode(', ', $TDemandes), 1, 'help') : $prod->getNomUrl(1)).
@@ -1041,10 +1074,21 @@ if ($resql || $resql2) {
 
 	        print '<td>'.$statutarray[$objp->finished].'</td>';
 
+
+	        
 				if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
 					print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" >';
 				}
-
+				
+			if (!empty($conf->categorie->enabled))
+			{
+				print '<td >';
+				$categorie = new Categorie($db);
+				$Tcategories = $categorie->containing($objp->rowid, 'product', 'label');
+				print implode(', ', $Tcategories);
+				print '</td>';
+			}
+			
             if (!empty($conf->service->enabled) && $type == 1) {
                 if (preg_match('/([0-9]+)y/i', $objp->duration, $regs)) {
                     $duration =  $regs[1] . ' ' . $langs->trans('DurationYear');
@@ -1097,13 +1141,13 @@ if ($resql || $resql2) {
 
 					$nb_day = (int)getMinAvailability($objp->rowid,$stocktobuy);
 
-					$champs.= '<td>'.($nb_day == 0 ? $langs->trans('Unknown') : $nb_day.' '.$langs->trans('Days')).'</td>';
+					$champs.= '<td data-info="availability" >'.($nb_day == 0 ? $langs->trans('Unknown') : $nb_day.' '.$langs->trans('Days')).'</td>';
 
 				}
 
 
 
-                 $champs.='<td align="right">'.
+                 $champs.='<td align="right" data-info="fourn-price" >'.
                  $form->select_product_fourn_price($prod->id, 'fourn'.$i, 1).
                  '</td>';
 				print $champs;
@@ -1190,8 +1234,35 @@ if ($resql || $resql2) {
 
 
     $db->free($resql);
-print ' <script type="text/javascript">
-     function toggle(source)
+print ' <script type="text/javascript">';
+
+
+if($conf->global->SOFO_USE_DELIVERY_TIME) {
+
+	print '
+	$( document ).ready(function() {
+		//console.log( "ready!" );
+
+		$("[data-info=\'fourn-price\'] select").on("change", function() {
+		    var productid = $(this).closest( "tr[data-productid]" ).attr( "data-productid" );
+			if ( productid.length ) {
+
+				var targetUrl = "'.dol_buildpath('/supplierorderfromorder/script/ajax.php', 2).'?action=get-availability&stocktobuy=1&fk_product=" + productid ;
+
+				$.get( targetUrl, function( data ) {
+				  	$("tr[data-productid=\'" + productid + "\'] [data-info=\'availability\']").html( data );
+				});
+
+
+			}
+		});
+
+	});
+	';
+}
+
+
+print ' function toggle(source)
      {
        var checkboxes = document.getElementsByClassName("check");
        for (var i=0; i < checkboxes.length;i++) {
@@ -1200,6 +1271,8 @@ print ' <script type="text/javascript">
         }
        }
      } </script>';
+
+
 
 	dol_fiche_end();
 } else {
