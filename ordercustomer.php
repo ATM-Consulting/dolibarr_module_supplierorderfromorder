@@ -1108,7 +1108,7 @@ if ($resql || $resql2) {
                  '</td>';
 				print $champs;
 
-       if($conf->of->enabled && $user->rights->of->of->write) {
+				if($conf->of->enabled && $user->rights->of->of->write && empty($conf->global->SOFO_REMOVE_MAKE_BTN)) {
 		print '<td><a href="'.dol_buildpath('/of/fiche_of.php',1).'?action=new&fk_product='.$prod->id.'" class="butAction">Fabriquer</a></td>';
 	   }
 	   else {
