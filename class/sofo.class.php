@@ -34,7 +34,7 @@ class TSOFO {
 		}
 		
 		$res_av = $db->query($sql);
-		
+
 		$min = false;
 		
 		if(empty($form))$form=new Form($db);

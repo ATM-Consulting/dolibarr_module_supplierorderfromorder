@@ -1065,7 +1065,7 @@ if ($resql || $resql2) {
 			}
 
 			$var =! $var;
-            print '<tr ' . $bc[$var] . ' data-productid="'.$objp->rowid.'" >'.
+			print '<tr ' . $bc[$var] . ' data-productid="'.$objp->rowid.'"  data-i="'.$i.'"   >'.
                  '<td><input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '></td>'.
                  '<td style="height:35px;" class="nowrap">'.
                  (!empty($TDemandes) ? $form->textwithpicto($prod->getNomUrl(1), 'Demande(s) de prix en cours :<br />'.implode(', ', $TDemandes), 1, 'help') : $prod->getNomUrl(1)).
@@ -1245,9 +1245,12 @@ if($conf->global->SOFO_USE_DELIVERY_TIME) {
 
 		$("[data-info=\'fourn-price\'] select").on("change", function() {
 		    var productid = $(this).closest( "tr[data-productid]" ).attr( "data-productid" );
+		    var rowi = $(this).closest( "tr[data-productid]" ).attr( "data-i" );
 			if ( productid.length ) {
+				var fk_price = $(this).val();
+				var stocktobuy = $("[name=\'tobuy" + rowi +"\']" ).val();
 
-				var targetUrl = "'.dol_buildpath('/supplierorderfromorder/script/ajax.php', 2).'?action=get-availability&stocktobuy=1&fk_product=" + productid ;
+				var targetUrl = "'.dol_buildpath('/supplierorderfromorder/script/interface.php', 2).'?get=availability&stocktobuy=" + stocktobuy + "&fk_product=" + productid + "&fk_price=" + fk_price ;
 
 				$.get( targetUrl, function( data ) {
 				  	$("tr[data-productid=\'" + productid + "\'] [data-info=\'availability\']").html( data );
