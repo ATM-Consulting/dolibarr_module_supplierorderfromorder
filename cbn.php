@@ -54,7 +54,7 @@ $dolibarr_version35 = false;
 if((float)DOL_VERSION >= 3.5){
 	$dolibarr_version35 = true;
 }
-/*echo "<form name=\"formCreateSupplierOrder\" method=\"post\" action=\"ordercustomer.php\">";*/
+/*echo "<form name=\"formCreateSupplierOrder\" method=\"post\" action=\"cbn.php\">";*/
 
 // Security check
 if ($user->societe_id) {
@@ -106,410 +106,14 @@ echo "</pre>";
 exit;*/
 
 
-
-//orders creation
-//FIXME: could go in the lib
-if ($action == 'order' && isset($_POST['valid'])) {
-    $linecount = GETPOST('linecount', 'int');
-    $box = false;
-    unset($_POST['linecount']);
-    if ($linecount > 0) {
-
-        $suppliers = array();
-		//var_dump($linecount);exit;
-        for ($i = 0; $i < $linecount; $i++) {
-
-            if(GETPOST('check'.$i, 'alpha') === 'on' && (GETPOST('fourn' . $i, 'int') > 0 || GETPOST('fourn_free' . $i, 'int') > 0)) { //one line
-
-            	//echo GETPOST('tobuy_free'.$i).'<br>';
-            	//Lignes de produit
-            	if(!GETPOST('tobuy_free'.$i)){
-	                $box = $i;
-	                $supplierpriceid = GETPOST('fourn'.$i, 'int');
-	                //get all the parameters needed to create a line
-	                $qty = GETPOST('tobuy'.$i, 'int');
-	                $desc = GETPOST('desc'.$i, 'alpha');
-
-	                $sql = 'SELECT fk_product, fk_soc, ref_fourn';
-	                $sql .= ', tva_tx, unitprice, remise_percent FROM ';
-	                $sql .= MAIN_DB_PREFIX . 'product_fournisseur_price';
-	                $sql .= ' WHERE rowid = ' . $supplierpriceid;
-
-	                $resql = $db->query($sql);
-
-	                if ($resql && $db->num_rows($resql) > 0) {
-	                    //might need some value checks
-	                    $obj = $db->fetch_object($resql);
-	                    $line = new CommandeFournisseurLigne($db);
-	                    $line->qty = $qty;
-	                    $line->desc = $desc;
-	                    $line->fk_product = $obj->fk_product;
-	                    $line->tva_tx = $obj->tva_tx;
-	                    $line->subprice = $obj->unitprice;
-	                    $line->total_ht = $obj->unitprice * $qty;
-	                    $tva = $line->tva_tx / 100;
-	                    $line->total_tva = $line->total_ht * $tva;
-	                    $line->total_ttc = $line->total_ht + $line->total_tva;
-	                    $line->ref_fourn = $obj->ref_fourn;
-						$line->remise_percent = $obj->remise_percent;
-	                    // FIXME: Ugly hack to get the right purchase price since supplier references can collide
-	                    // (eg. same supplier ref for multiple suppliers with different prices).
-	                    $line->fk_prod_fourn_price = $supplierpriceid;
-
-	                    if(!empty($_REQUEST['tobuy'.$i])) {
-	                    	$suppliers[$obj->fk_soc]['lines'][] = $line;
-	                    }
-
-
-	                } else {
-	                    $error=$db->lasterror();
-	                    dol_print_error($db);
-	                    dol_syslog('replenish.php: '.$error, LOG_ERR);
-	                }
-	                $db->free($resql);
-	                unset($_POST['fourn' . $i]);
-	        	}
-				//Lignes libres
-				else{
-					//var_dump($_REQUEST);
-					//echo 'ok<br>';
-					$box = $i;
-					$qty = GETPOST('tobuy_free'.$i, 'int');
-	                $desc = GETPOST('desc'.$i, 'alpha');
-					$product_type = GETPOST('product_type'.$i, 'int');
-					$price = price2num(GETPOST('price_free'.$i));
-					$lineid = GETPOST('lineid_free'.$i, 'int');
-					$fournid = GETPOST('fourn_free'.$i, 'int');
-					$commandeline = new OrderLine($db);
-					$commandeline->fetch($lineid);
-
-					$line = new CommandeFournisseurLigne($db);
-                    $line->qty = $qty;
-                    $line->desc = $desc;
-					$line->product_type = $product_type;
-                    $line->tva_tx = $commandeline->tva_tx;
-                    $line->subprice = $price;
-                    $line->total_ht = $price * $qty;
-                    $tva = $line->tva_tx / 100;
-                    $line->total_tva = $line->total_ht * $tva;
-                    $line->total_ttc = $line->total_ht + $line->total_tva;
-                    //$line->ref_fourn = $obj->ref_fourn;
-					$line->remise_percent = $commandeline->remise_percent;
-
-                    if(!empty($_REQUEST['tobuy_free'.$i])) {
-                    	$suppliers[$fournid]['lines'][] = $line;
-                    }
-					unset($_POST['fourn_free' . $i]);
-				}
-            }
-            unset($_POST[$i]);
-        }
-
-        //we now know how many orders we need and what lines they have
-        $i = 0;
-		$nb_orders_created = 0;
-        $orders = array();
-        $suppliersid = array_keys($suppliers);
-		$projectid = GETPOST('projectid');
-        foreach ($suppliers as $idsupplier => $supplier) {
-
-        	$sql2 = 'SELECT rowid, ref';
-			$sql2 .= ' FROM ' . MAIN_DB_PREFIX . 'commande_fournisseur';
-			$sql2 .= ' WHERE fk_soc = '.$idsupplier;
-			$sql2 .= ' AND fk_statut = 0'; // 0 = DRAFT (Brouillon)
-			if(!empty($conf->global->SOFO_DISTINCT_ORDER_BY_PROJECT) && !empty($projectid)){
-				$sql2 .= ' AND fk_projet = '.$projectid;
-			}
-
-			$sql2 .= ' AND entity IN('.getEntity('commande_fournisseur').')';
-			$sql2 .= ' ORDER BY rowid DESC';
-			$sql2 .= ' LIMIT 1';
-
-			$res = $db->query($sql2);
-			$obj = $db->fetch_object($res);
-
-			$commandeClient = new Commande($db);
-			$commandeClient->fetch($_REQUEST['id']);
-
-			// Test recupération contact livraison
-			if($conf->global->SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY)
-			{
-				$contact_ship = $commandeClient->getIdContact('external', 'SHIPPING');
-				$contact_ship=$contact_ship[0];
-			}else{$contact_ship=null;}
-			//Si une commande au statut brouillon existe déjà et que l'option SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME
-			if($obj && !$conf->global->SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME) {
-
-				$order = new CommandeFournisseur($db);
-				$order->fetch($obj->rowid);
-				$order->socid = $idsupplier;
-				
-//				var_dump($obj,$order);exit;
-				if(!empty($projectid)){
-					$order->fk_project = GETPOST('projectid');
-				}
-				// On vérifie qu'il n'existe pas déjà un lien entre la commande client et la commande fournisseur dans la table element_element.
-				// S'il n'y en a pas, on l'ajoute, sinon, on ne l'ajoute pas
-				$order->fetchObjectLinked('', 'commande', $order->id, 'order_supplier');
-
-				//if(count($order->linkedObjects) == 0) {
-
-					$order->add_object_linked('commande', $_REQUEST['id']);
-
-				//}
-					
-					
-				if(!empty($conf->global->SOFO_GET_INFOS_FROM_FOURN))
-				{
-					$fourn = new Fournisseur($db);
-					if($fourn->fetch($order->socid) > 0)
-					{
-						$order->mode_reglement_id = $fourn->mode_reglement_supplier_id;
-						$order->mode_reglement_code = getPaiementCode($order->mode_reglement_id);
-						
-						$order->cond_reglement_id = $fourn->cond_reglement_supplier_id;
-						$order->cond_reglement_code = getPaymentTermCode($order->cond_reglement_id);
-					}
-				}
-				
-				if($conf->global->SOFO_GET_INFOS_FROM_ORDER){
-					$order->mode_reglement_code = $commandeClient->mode_reglement_code;
-					$order->mode_reglement_id = $commandeClient->mode_reglement_id;
-					$order->cond_reglement_id = $commandeClient->cond_reglement_id;
-					$order->cond_reglement_code = $commandeClient->cond_reglement_code;
-					$order->date_livraison = $commandeClient->date_livraison;
-				}
-				
-				$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
-				$newCommande = false;
-			} else {
-								/*echo '<pre>';
-				print_r($commandeClient);exit;*/
-
-				$order = new CommandeFournisseur($db);
-				$order->socid = $idsupplier;
-				if(!empty($projectid)){
-					$order->fk_project = $projectid;
-				}
-				
-				if(!empty($conf->global->SOFO_GET_INFOS_FROM_FOURN))
-				{
-					$fourn = new Fournisseur($db);
-					if($fourn->fetch($order->socid) > 0)
-					{
-						$order->mode_reglement_id = $fourn->mode_reglement_supplier_id;
-						$order->mode_reglement_code = getPaiementCode($order->mode_reglement_id);
-						
-						$order->cond_reglement_id = $fourn->cond_reglement_supplier_id;
-						$order->cond_reglement_code = getPaymentTermCode($order->cond_reglement_id);
-					}
-				}
-				
-				if($conf->global->SOFO_GET_INFOS_FROM_ORDER){
-					$order->mode_reglement_code = $commandeClient->mode_reglement_code;
-					$order->mode_reglement_id = $commandeClient->mode_reglement_id;
-					$order->cond_reglement_id = $commandeClient->cond_reglement_id;
-					$order->cond_reglement_code = $commandeClient->cond_reglement_code;
-					$order->date_livraison = $commandeClient->date_livraison;
-				}
-				
-				
-				
-				$id = $order->create($user);
-				if($contact_ship && $conf->global->SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY) $order->add_contact($contact_ship, 'SHIPPING');
-				$order->add_object_linked('commande', $_REQUEST['id']);
-				$newCommande = true;
-
-				$nb_orders_created++;
-			}
-			$order_id = $order->id;
-            //trick to know which orders have been generated this way
-            $order->source = 42;
-            $MaxAvailability = 0;
-            
-            foreach ($supplier['lines'] as $line) {
-
-	            $done = false;
-
-				$prodfourn = new ProductFournisseur($db);
-				$prodfourn->fetch_product_fournisseur_price($_REQUEST['fourn'.$i]);
-
-            	foreach($order->lines as $lineOrderFetched) {
-
-            		if($line->fk_product == $lineOrderFetched->fk_product) {
-
-                        $remise_percent = $lineOrderFetched->remise_percent;
-                        if($line->remise_percent > $remise_percent)$remise_percent = $line->remise_percent;
-//var_dump($line);
-            			$order->updateline(
-                            $lineOrderFetched->id,
-                            $lineOrderFetched->desc,
-                            // FIXME: The current existing line may very well not be at the same purchase price
-                            $lineOrderFetched->pu_ht,
-                            $lineOrderFetched->qty + $line->qty,
-                            $remise_percent,
-                            $lineOrderFetched->tva_tx
-                        );
-						$done = true;
-						break;
-
-            		}
-
-            	}
-
-				// On ajoute une ligne seulement si un "updateline()" n'a pas été fait et si la quantité souhaitée est supérieure à zéro
-
-				if(!$done) {
-
-					$order->addline(
-                        $line->desc,
-                        $line->subprice,
-                        $line->qty,
-                        $line->tva_tx,
-                        null,
-                        null,
-                        $line->fk_product,
-                        // We need to pass fk_prod_fourn_price to get the right price.
-                        $line->fk_prod_fourn_price,
-                        $line->ref_fourn,
-                        $line->remise_percent
-                        ,'HT'
-                        ,0
-                        ,$line->product_type
-                        ,$line->info_bits
-                    );
-
-				}
-				
-				$nb_day = (int)TSOFO::getMinAvailability($line->fk_product, $line->qty,$prodfourn->fourn_id);
-				if($MaxAvailability<$nb_day)
-				{
-					$MaxAvailability = $nb_day;
-				}
-				
-				
-
-            }
-
-            if(!empty($conf->global->SOFO_USE_MAX_DELIVERY_DATE))
-            {
-            	$order->date_livraison = dol_now() + $MaxAvailability*86400;
-            	$order->set_date_livraison($user,$order->date_livraison);
-            }
-            
-            $order->cond_reglement_id = 0;
-            $order->mode_reglement_id = 0;
-
-            if ($id < 0) {
-                $fail++; // FIXME: declare somewhere and use, or get rid of it!
-                $msg = $langs->trans('OrderFail') . "&nbsp;:&nbsp;";
-                $msg .= $order->error;
-                setEventMessage($msg, 'errors');
-            }else{
-            	// CODE de redirection s'il y a un seul fournisseur (évite de le laisser sur la page sans comprendre)
-            	if($conf->global->SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER)
-				{
-	            	if(count($suppliersid) == 1)
-					{
-						$link = dol_buildpath('/fourn/commande/card.php?id='.$order_id, 1);
-						header('Location:'.$link);
-					}
-				}
-            }
-            $i++;
-        }
-
-		/*if($newCommande) {
-
-			setEventMessage("Commande fournisseur créée avec succès !", 'errors');
-
-		} else {
-
-			setEventMessage("Produits ajoutés à la commande en cours !", 'errors');
-
-		}*/
-
-        /*if (!$fail && $id) {
-            setEventMessage($langs->trans('OrderCreated'), 'mesgs');
-            //header('Location: '.DOL_URL_ROOT.'/commande/fiche.php?id='.$_REQUEST['id'].'');
-        } else {
-        	setEventMessage('coucou', 'mesgs');
-        }*/
-    }
-
-	if ($nb_orders_created > 0)
-	{
-		setEventMessages($langs->trans('supplierorderfromorder_nb_orders_created', $nb_orders_created), array());
-	}
-
-    if ($box === false) {
-        setEventMessage($langs->trans('SelectProduct'), 'warnings');
-    } else {
-
-    	foreach($suppliers as $idSupplier => $lines) {
-    		$j = 0;
-    		foreach($lines as $line) {
-		    	$sql = "SELECT quantity";
-				$sql.= " FROM ".MAIN_DB_PREFIX."product_fournisseur_price";
-				$sql.= " WHERE fk_soc = ".$idSupplier;
-				$sql.= " AND fk_product = ".$line[$j]->fk_product;
-				$sql.= " ORDER BY quantity ASC";
-				$sql.= " LIMIT 1";
-				$resql = $db->query($sql);
-				if($resql){
-					$resql = $db->fetch_object($resql);
-
-					//echo $j;
-
-					if($line[$j]->qty < $resql->quantity) {
-						$p = new Product($db);
-						$p->fetch($line[$j]->fk_product);
-						$f = new Fournisseur($db);
-						$f->fetch($idSupplier);
-						$rates[$f->name] = $p->label;
-					} else {
-						$p = new Product($db);
-						$p->fetch($line[$j]->fk_product);
-						$f = new Fournisseur($db);
-						$f->fetch($idSupplier);
-						$ajoutes[$f->name] = $p->label;
-					}
-				}
-
-				/*echo "<pre>";
-				print_r($rates);
-				echo "</pre>";
-				echo "<pre>";
-				print_r($ajoutes);
-				echo "</pre>";*/
-				$j++;
-			}
-		}
-		$mess = "";
-	    // FIXME: declare $ajoutes somewhere. It's unclear if it should be reinitialized or not in the interlocking loops.
-		if($ajoutes) {
-			foreach($ajoutes as $nomFournisseur => $nomProd) {
-				$mess.= "Produit ' ".$nomProd." ' ajouté à la commande du fournisseur ' ".$nomFournisseur." '<br />";
-			}
-		}
-	    // FIXME: same as $ajoutes.
-		if($rates) {
-			foreach($rates as $nomFournisseur => $nomProd) {
-				$mess.= "Quantité insuffisante de ' ".$nomProd." ' pour le fournisseur ' ".$nomFournisseur." '<br />";
-			}
-		}
-		if($rates) {
-			setEventMessage($mess, 'warnings');
-		} else {
-			setEventMessage($mess, 'mesgs');
-		}
-    }
-}
+require 'lib/cbn.genorder.php';
 
 /*
  * View
  */
 $title = $langs->trans('ProductsToOrder');
+
+$db->query("SET sql_mode=''");
 
 $sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
@@ -519,23 +123,12 @@ $sql .= $dolibarr_version35 ? ', p.desiredstock' : "";
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
 $sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd ON (p.rowid = cd.fk_product)';
 
-if (!empty($conf->categorie->enabled))
-{
-	$sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'categorie_product as cp ON (p.rowid = cp.fk_product)';
-}
-
 //$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s ON (p.rowid = s.fk_product)';
 $sql .= ' WHERE p.fk_product_type IN (0,1) AND p.entity IN (' . getEntity("product", 1) . ')';
 
 $fk_commande = GETPOST('id','int');
 
 if($fk_commande > 0) $sql .= ' AND cd.fk_commande = '.$fk_commande;
-
-if (!empty($conf->categorie->enabled))
-{
-	$fk_categorie = GETPOST('categorie','int');
-	if($fk_categorie > 0) $sql .= ' AND cp.fk_categorie = '.intval($fk_categorie);
-}
 
 if ($sall) {
     $sql .= ' AND (p.ref LIKE "%'.$db->escape($sall).'%" ';
@@ -607,7 +200,7 @@ $sql .= $db->order($sortfield,$sortorder);
 if(!$conf->global->SOFO_USE_DELIVERY_TIME) $sql .= $db->plimit($limit + 1, $offset);
 $resql = $db->query($sql);
 
-if(isset($_REQUEST['DEBUG']) || $resql===false) {print $sql;exit;}
+if(isset($_REQUEST['DEBUG']) || $resql===false) {print $sql; var_dump($db);exit;}
 
 if($sql2 && $fk_commande > 0){
 	$sql2 .= $db->order($sortfield,$sortorder);
@@ -628,7 +221,7 @@ if ($resql || $resql2) {
     $helpurl .= 'ES:M&oacute;dulo_Stocks';
     llxHeader('', $title, $helpurl, $title);
     $head = array();
-    $head[0][0] = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id='.$_REQUEST['id'],2);
+    $head[0][0] = dol_buildpath('/supplierorderfromorder/cbn.php?id='.$_REQUEST['id'],2);
     $head[0][1] = $title;
     $head[0][2] = 'supplierorderfromorder';
 	/*$head[1][0] = DOL_URL_ROOT.'/product/stock/replenishorders.php';
@@ -648,7 +241,7 @@ if ($resql || $resql2) {
 			 print_barre_liste(
 	        		$texte,
 	        		$page,
-	        		'ordercustomer.php',
+	        		'cbn.php',
 	        		$filters,
 	        		$sortfield,
 	        		$sortorder,
@@ -669,7 +262,7 @@ if ($resql || $resql2) {
         print_barre_liste(
         		$texte,
         		$page,
-        		'ordercustomer.php',
+        		'cbn.php',
         		$filters,
         		$sortfield,
         		$sortorder,
@@ -720,7 +313,7 @@ if ($resql || $resql2) {
          '<td><input type="checkbox" onClick="toggle(this)" /></td>';
     print_liste_field_titre(
     		$langs->trans('Ref'),
-    		'ordercustomer.php',
+    		'cbn.php',
     		'p.ref',
     		$param,
     		'id='.$_REQUEST['id'],
@@ -730,42 +323,29 @@ if ($resql || $resql2) {
     );
     print_liste_field_titre(
     		$langs->trans('Label'),
-    		'ordercustomer.php',
+    		'cbn.php',
     		'p.label',
     		$param,
     		'id='.$_REQUEST['id'],
     		'',
     		$sortfield,
     		$sortorder
-    		);
+    );
     print_liste_field_titre(
     		$langs->trans('Nature'),
-    		'ordercustomer.php',
+    		'cbn.php',
     		'p.label',
     		$param,
     		'id='.$_REQUEST['id'],
     		'',
     		$sortfield,
     		$sortorder
-    		);
-    if (!empty($conf->categorie->enabled))
-    {
-	    print_liste_field_titre(
-	    		$langs->trans("Categories"),
-	    		'ordercustomer.php',
-	    		'cp.fk_categorie',
-	    		$param,
-	    		'id='.$_REQUEST['id'],
-	    		'',
-	    		$sortfield,
-	    		$sortorder
-	    		);
-    }
+    );
     if (!empty($conf->service->enabled) && $type == 1)
     {
     	print_liste_field_titre(
     			$langs->trans('Duration'),
-    			'ordercustomer.php',
+    			'cbn.php',
     			'p.duration',
     			$param,
     			'id='.$_REQUEST['id'],
@@ -778,7 +358,7 @@ if ($resql || $resql2) {
 	if($dolibarr_version35) {
 	    print_liste_field_titre(
 	    		$langs->trans('DesiredStock'),
-	    		'ordercustomer.php',
+	    		'cbn.php',
 	    		'p.desiredstock',
 	    		$param,
 	    		'id='.$_REQUEST['id'],
@@ -798,7 +378,7 @@ if ($resql || $resql2) {
     }
     print_liste_field_titre(
     		$stocklabel,
-    		'ordercustomer.php',
+    		'cbn.php',
     		'stock_physique',
     		$param,
     		'id='.$_REQUEST['id'],
@@ -812,7 +392,7 @@ if ($resql || $resql2) {
 		dol_include_once('/of/lib/of.lib.php');
 		print_liste_field_titre(
 	    		'Stock théo - OF',
-	    		'ordercustomer.php',
+	    		'cbn.php',
 	    		'stock_theo_of',
 	    		$param,
 	    		'id='.$_REQUEST['id'],
@@ -824,7 +404,7 @@ if ($resql || $resql2) {
 
     print_liste_field_titre(
     		$langs->trans('Ordered'),
-    		'ordercustomer.php',
+    		'cbn.php',
     		'',
     		$param,
     		'id='.$_REQUEST['id'],
@@ -834,7 +414,7 @@ if ($resql || $resql2) {
     );
     print_liste_field_titre(
     		$langs->trans('StockToBuy'),
-    		'ordercustomer.php',
+    		'cbn.php',
     		'',
     		$param,
     		'id='.$_REQUEST['id'],
@@ -843,13 +423,13 @@ if ($resql || $resql2) {
     		$sortorder
     );
 
-	//print '<td class="liste_titre" >fghf</td>';
+	print '<td></td>';
 
    	if (!empty($conf->global->FOURN_PRODUCT_AVAILABILITY)) print_liste_field_titre($langs->trans("Availability"));
 
     print_liste_field_titre(
     		$langs->trans('Supplier'),
-    		'ordercustomer.php',
+    		'cbn.php',
     		'',
     		$param,
     		'id='.$_REQUEST['id'],
@@ -857,18 +437,17 @@ if ($resql || $resql2) {
     		$sortfield,
     		$sortorder
     );
-    
     print '</tr>'.
+
 	    // Lignes des champs de filtre
          '<tr class="liste_titre">'.
-         	'<td class="liste_titre">&nbsp;</td>'.
-         	'<td class="liste_titre">'.
-         	'<input class="flat" type="text" name="sref" value="' . $sref . '">'.
+         '<td class="liste_titre">&nbsp;</td>'.
+         '<td class="liste_titre">'.
+         '<input class="flat" type="text" name="sref" value="' . $sref . '">'.
          '</td>'.
          '<td class="liste_titre">'.
-         	'<input class="flat" type="text" name="snom" value="' . $snom . '">'.
+         '<input class="flat" type="text" name="snom" value="' . $snom . '">'.
          '</td>';
-    
     if (!empty($conf->service->enabled) && $type == 1)
     {
         print '<td class="liste_titre">'.
@@ -878,15 +457,7 @@ if ($resql || $resql2) {
 
 	$liste_titre = "";
 	$liste_titre.= '<td class="liste_titre">'.$form->selectarray('finished',$statutarray,(!isset($_REQUEST['button_search_x']) && $conf->global->SOFO_DEFAUT_FILTER != -1) ? $conf->global->SOFO_DEFAUT_FILTER : GETPOST('finished'),1).'</td>';
-    
-	if (!empty($conf->categorie->enabled))
-	{
-		$liste_titre.= '<td class="liste_titre">';
-		$liste_titre.= $form->select_all_categories('product',GETPOST('categorie'), 'categorie');
-		$liste_titre.= '</td>';
-	}
-	
-	$liste_titre.= $dolibarr_version35 ? '<td class="liste_titre">&nbsp;</td>' : '';
+    $liste_titre.= $dolibarr_version35 ? '<td class="liste_titre">&nbsp;</td>' : '';
     $liste_titre.= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>';
 
 	if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL))
@@ -1127,12 +698,6 @@ if ($resql || $resql2) {
 				}
 
 				$stocktobuy += $stock_of_needed - $stock_of_tomake;
-				
-				if(!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK)
-				{
-					$stock -= $stock_of_needed - $stock_of_tomake;
-				}
-				
 				$help_stock.=', '.$langs->trans('OF').' : '.(float)($stock_of_needed - $stock_of_tomake);
 			}
 
@@ -1147,7 +712,7 @@ if ($resql || $resql2) {
 			}
 
 			$var =! $var;
-			print '<tr ' . $bc[$var] . ' data-productid="'.$objp->rowid.'"  data-i="'.$i.'"   >'.
+            print '<tr ' . $bc[$var] . '>'.
                  '<td><input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '></td>'.
                  '<td style="height:35px;" class="nowrap">'.
                  (!empty($TDemandes) ? $form->textwithpicto($prod->getNomUrl(1), 'Demande(s) de prix en cours :<br />'.implode(', ', $TDemandes), 1, 'help') : $prod->getNomUrl(1)).
@@ -1156,21 +721,10 @@ if ($resql || $resql2) {
 
 	        print '<td>'.$statutarray[$objp->finished].'</td>';
 
-
-	        
 				if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
 					print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" >';
 				}
-				
-			if (!empty($conf->categorie->enabled))
-			{
-				print '<td >';
-				$categorie = new Categorie($db);
-				$Tcategories = $categorie->containing($objp->rowid, 'product', 'label');
-				print implode(', ', $Tcategories);
-				print '</td>';
-			}
-			
+
             if (!empty($conf->service->enabled) && $type == 1) {
                 if (preg_match('/([0-9]+)y/i', $objp->duration, $regs)) {
                     $duration =  $regs[1] . ' ' . $langs->trans('DurationYear');
@@ -1196,7 +750,7 @@ if ($resql || $resql2) {
             	$champs = "";
             	$champs .= $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : '';
                 $champs.= '<td align="right">'.
-                  $warning . $stock. //$stocktobuy
+                 $warning . $stock.
                  '</td>';
 				if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL))
 				{
@@ -1223,18 +777,18 @@ if ($resql || $resql2) {
 
 					$nb_day = (int)getMinAvailability($objp->rowid,$stocktobuy);
 
-					$champs.= '<td data-info="availability" >'.($nb_day == 0 ? $langs->trans('Unknown') : $nb_day.' '.$langs->trans('Days')).'</td>';
+					$champs.= '<td>'.($nb_day == 0 ? $langs->trans('Unknown') : $nb_day.' '.$langs->trans('Days')).'</td>';
 
 				}
 
 
 
-                 $champs.='<td align="right" data-info="fourn-price" >'.
+                 $champs.='<td align="right">'.
                  $form->select_product_fourn_price($prod->id, 'fourn'.$i, 1).
                  '</td>';
 				print $champs;
 
-				if($conf->of->enabled && $user->rights->of->of->write && empty($conf->global->SOFO_REMOVE_MAKE_BTN)) {
+       if($conf->of->enabled && $user->rights->of->of->write) {
 		print '<td><a href="'.dol_buildpath('/of/fiche_of.php',1).'?action=new&fk_product='.$prod->id.'" class="butAction">Fabriquer</a></td>';
 	   }
 	   else {
@@ -1245,6 +799,8 @@ if ($resql || $resql2) {
 
 //	if($prod->ref=='A0000753') exit;
 
+        flush();
+        
         $i++;
     }
 
@@ -1316,38 +872,8 @@ if ($resql || $resql2) {
 
 
     $db->free($resql);
-print ' <script type="text/javascript">';
-
-
-if($conf->global->SOFO_USE_DELIVERY_TIME) {
-
-	print '
-	$( document ).ready(function() {
-		//console.log( "ready!" );
-
-		$("[data-info=\'fourn-price\'] select").on("change", function() {
-		    var productid = $(this).closest( "tr[data-productid]" ).attr( "data-productid" );
-		    var rowi = $(this).closest( "tr[data-productid]" ).attr( "data-i" );
-			if ( productid.length ) {
-				var fk_price = $(this).val();
-				var stocktobuy = $("[name=\'tobuy" + rowi +"\']" ).val();
-
-				var targetUrl = "'.dol_buildpath('/supplierorderfromorder/script/interface.php', 2).'?get=availability&stocktobuy=" + stocktobuy + "&fk_product=" + productid + "&fk_price=" + fk_price ;
-
-				$.get( targetUrl, function( data ) {
-				  	$("tr[data-productid=\'" + productid + "\'] [data-info=\'availability\']").html( data );
-				});
-
-
-			}
-		});
-
-	});
-	';
-}
-
-
-print ' function toggle(source)
+print ' <script type="text/javascript">
+     function toggle(source)
      {
        var checkboxes = document.getElementsByClassName("check");
        for (var i=0; i < checkboxes.length;i++) {
@@ -1356,8 +882,6 @@ print ' function toggle(source)
         }
        }
      } </script>';
-
-
 
 	dol_fiche_end();
 } else {

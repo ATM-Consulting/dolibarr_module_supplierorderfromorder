@@ -21,10 +21,10 @@ class TSOFO {
 		}
 		
 	}
-	static function getMinAvailability($fk_product, $qty,$fk_soc=0) {
+	static function getMinAvailability($fk_product, $qty, $only_with_delai = false ,$fk_soc=0) {
 	global $db,$form;
 		
-		$sql = "SELECT fk_availability 
+		$sql = "SELECT fk_availability".((float)DOL_VERSION>5 ? ',delivery_time_days' : '')." 
 				FROM ".MAIN_DB_PREFIX."product_fournisseur_price
 				WHERE fk_product=". intval($fk_product) ." AND quantity <= ".$qty;
 		
@@ -44,48 +44,18 @@ class TSOFO {
 		}
 		
 		while($obj_availability = $db->fetch_object($res_av)) {
-			$av_code = $form->cache_availability[$obj_availability->fk_availability] ; 
-			$nb_day = self::getDayFromAvailabilityCode($av_code['code']);
 			
-			if($min === false || $nb_day<$min) $min = $nb_day;
+			if(!empty($obj_availability->delivery_time_days))$nb_day = $obj_availability->delivery_time_days;
+			else {
+				$av_code = $form->cache_availability[$obj_availability->fk_availability] ; 
+				$nb_day = self::getDayFromAvailabilityCode($av_code['code']);
+			}
+			if(($min === false || $nb_day<$min )
+				&& (!$only_with_delai || $nb_day>0)) $min = $nb_day;
 			
 		}
 		
 		return $min;
-		
-	}
-	
-	
-	static function getMaxAvailability($fk_product, $qty) {
-		global $db,$form;
-		
-		$sql = "SELECT fk_availability
-				FROM ".MAIN_DB_PREFIX."product_fournisseur_price
-				WHERE fk_product=". intval($fk_product) ." AND quantity <= ".$qty;
-		
-		if(!empty($fk_soc))
-		{
-			$sql .=  ' AND fk_soc='. intval($fk_soc) ;
-		}
-		
-		$res_av = $db->query($sql);
-		
-		$max = false;
-		
-		if(empty($form))$form=new Form($db);
-		if(empty($form->cache_availability)){
-			$form->load_cache_availability();
-		}
-		
-		while($obj_availability = $db->fetch_object($res_av)) {
-			$av_code = $form->cache_availability[$obj_availability->fk_availability] ;
-			$nb_day = self::getDayFromAvailabilityCode($av_code['code']);
-			
-			if($max === false || $nb_day>$max) $max = $nb_day;
-			
-		}
-		
-		return $max;
 		
 	}
 	
