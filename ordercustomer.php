@@ -305,7 +305,9 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$order->cond_reglement_code = $commandeClient->cond_reglement_code;
 					$order->date_livraison = $commandeClient->date_livraison;
 				}
-
+				
+				
+				
 				$id = $order->create($user);
 				if($contact_ship && $conf->global->SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY) $order->add_contact($contact_ship, 'SHIPPING');
 				$order->add_object_linked('commande', $_REQUEST['id']);
@@ -316,7 +318,8 @@ if ($action == 'order' && isset($_POST['valid'])) {
 			$order_id = $order->id;
             //trick to know which orders have been generated this way
             $order->source = 42;
-
+            $MaxAvailability = 0;
+            
             foreach ($supplier['lines'] as $line) {
 
 	            $done = false;
@@ -370,9 +373,23 @@ if ($action == 'order' && isset($_POST['valid'])) {
                     );
 
 				}
+				
+				$nb_day = (int)TSOFO::getMinAvailability($line->fk_product, $line->qty,$prodfourn->fourn_id);
+				if($MaxAvailability<$nb_day)
+				{
+					$MaxAvailability = $nb_day;
+				}
+				
+				
 
             }
 
+            if(!empty($conf->global->SOFO_USE_MAX_DELIVERY_DATE))
+            {
+            	$order->date_livraison = dol_now() + $MaxAvailability*86400;
+            	$order->set_date_livraison($user,$order->date_livraison);
+            }
+            
             $order->cond_reglement_id = 0;
             $order->mode_reglement_id = 0;
 

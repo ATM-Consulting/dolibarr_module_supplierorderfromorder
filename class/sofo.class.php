@@ -28,6 +28,7 @@ class TSOFO {
 				FROM ".MAIN_DB_PREFIX."product_fournisseur_price
 				WHERE fk_product=". intval($fk_product) ." AND quantity <= ".$qty;
 		
+		
 		if(!empty($fk_soc))
 		{
 			$sql .=  ' AND fk_soc='. intval($fk_soc)  ;
@@ -54,5 +55,38 @@ class TSOFO {
 		
 	}
 	
+	
+	static function getMaxAvailability($fk_product, $qty) {
+		global $db,$form;
+		
+		$sql = "SELECT fk_availability
+				FROM ".MAIN_DB_PREFIX."product_fournisseur_price
+				WHERE fk_product=". intval($fk_product) ." AND quantity <= ".$qty;
+		
+		if(!empty($fk_soc))
+		{
+			$sql .=  ' AND fk_soc='. intval($fk_soc) ;
+		}
+		
+		$res_av = $db->query($sql);
+		
+		$max = false;
+		
+		if(empty($form))$form=new Form($db);
+		if(empty($form->cache_availability)){
+			$form->load_cache_availability();
+		}
+		
+		while($obj_availability = $db->fetch_object($res_av)) {
+			$av_code = $form->cache_availability[$obj_availability->fk_availability] ;
+			$nb_day = self::getDayFromAvailabilityCode($av_code['code']);
+			
+			if($max === false || $nb_day>$max) $max = $nb_day;
+			
+		}
+		
+		return $max;
+		
+	}
 	
 }
