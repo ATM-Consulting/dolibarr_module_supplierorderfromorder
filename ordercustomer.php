@@ -39,6 +39,8 @@ dol_include_once("/core/lib/admin.lib.php");
 dol_include_once("/fourn/class/fournisseur.class.php");
 dol_include_once('/supplierorderfromorder/lib/function.lib.php');
 dol_include_once("/commande/class/commande.class.php");
+dol_include_once("/supplier_proposal/class/supplier_proposal.class.php");
+
 
 global $bc, $conf, $db, $langs, $user;
 
@@ -93,7 +95,9 @@ $offset = $limit * $page ;
  * Actions
  */
 
-if (isset($_POST['button_removefilter']) || isset($_POST['valid'])) {
+
+
+if (isset($_POST['button_removefilter']) || in_array($action, array('valid-propal', 'valid-order') ) ) {
     $sref = '';
     $snom = '';
     $sal = '';
@@ -109,211 +113,101 @@ exit;*/
 
 //orders creation
 //FIXME: could go in the lib
-if ($action == 'order' && isset($_POST['valid'])) {
+if (in_array($action, array('valid-propal', 'valid-order') )) {
+	
+
+	$actionTarget = 'order';
+	if($action=='valid-propal')
+	{
+		$actionTarget= 'propal';
+	}
+	
+	
     $linecount = GETPOST('linecount', 'int');
     $box = false;
     unset($_POST['linecount']);
     if ($linecount > 0) {
 
         $suppliers = array();
-		//var_dump($linecount);exit;
+
         for ($i = 0; $i < $linecount; $i++) {
 
             if(GETPOST('check'.$i, 'alpha') === 'on' && (GETPOST('fourn' . $i, 'int') > 0 || GETPOST('fourn_free' . $i, 'int') > 0)) { //one line
-
-            	//echo GETPOST('tobuy_free'.$i).'<br>';
-            	//Lignes de produit
-            	if(!GETPOST('tobuy_free'.$i)){
-	                $box = $i;
-	                $supplierpriceid = GETPOST('fourn'.$i, 'int');
-	                //get all the parameters needed to create a line
-	                $qty = GETPOST('tobuy'.$i, 'int');
-	                $desc = GETPOST('desc'.$i, 'alpha');
-
-	                $sql = 'SELECT fk_product, fk_soc, ref_fourn';
-	                $sql .= ', tva_tx, unitprice, remise_percent FROM ';
-	                $sql .= MAIN_DB_PREFIX . 'product_fournisseur_price';
-	                $sql .= ' WHERE rowid = ' . $supplierpriceid;
-
-	                $resql = $db->query($sql);
-
-	                if ($resql && $db->num_rows($resql) > 0) {
-	                    //might need some value checks
-	                    $obj = $db->fetch_object($resql);
-	                    $line = new CommandeFournisseurLigne($db);
-	                    $line->qty = $qty;
-	                    $line->desc = $desc;
-	                    $line->fk_product = $obj->fk_product;
-	                    $line->tva_tx = $obj->tva_tx;
-	                    $line->subprice = $obj->unitprice;
-	                    $line->total_ht = $obj->unitprice * $qty;
-	                    $tva = $line->tva_tx / 100;
-	                    $line->total_tva = $line->total_ht * $tva;
-	                    $line->total_ttc = $line->total_ht + $line->total_tva;
-	                    $line->ref_fourn = $obj->ref_fourn;
-						$line->remise_percent = $obj->remise_percent;
-	                    // FIXME: Ugly hack to get the right purchase price since supplier references can collide
-	                    // (eg. same supplier ref for multiple suppliers with different prices).
-	                    $line->fk_prod_fourn_price = $supplierpriceid;
-
-	                    if(!empty($_REQUEST['tobuy'.$i])) {
-	                    	$suppliers[$obj->fk_soc]['lines'][] = $line;
-	                    }
-
-
-	                } else {
-	                    $error=$db->lasterror();
-	                    dol_print_error($db);
-	                    dol_syslog('replenish.php: '.$error, LOG_ERR);
-	                }
-	                $db->free($resql);
-	                unset($_POST['fourn' . $i]);
-	        	}
-				//Lignes libres
-				else{
-					//var_dump($_REQUEST);
-					//echo 'ok<br>';
-					$box = $i;
-					$qty = GETPOST('tobuy_free'.$i, 'int');
-	                $desc = GETPOST('desc'.$i, 'alpha');
-					$product_type = GETPOST('product_type'.$i, 'int');
-					$price = price2num(GETPOST('price_free'.$i));
-					$lineid = GETPOST('lineid_free'.$i, 'int');
-					$fournid = GETPOST('fourn_free'.$i, 'int');
-					$commandeline = new OrderLine($db);
-					$commandeline->fetch($lineid);
-
-					$line = new CommandeFournisseurLigne($db);
-                    $line->qty = $qty;
-                    $line->desc = $desc;
-					$line->product_type = $product_type;
-                    $line->tva_tx = $commandeline->tva_tx;
-                    $line->subprice = $price;
-                    $line->total_ht = $price * $qty;
-                    $tva = $line->tva_tx / 100;
-                    $line->total_tva = $line->total_ht * $tva;
-                    $line->total_ttc = $line->total_ht + $line->total_tva;
-                    //$line->ref_fourn = $obj->ref_fourn;
-					$line->remise_percent = $commandeline->remise_percent;
-
-                    if(!empty($_REQUEST['tobuy_free'.$i])) {
-                    	$suppliers[$fournid]['lines'][] = $line;
-                    }
-					unset($_POST['fourn_free' . $i]);
-				}
+            	_prepareLine($i,$actionTarget);
             }
             unset($_POST[$i]);
+            
         }
+        
 
+        
         //we now know how many orders we need and what lines they have
         $i = 0;
 		$nb_orders_created = 0;
         $orders = array();
         $suppliersid = array_keys($suppliers);
 		$projectid = GETPOST('projectid');
+
         foreach ($suppliers as $idsupplier => $supplier) {
 
-        	$sql2 = 'SELECT rowid, ref';
-			$sql2 .= ' FROM ' . MAIN_DB_PREFIX . 'commande_fournisseur';
-			$sql2 .= ' WHERE fk_soc = '.$idsupplier;
-			$sql2 .= ' AND fk_statut = 0'; // 0 = DRAFT (Brouillon)
-			if(!empty($conf->global->SOFO_DISTINCT_ORDER_BY_PROJECT) && !empty($projectid)){
-				$sql2 .= ' AND fk_projet = '.$projectid;
+			
+			
+			if($actionTarget=='propal')
+			{
+				$order = new SupplierProposal($db);
+				$obj =_getSupplierProposalInfos($idsupplier, $projectid);
 			}
-
-			$sql2 .= ' AND entity IN('.getEntity('commande_fournisseur').')';
-			$sql2 .= ' ORDER BY rowid DESC';
-			$sql2 .= ' LIMIT 1';
-
-			$res = $db->query($sql2);
-			$obj = $db->fetch_object($res);
-
+			else
+			{
+				$order = new CommandeFournisseur($db);
+				$obj =_getSupplierOrderInfos($idsupplier, $projectid);
+			}
+			
 			$commandeClient = new Commande($db);
 			$commandeClient->fetch($_REQUEST['id']);
-
+			
 			// Test recupération contact livraison
 			if($conf->global->SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY)
 			{
 				$contact_ship = $commandeClient->getIdContact('external', 'SHIPPING');
 				$contact_ship=$contact_ship[0];
 			}else{$contact_ship=null;}
+			
+			
+		
+			
 			//Si une commande au statut brouillon existe déjà et que l'option SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME
 			if($obj && !$conf->global->SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME) {
 
-				$order = new CommandeFournisseur($db);
 				$order->fetch($obj->rowid);
 				$order->socid = $idsupplier;
 				
-//				var_dump($obj,$order);exit;
 				if(!empty($projectid)){
 					$order->fk_project = GETPOST('projectid');
 				}
+				
 				// On vérifie qu'il n'existe pas déjà un lien entre la commande client et la commande fournisseur dans la table element_element.
 				// S'il n'y en a pas, on l'ajoute, sinon, on ne l'ajoute pas
 				$order->fetchObjectLinked('', 'commande', $order->id, 'order_supplier');
-
-				//if(count($order->linkedObjects) == 0) {
-
-					$order->add_object_linked('commande', $_REQUEST['id']);
-
-				//}
+				$order->add_object_linked('commande', $_REQUEST['id']);
 					
-					
-				if(!empty($conf->global->SOFO_GET_INFOS_FROM_FOURN))
-				{
-					$fourn = new Fournisseur($db);
-					if($fourn->fetch($order->socid) > 0)
-					{
-						$order->mode_reglement_id = $fourn->mode_reglement_supplier_id;
-						$order->mode_reglement_code = getPaiementCode($order->mode_reglement_id);
-						
-						$order->cond_reglement_id = $fourn->cond_reglement_supplier_id;
-						$order->cond_reglement_code = getPaymentTermCode($order->cond_reglement_id);
-					}
-				}
+				// cond reglement, mode reglement, delivery date
+				_appliCond($order, $commandeClient);
 				
-				if($conf->global->SOFO_GET_INFOS_FROM_ORDER){
-					$order->mode_reglement_code = $commandeClient->mode_reglement_code;
-					$order->mode_reglement_id = $commandeClient->mode_reglement_id;
-					$order->cond_reglement_id = $commandeClient->cond_reglement_id;
-					$order->cond_reglement_code = $commandeClient->cond_reglement_code;
-					$order->date_livraison = $commandeClient->date_livraison;
-				}
+				
 				
 				$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
 				$newCommande = false;
+				
 			} else {
-								/*echo '<pre>';
-				print_r($commandeClient);exit;*/
 
-				$order = new CommandeFournisseur($db);
 				$order->socid = $idsupplier;
 				if(!empty($projectid)){
-					$order->fk_project = $projectid;
+					$order->fk_project = GETPOST('projectid');
 				}
 				
-				if(!empty($conf->global->SOFO_GET_INFOS_FROM_FOURN))
-				{
-					$fourn = new Fournisseur($db);
-					if($fourn->fetch($order->socid) > 0)
-					{
-						$order->mode_reglement_id = $fourn->mode_reglement_supplier_id;
-						$order->mode_reglement_code = getPaiementCode($order->mode_reglement_id);
-						
-						$order->cond_reglement_id = $fourn->cond_reglement_supplier_id;
-						$order->cond_reglement_code = getPaymentTermCode($order->cond_reglement_id);
-					}
-				}
-				
-				if($conf->global->SOFO_GET_INFOS_FROM_ORDER){
-					$order->mode_reglement_code = $commandeClient->mode_reglement_code;
-					$order->mode_reglement_id = $commandeClient->mode_reglement_id;
-					$order->cond_reglement_id = $commandeClient->cond_reglement_id;
-					$order->cond_reglement_code = $commandeClient->cond_reglement_code;
-					$order->date_livraison = $commandeClient->date_livraison;
-				}
-				
-				
+				// cond reglement, mode reglement, delivery date
+				_appliCond($order, $commandeClient);
 				
 				$id = $order->create($user);
 				if($contact_ship && $conf->global->SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY) $order->add_contact($contact_ship, 'SHIPPING');
@@ -322,6 +216,8 @@ if ($action == 'order' && isset($_POST['valid'])) {
 
 				$nb_orders_created++;
 			}
+			
+			
 			$order_id = $order->id;
             //trick to know which orders have been generated this way
             $order->source = 42;
@@ -341,15 +237,48 @@ if ($action == 'order' && isset($_POST['valid'])) {
                         $remise_percent = $lineOrderFetched->remise_percent;
                         if($line->remise_percent > $remise_percent)$remise_percent = $line->remise_percent;
 //var_dump($line);
-            			$order->updateline(
-                            $lineOrderFetched->id,
-                            $lineOrderFetched->desc,
-                            // FIXME: The current existing line may very well not be at the same purchase price
-                            $lineOrderFetched->pu_ht,
-                            $lineOrderFetched->qty + $line->qty,
-                            $remise_percent,
-                            $lineOrderFetched->tva_tx
-                        );
+
+                        
+                        if($order->element == 'order_supplier')
+                        {
+                        	
+                        	$order->updateline(
+                        			$lineOrderFetched->id,
+                        			$lineOrderFetched->desc,
+                        			// FIXME: The current existing line may very well not be at the same purchase price
+                        			$lineOrderFetched->pu_ht,
+                        			$lineOrderFetched->qty + $line->qty,
+                        			$remise_percent,
+                        			$lineOrderFetched->tva_tx
+                        			);
+                        }
+                        else if($order->element == 'supplier_proposal')
+                        {
+            			
+                        	$order->updateline(
+                        			$lineOrderFetched->id, 
+            						$lineOrderFetched->pu_ht, 
+            						$lineOrderFetched->qty + $line->qty, 
+            						$remise_percent, 
+            						$lineOrderFetched->tva_tx, 
+            						0, //$txlocaltax1=0, 
+            						0, //$txlocaltax2=0, 
+            						$lineOrderFetched->desc
+	            					//$price_base_type='HT', 
+	            					//$info_bits=0, 
+	            					//$special_code=0, 
+	            					//$fk_parent_line=0, 
+	            					//$skip_update_total=0, 
+	            					//$fk_fournprice=0, 
+	            					//$pa_ht=0, 
+	            					//$label='', 
+	            					//$type=0, 
+	            					//$array_option=0, 
+	            					//$ref_fourn='', 
+	            					//$fk_unit=''
+            				);
+                        }
+            			
 						$done = true;
 						break;
 
@@ -361,23 +290,57 @@ if ($action == 'order' && isset($_POST['valid'])) {
 
 				if(!$done) {
 
-					$order->addline(
-                        $line->desc,
-                        $line->subprice,
-                        $line->qty,
-                        $line->tva_tx,
-                        null,
-                        null,
-                        $line->fk_product,
-                        // We need to pass fk_prod_fourn_price to get the right price.
-                        $line->fk_prod_fourn_price,
-                        $line->ref_fourn,
-                        $line->remise_percent
-                        ,'HT'
-                        ,0
-                        ,$line->product_type
-                        ,$line->info_bits
-                    );
+					if($order->element == 'order_supplier')
+					{
+						
+						$order->addline(
+								$line->desc,
+								$line->subprice,
+								$line->qty,
+								$line->tva_tx,
+								null,
+								null,
+								$line->fk_product,
+								// We need to pass fk_prod_fourn_price to get the right price.
+								$line->fk_prod_fourn_price,
+								$line->ref_fourn,
+								$line->remise_percent
+								,'HT'
+								,0
+								,$line->product_type
+								,$line->info_bits
+								);
+					}
+					else if($order->element == 'supplier_proposal')
+					{
+						$order->addline(
+								$line->desc,
+								$line->subprice,
+								$line->qty,
+								$line->tva_tx,
+								null,
+								null,
+								$line->fk_product,
+								$line->remise_percent, 
+								'HT', 
+								0, //$pu_ttc=0, 
+								$line->info_bits, //$info_bits=0, 
+								$line->product_type, //$type=0, 
+								-1, //$rang=-1, 
+								0, //$special_code=0, ,
+								0, //$fk_parent_line=0, ,
+								$line->fk_fournprice, //$fk_fournprice=0, ,
+								0, //$pa_ht=0, ,
+								'', //$label='',,
+								0, //$array_option=0, ,
+								$line->ref_fourn, //$ref_fourn='', ,
+								'', //$fk_unit='', ,
+								'', //$origin='', ,
+								0 //$origin_id=0
+							);
+						
+					
+					}
 
 				}
 				
@@ -419,22 +382,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
             $i++;
         }
 
-		/*if($newCommande) {
 
-			setEventMessage("Commande fournisseur créée avec succès !", 'errors');
-
-		} else {
-
-			setEventMessage("Produits ajoutés à la commande en cours !", 'errors');
-
-		}*/
-
-        /*if (!$fail && $id) {
-            setEventMessage($langs->trans('OrderCreated'), 'mesgs');
-            //header('Location: '.DOL_URL_ROOT.'/commande/fiche.php?id='.$_REQUEST['id'].'');
-        } else {
-        	setEventMessage('coucou', 'mesgs');
-        }*/
     }
 
 	if ($nb_orders_created > 0)
@@ -489,7 +437,16 @@ if ($action == 'order' && isset($_POST['valid'])) {
 	    // FIXME: declare $ajoutes somewhere. It's unclear if it should be reinitialized or not in the interlocking loops.
 		if($ajoutes) {
 			foreach($ajoutes as $nomFournisseur => $nomProd) {
-				$mess.= "Produit ' ".$nomProd." ' ajouté à la commande du fournisseur ' ".$nomFournisseur." '<br />";
+				
+				if($actionTarget=='propal')
+				{
+					$mess.= $langs->trans('ProductAddToSupplierQuotation', $nomProd,$nomFournisseur).'<br />';
+				}
+				else
+				{
+					$mess.= $langs->trans('ProductAddToSupplierOrder', $nomProd,$nomFournisseur).'<br />';
+				}
+				
 			}
 		}
 	    // FIXME: same as $ajoutes.
@@ -526,7 +483,7 @@ if (!empty($conf->categorie->enabled))
 
 //$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s ON (p.rowid = s.fk_product)';
 $sql .= ' WHERE p.fk_product_type IN (0,1) AND p.entity IN (' . getEntity("product", 1) . ')';
-
+$sql .= ' AND p.rowid = 13062';
 $fk_commande = GETPOST('id','int');
 
 if($fk_commande > 0) $sql .= ' AND cd.fk_commande = '.$fk_commande;
@@ -687,7 +644,6 @@ if ($resql || $resql2) {
          '<input type="hidden" name="sortorder" value="' . $sortorder . '">'.
          '<input type="hidden" name="type" value="' . $type . '">'.
          '<input type="hidden" name="linecount" value="' . ($num+$num2) . '">'.
-         '<input type="hidden" name="action" value="order">'.
          '<input type="hidden" name="fk_commande" value="' . GETPOST('fk_commande','int'). '">'.
          '<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need'). '">'.
 
@@ -1305,12 +1261,13 @@ if ($resql || $resql2) {
 	        $i++; $j++;
 	    }
     }
-
-    $value = $langs->trans("GenerateSupplierOrder");
+    
+    
     print '</table>'.
          '<table width="100%" style="margin-top:15px;">'.
          '<tr><td align="right">'.
-         '<input class="butAction" type="submit" name="valid" value="' . $value . '">'.
+         '<button class="butAction" type="submit" name="action" value="valid-propal">'.$langs->trans("GenerateSupplierPropal").'</button>'.
+         '<button class="butAction" type="submit" name="action" value="valid-order">'.$langs->trans("GenerateSupplierOrder").'</button>'.
          '</td></tr></table>'.
          '</form>';
 
@@ -1414,6 +1371,194 @@ print ' function toggle(source)
 <?php
 
 llxFooter();
+
+function _prepareLine($i,$actionTarget = 'order')
+{
+	global $db,$suppliers,$box;
+	
+	if($actionTarget=='propal')
+	{
+		$line = new SupplierProposalLine($db);
+	}
+	else
+	{
+		$line = new CommandeFournisseurLigne($db); //$actionTarget = 'order'
+	}
+	
+	//Lignes de produit
+	if(!GETPOST('tobuy_free'.$i)){
+		$box = $i;
+		$supplierpriceid = GETPOST('fourn'.$i, 'int');
+		//get all the parameters needed to create a line
+		$qty = GETPOST('tobuy'.$i, 'int');
+		$desc = GETPOST('desc'.$i, 'alpha');
+		
+
+		$obj = _getSupplierPriceInfos($supplierpriceid);
+		
+		if ($obj) {
+			
+			$line->qty = $qty;
+			$line->desc = $desc;
+			$line->fk_product = $obj->fk_product;
+			$line->tva_tx = $obj->tva_tx;
+			$line->subprice = $obj->unitprice;
+			$line->total_ht = $obj->unitprice * $qty;
+			$tva = $line->tva_tx / 100;
+			$line->total_tva = $line->total_ht * $tva;
+			$line->total_ttc = $line->total_ht + $line->total_tva;
+			$line->ref_fourn = $obj->ref_fourn;
+			$line->remise_percent = $obj->remise_percent;
+			// FIXME: Ugly hack to get the right purchase price since supplier references can collide
+			// (eg. same supplier ref for multiple suppliers with different prices).
+			$line->fk_prod_fourn_price = $supplierpriceid;
+			
+			if(!empty($_REQUEST['tobuy'.$i])) {
+				$suppliers[$obj->fk_soc]['lines'][] = $line;
+			}
+			
+		} else {
+			$error=$db->lasterror();
+			dol_print_error($db);
+			dol_syslog('replenish.php: '.$error, LOG_ERR);
+		}
+		$db->free($resql);
+		unset($_POST['fourn' . $i]);
+	}
+	//Lignes libres
+	else
+	{
+
+		$box = $i;
+		$qty = GETPOST('tobuy_free'.$i, 'int');
+		$desc = GETPOST('desc'.$i, 'alpha');
+		$product_type = GETPOST('product_type'.$i, 'int');
+		$price = price2num(GETPOST('price_free'.$i));
+		$lineid = GETPOST('lineid_free'.$i, 'int');
+		$fournid = GETPOST('fourn_free'.$i, 'int');
+		$commandeline = new OrderLine($db);
+		$commandeline->fetch($lineid);
+		
+		$line->qty = $qty;
+		$line->desc = $desc;
+		$line->product_type = $product_type;
+		$line->tva_tx = $commandeline->tva_tx;
+		$line->subprice = $price;
+		$line->total_ht = $price * $qty;
+		$tva = $line->tva_tx / 100;
+		$line->total_tva = $line->total_ht * $tva;
+		$line->total_ttc = $line->total_ht + $line->total_tva;
+		//$line->ref_fourn = $obj->ref_fourn;
+		$line->remise_percent = $commandeline->remise_percent;
+		
+		unset($_POST['fourn_free' . $i]);
+		
+		if(!empty($_REQUEST['tobuy_free'.$i])) {
+			$suppliers[$fournid]['lines'][] = $line;
+		}
+	}
+
+}
+
+
+function _getSupplierPriceInfos($supplierpriceid)
+{
+	global $db;
+	$sql = 'SELECT fk_product, fk_soc, ref_fourn';
+	$sql .= ', tva_tx, unitprice, remise_percent FROM ';
+	$sql .= MAIN_DB_PREFIX . 'product_fournisseur_price';
+	$sql .= ' WHERE rowid = ' . $supplierpriceid;
+	
+	$resql = $db->query($sql);
+	
+	if ($resql && $db->num_rows($resql) > 0) {
+		//might need some value checks
+		return $db->fetch_object($resql);
+	}
+	
+	return false;
+}
+
+
+function _getSupplierOrderInfos($idsupplier, $projectid='')
+{
+	global $db,$conf;
+	
+	$sql = 'SELECT rowid, ref';
+	$sql .= ' FROM ' . MAIN_DB_PREFIX . 'commande_fournisseur';
+	$sql .= ' WHERE fk_soc = '.$idsupplier;
+	$sql .= ' AND fk_statut = 0'; // 0 = DRAFT (Brouillon)
+	
+	if(!empty($conf->global->SOFO_DISTINCT_ORDER_BY_PROJECT) && !empty($projectid)){
+		$sql .= ' AND fk_projet = '.$projectid;
+	}
+	
+	$sql .= ' AND entity IN('.getEntity('commande_fournisseur').')';
+	$sql .= ' ORDER BY rowid DESC';
+	$sql .= ' LIMIT 1';
+	
+	$resql = $db->query($sql);
+	
+	if ($resql && $db->num_rows($resql) > 0) {
+		//might need some value checks
+		return $db->fetch_object($resql);
+	}
+	
+	return false;
+}
+
+
+function _getSupplierProposalInfos($idsupplier, $projectid='')
+{
+	global $db,$conf;
+	
+	$sql = 'SELECT rowid, ref';
+	$sql .= ' FROM ' . MAIN_DB_PREFIX . 'supplier_proposal';
+	$sql .= ' WHERE fk_soc = '.$idsupplier;
+	$sql .= ' AND fk_statut = 0'; // 0 = DRAFT (Brouillon)
+	
+	if(!empty($conf->global->SOFO_DISTINCT_ORDER_BY_PROJECT) && !empty($projectid)){
+		$sql .= ' AND fk_projet = '.$projectid;
+	}
+	
+	$sql .= ' AND entity IN('.getEntity('supplier_proposal').')';
+	$sql .= ' ORDER BY rowid DESC';
+	$sql .= ' LIMIT 1';
+	
+	$resql = $db->query($sql);
+	
+	if ($resql && $db->num_rows($resql) > 0) {
+		//might need some value checks
+		return $db->fetch_object($resql);
+	}
+	
+	return false;
+}
+
+function _appliCond($order, $commandeClient){
+	global $db, $conf;
+	
+	if(!empty($conf->global->SOFO_GET_INFOS_FROM_FOURN))
+	{
+		$fourn = new Fournisseur($db);
+		if($fourn->fetch($order->socid) > 0)
+		{
+			$order->mode_reglement_id = $fourn->mode_reglement_supplier_id;
+			$order->mode_reglement_code = getPaiementCode($order->mode_reglement_id);
+			
+			$order->cond_reglement_id = $fourn->cond_reglement_supplier_id;
+			$order->cond_reglement_code = getPaymentTermCode($order->cond_reglement_id);
+		}
+	}
+	
+	if($conf->global->SOFO_GET_INFOS_FROM_ORDER){
+		$order->mode_reglement_code = $commandeClient->mode_reglement_code;
+		$order->mode_reglement_id = $commandeClient->mode_reglement_id;
+		$order->cond_reglement_id = $commandeClient->cond_reglement_id;
+		$order->cond_reglement_code = $commandeClient->cond_reglement_code;
+		$order->date_livraison = $commandeClient->date_livraison;
+	}
+}
 
 $db->close();
 
