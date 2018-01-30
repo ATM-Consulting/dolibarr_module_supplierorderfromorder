@@ -48,7 +48,7 @@ function _getAvailability()
 			}
 		}
 		
-		$nb_day = (int)TSOFO::getMinAvailability($fk_product, $qty,$fk_fourn);
+		$nb_day = (int)TSOFO::getMinAvailability($fk_product, $qty,1,$fk_fourn);
 		print ($nb_day == 0 ? $langs->trans('Unknown') : $nb_day.' '.$langs->trans('Days'));
 	}
 	exit();
