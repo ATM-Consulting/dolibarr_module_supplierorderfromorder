@@ -381,7 +381,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 
 				}
 				
-				$nb_day = (int)TSOFO::getMinAvailability($line->fk_product, $line->qty,$prodfourn->fourn_id);
+				$nb_day = (int)TSOFO::getMinAvailability($line->fk_product, $line->qty,1,$prodfourn->fourn_id);
 				if($MaxAvailability<$nb_day)
 				{
 					$MaxAvailability = $nb_day;
