@@ -519,7 +519,7 @@ if (!empty($conf->categorie->enabled))
 
 //$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s ON (p.rowid = s.fk_product)';
 $sql .= ' WHERE p.fk_product_type IN (0,1) AND p.entity IN (' . getEntity("product", 1) . ')';
-$sql .= ' AND p.rowid IN ( 751, 8831 )';
+
 $fk_commande = GETPOST('id','int');
 
 if($fk_commande > 0) $sql .= ' AND cd.fk_commande = '.$fk_commande;
@@ -1099,7 +1099,12 @@ if ($resql || $resql2) {
 				}
 
 				$stocktobuy += $stock_of_needed - $stock_of_tomake;
-				$stock -= $stock_of_needed - $stock_of_tomake;
+				
+				if(!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK)
+				{
+					$stock -= $stock_of_needed - $stock_of_tomake;
+				}
+				
 				$help_stock.=', '.$langs->trans('OF').' : '.(float)($stock_of_needed - $stock_of_tomake);
 			}
 
