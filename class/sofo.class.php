@@ -21,12 +21,14 @@ class TSOFO {
 		}
 		
 	}
-	static function getMinAvailability($fk_product, $qty) {
+	static function getMinAvailability($fk_product, $qty, $only_with_delai = false) {
 	global $db,$form;
 		
 		$sql = "SELECT fk_availability".((float)DOL_VERSION>5 ? ',delivery_time_days' : '')." 
 				FROM ".MAIN_DB_PREFIX."product_fournisseur_price
 				WHERE fk_product=". $fk_product ." AND quantity <= ".$qty;
+//		if($only_with_delai) $sql.=" AND (fk_availability>0 || delivery_time_days>0 || fk_availability IS NOT NULL) ";
+
 				
 		$res_av = $db->query($sql);
 		
@@ -44,7 +46,8 @@ class TSOFO {
 				$av_code = $form->cache_availability[$obj_availability->fk_availability] ; 
 				$nb_day = self::getDayFromAvailabilityCode($av_code['code']);
 			}
-			if($min === false || $nb_day<$min) $min = $nb_day;
+			if(($min === false || $nb_day<$min )
+				&& (!$only_with_delai || $nb_day>0)) $min = $nb_day;
 			
 		}
 		
