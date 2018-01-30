@@ -236,6 +236,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				$order = new CommandeFournisseur($db);
 				$order->fetch($obj->rowid);
 				$order->socid = $idsupplier;
+				
 //				var_dump($obj,$order);exit;
 				if(!empty($projectid)){
 					$order->fk_project = GETPOST('projectid');
@@ -249,6 +250,21 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$order->add_object_linked('commande', $_REQUEST['id']);
 
 				//}
+					
+					
+				if(!empty($conf->global->SOFO_GET_INFOS_FROM_FOURN))
+				{
+					$fourn = new Fournisseur($db);
+					if($fourn->fetch($order->socid) > 0)
+					{
+						$order->mode_reglement_id = $fourn->mode_reglement_supplier_id;
+						$order->mode_reglement_code = getPaiementCode($order->mode_reglement_id);
+						
+						$order->cond_reglement_id = $fourn->cond_reglement_supplier_id;
+						$order->cond_reglement_code = getPaymentTermCode($order->cond_reglement_id);
+					}
+				}
+				
 				if($conf->global->SOFO_GET_INFOS_FROM_ORDER){
 					$order->mode_reglement_code = $commandeClient->mode_reglement_code;
 					$order->mode_reglement_id = $commandeClient->mode_reglement_id;
@@ -256,6 +272,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$order->cond_reglement_code = $commandeClient->cond_reglement_code;
 					$order->date_livraison = $commandeClient->date_livraison;
 				}
+				
 				$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
 				$newCommande = false;
 			} else {
@@ -267,6 +284,20 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				if(!empty($projectid)){
 					$order->fk_project = $projectid;
 				}
+				
+				if(!empty($conf->global->SOFO_GET_INFOS_FROM_FOURN))
+				{
+					$fourn = new Fournisseur($db);
+					if($fourn->fetch($order->socid) > 0)
+					{
+						$order->mode_reglement_id = $fourn->mode_reglement_supplier_id;
+						$order->mode_reglement_code = getPaiementCode($order->mode_reglement_id);
+						
+						$order->cond_reglement_id = $fourn->cond_reglement_supplier_id;
+						$order->cond_reglement_code = getPaymentTermCode($order->cond_reglement_id);
+					}
+				}
+				
 				if($conf->global->SOFO_GET_INFOS_FROM_ORDER){
 					$order->mode_reglement_code = $commandeClient->mode_reglement_code;
 					$order->mode_reglement_id = $commandeClient->mode_reglement_id;
