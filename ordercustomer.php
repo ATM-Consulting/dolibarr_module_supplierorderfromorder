@@ -1099,6 +1099,7 @@ if ($resql || $resql2) {
 				}
 
 				$stocktobuy += $stock_of_needed - $stock_of_tomake;
+				$stock -= $stock_of_needed - $stock_of_tomake;
 				$help_stock.=', '.$langs->trans('OF').' : '.(float)($stock_of_needed - $stock_of_tomake);
 			}
 
@@ -1162,7 +1163,7 @@ if ($resql || $resql2) {
             	$champs = "";
             	$champs .= $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : '';
                 $champs.= '<td align="right">'.
-                 $warning . $stock.
+                  $warning . $stock. //$stocktobuy
                  '</td>';
 				if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL))
 				{
