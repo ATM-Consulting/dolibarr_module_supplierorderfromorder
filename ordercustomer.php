@@ -482,7 +482,7 @@ if (!empty($conf->categorie->enabled))
 
 //$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s ON (p.rowid = s.fk_product)';
 $sql .= ' WHERE p.fk_product_type IN (0,1) AND p.entity IN (' . getEntity("product", 1) . ')';
-$sql .= ' AND p.rowid = 13062';
+
 $fk_commande = GETPOST('id','int');
 
 if($fk_commande > 0) $sql .= ' AND cd.fk_commande = '.$fk_commande;
