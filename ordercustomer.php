@@ -241,7 +241,6 @@ if (in_array($action, array('valid-propal', 'valid-order') )) {
                         
                         if($order->element == 'order_supplier')
                         {
-                        	
                         	$order->updateline(
                         			$lineOrderFetched->id,
                         			$lineOrderFetched->desc,
@@ -254,10 +253,10 @@ if (in_array($action, array('valid-propal', 'valid-order') )) {
                         }
                         else if($order->element == 'supplier_proposal')
                         {
-            			
+
                         	$order->updateline(
                         			$lineOrderFetched->id, 
-            						$lineOrderFetched->pu_ht, 
+                        			$prodfourn->fourn_unitprice, //$lineOrderFetched->pu_ht is empty,
             						$lineOrderFetched->qty + $line->qty, 
             						$remise_percent, 
             						$lineOrderFetched->tva_tx, 
@@ -329,7 +328,7 @@ if (in_array($action, array('valid-propal', 'valid-order') )) {
 								-1, //$rang=-1, 
 								0, //$special_code=0, ,
 								0, //$fk_parent_line=0, ,
-								$line->fk_fournprice, //$fk_fournprice=0, ,
+								$line->fk_prod_fourn_price, //$fk_fournprice=0, ,
 								0, //$pa_ht=0, ,
 								'', //$label='',,
 								0, //$array_option=0, ,
@@ -650,11 +649,24 @@ if ($resql || $resql2) {
          '<div style="text-align:right"><a href="'.$_SERVER["PHP_SELF"].'?'.$_SERVER["QUERY_STRING"].'&show_stock_no_need=yes">'.$langs->trans('ShowLineEvenIfStockIsSuffisant').'</a></div>'.
          '<table class="liste" width="100%">';
 
+    $colspan = 7;
+    
     if($conf->global->SOFO_USE_DELIVERY_TIME) {
             $week_to_replenish = (int)GETPOST('week_to_replenish','int');
 
             $colspan = empty($conf->global->FOURN_PRODUCT_AVAILABILITY) ? 7 : 8;
 
+            if (!empty($conf->of->enabled) && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)){$colspan ++;}
+            
+            if (!empty( $conf->global->SOFO_USE_DELIVERY_TIME)){$colspan ++;}
+           
+            if (!empty($conf->categorie->enabled)){$colspan ++;}
+           
+            if (!empty($conf->service->enabled) && $type == 1){$colspan ++;}
+            
+            if($dolibarr_version35){$colspan ++;}
+            
+            
         print '<tr class="liste_titre">'.
             '<td colspan="'.$colspan.'">'.$langs->trans('NbWeekToReplenish').'<input type="text" name="week_to_replenish" value="'.$week_to_replenish.'" size="2"> '
             .'<input type="submit" value="'.$langs->trans('ReCalculate').'" /></td><td></td>';
@@ -667,6 +679,7 @@ if ($resql || $resql2) {
     }
 
 
+    
     $param = (isset($type)? '&type=' . $type : '');
     $param .= '&fourn_id=' . $fourn_id . '&snom='. $snom . '&salert=' . $salert;
     $param .= '&sref=' . $sref;
@@ -813,6 +826,8 @@ if ($resql || $resql2) {
     		$sortfield,
     		$sortorder
     );
+    
+    print '<th class="liste_titre" >&nbsp;</th>';
     
     print '</tr>'.
 	    // Lignes des champs de filtre
