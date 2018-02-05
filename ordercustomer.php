@@ -489,8 +489,17 @@ if($fk_commande > 0) $sql .= ' AND cd.fk_commande = '.$fk_commande;
 
 if (!empty($conf->categorie->enabled))
 {
-	$fk_categorie = GETPOST('categorie','int');
-	if($fk_categorie > 0) $sql .= ' AND cp.fk_categorie = '.intval($fk_categorie);
+	$fk_categorie = GETPOST('categorie');
+	if(is_array($fk_categorie))
+	{
+		$fk_categorie = array_map('intval', $fk_categorie);
+	}
+	else
+	{
+		$fk_categorie = intval($fk_categorie);
+	}
+	
+	if($fk_categorie > 0) $sql .= ' AND cp.fk_categorie IN ( '.implode(',', $fk_categorie ) .' ) ' ;
 }
 
 if ($sall) {
@@ -570,7 +579,7 @@ if($sql2 && $fk_commande > 0){
 	$sql2 .= $db->plimit($limit + 1, $offset);
 	$resql2 = $db->query($sql2);
 }
-
+//print $sql ;
 $justOFforNeededProduct = !empty($conf->global->SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT) && empty($fk_commande);
 $statutarray=array('1' => $langs->trans("Finished"), '0' => $langs->trans("RowMaterial"));
 $form = new Form($db);
@@ -655,15 +664,10 @@ if ($resql || $resql2) {
             $week_to_replenish = (int)GETPOST('week_to_replenish','int');
 
             $colspan = empty($conf->global->FOURN_PRODUCT_AVAILABILITY) ? 7 : 8;
-
             if (!empty($conf->of->enabled) && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)){$colspan ++;}
-            
             if (!empty( $conf->global->SOFO_USE_DELIVERY_TIME)){$colspan ++;}
-           
-            if (!empty($conf->categorie->enabled)){$colspan ++;}
-           
+            if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN) ){$colspan ++;}
             if (!empty($conf->service->enabled) && $type == 1){$colspan ++;}
-            
             if($dolibarr_version35){$colspan ++;}
             
             
@@ -676,6 +680,26 @@ if ($resql || $resql2) {
 			print '</tr>';
 
 
+    }
+    
+    if (!empty($conf->categorie->enabled))
+    {
+    	$colspan = empty($conf->global->FOURN_PRODUCT_AVAILABILITY) ? 6 : 7;
+    	
+    	if (!empty($conf->of->enabled) && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)){$colspan ++;}
+    	if (!empty( $conf->global->SOFO_USE_DELIVERY_TIME)){$colspan ++;}
+    	if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN) ){$colspan ++;}
+    	if (!empty($conf->service->enabled) && $type == 1){$colspan ++;}
+    	if($dolibarr_version35){$colspan ++;}
+    	
+    	print '<tr class="liste_titre">';
+    	print '<td colspan="2" >';
+    	print $langs->trans("Categories");
+    	print '</td>';
+    	print '<td  colspan="'.$colspan.'" >';
+    	print _getCatMultiselect($form);
+    	print '</td>';
+    	print '</tr>';
     }
 
 
@@ -717,7 +741,7 @@ if ($resql || $resql2) {
     		$sortfield,
     		$sortorder
     		);
-    if (!empty($conf->categorie->enabled))
+    if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN) )
     {
 	    print_liste_field_titre(
 	    		$langs->trans("Categories"),
@@ -850,10 +874,9 @@ if ($resql || $resql2) {
 	$liste_titre = "";
 	$liste_titre.= '<td class="liste_titre">'.$form->selectarray('finished',$statutarray,(!isset($_REQUEST['button_search_x']) && $conf->global->SOFO_DEFAUT_FILTER != -1) ? $conf->global->SOFO_DEFAUT_FILTER : GETPOST('finished'),1).'</td>';
     
-	if (!empty($conf->categorie->enabled))
+	if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN) )
 	{
 		$liste_titre.= '<td class="liste_titre">';
-		$liste_titre.= $form->select_all_categories('product',GETPOST('categorie'), 'categorie');
 		$liste_titre.= '</td>';
 	}
 	
@@ -1133,7 +1156,7 @@ if ($resql || $resql2) {
 					print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" >';
 				}
 				
-			if (!empty($conf->categorie->enabled))
+			if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN) )
 			{
 				print '<td >';
 				$categorie = new Categorie($db);
@@ -1574,6 +1597,30 @@ function _appliCond($order, $commandeClient){
 		$order->date_livraison = $commandeClient->date_livraison;
 	}
 }
+
+
+
+function _getCatMultiselect($form)
+{
+
+	$maxlength=64;
+	$excludeafterid=0;
+	$outputmode=1;
+	$htmlname='categorie';
+	$array=$form->select_all_categories('product',GETPOST('categorie'), $htmlname,$maxlength,$excludeafterid,$outputmode);
+	$selected=GETPOST('categorie');
+	$key_in_label=0;
+	$value_as_key=0;
+	$morecss='';
+	$translate=0;
+	$width='90%';
+	$moreattrib='';
+	$elemtype='';
+	
+	return $form->multiselectarray($htmlname, $array, $selected, $key_in_label, $value_as_key, $morecss, $translate, $width, $moreattrib,$elemtype);
+
+}
+
 
 $db->close();
 
