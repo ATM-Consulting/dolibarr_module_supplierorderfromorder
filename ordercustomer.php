@@ -496,7 +496,7 @@ if (!empty($conf->categorie->enabled))
 	}
 	else
 	{
-		$fk_categorie = intval($fk_categorie);
+		$fk_categorie = array(intval($fk_categorie));
 	}
 	
 	if($fk_categorie > 0) $sql .= ' AND cp.fk_categorie IN ( '.implode(',', $fk_categorie ) .' ) ' ;
