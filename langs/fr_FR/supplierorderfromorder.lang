@@ -22,3 +22,4 @@ ShowLineEvenIfStockIsSuffisant=Inclure les lignes avec un stock suffisant
 supplierorderfromorder_nb_orders_created=Nombre de commandes fournisseurs créées : %s
 CreateDistinctSupplierOrderFromOrderDependingOfProject=Créer des commandes fournisseurs distinctes si les projets des commandes clients sont différents
 UseCostPriceAsBuyingPrice=Utiliser le prix de reviens comme prix d'achat pour les lignes de type libres
+PurgeSessionForCachedProduct=Affichage basé sur un cache produit, purger le cache ?
