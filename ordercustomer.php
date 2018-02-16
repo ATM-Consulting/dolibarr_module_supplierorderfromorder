@@ -461,6 +461,11 @@ if ($action == 'order' && isset($_POST['valid'])) {
 /*
  * View
  */
+
+$TCachedProductId =& $_SESSION['TCachedProductId'];
+if(empty($TCachedProductId)) $TCachedProductId=array();
+if(GETPOST('purge_cached_product')=='yes') $TCachedProductId =array();
+
 $title = $langs->trans('ProductsToOrder');
 
 $sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty';
@@ -473,6 +478,10 @@ $sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd ON (p.rowid = 
 
 //$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s ON (p.rowid = s.fk_product)';
 $sql .= ' WHERE p.fk_product_type IN (0,1) AND p.entity IN (' . getEntity("product", 1) . ')';
+
+if(!empty($TCachedProductId)) {
+	$sql.= ' AND p.rowid IN('.implode(',',$TCachedProductId).') ' ;
+}
 
 $fk_commande = GETPOST('id','int');
 
@@ -632,7 +641,14 @@ if ($resql || $resql2) {
          '<input type="hidden" name="fk_commande" value="' . GETPOST('fk_commande','int'). '">'.
          '<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need'). '">'.
 
-         '<div style="text-align:right"><a href="'.$_SERVER["PHP_SELF"].'?'.$_SERVER["QUERY_STRING"].'&show_stock_no_need=yes">'.$langs->trans('ShowLineEvenIfStockIsSuffisant').'</a></div>'.
+         '<div style="text-align:right">
+			<a href="'.$_SERVER["PHP_SELF"].'?'.$_SERVER["QUERY_STRING"].'&show_stock_no_need=yes">'.$langs->trans('ShowLineEvenIfStockIsSuffisant').'</a>';
+
+	if(!empty($TCachedProductId)) {
+		echo '<a style="color:red; font-weight:bold;" href="'.$_SERVER["PHP_SELF"].'?'.$_SERVER["QUERY_STRING"].'&purge_cached_product=yes">'.$langs->trans('PurgeSessionForCachedProduct').'</a>';
+	}
+
+print '	  </div>'.
          '<table class="liste" width="100%">';
 
     if($conf->global->SOFO_USE_DELIVERY_TIME) {
@@ -1143,6 +1159,9 @@ if ($resql || $resql2) {
 	    	print '<td>&nbsp</td>';
 	   }
            print '</tr>';
+
+	  if(empty($fk_commande)) $TCachedProductId[] = $prod->id; //mise en cache
+
         }
 
 //	if($prod->ref=='A0000753') exit;
