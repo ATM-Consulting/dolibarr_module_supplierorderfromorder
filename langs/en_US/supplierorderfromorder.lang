@@ -22,3 +22,6 @@ ShowLineEvenIfStockIsSuffisant=Include lines with sufficient stock
 supplierorderfromorder_nb_orders_created=Number of supplier order(s) created: %s
 CreateDistinctSupplierOrderFromOrderDependingOfProject=Create separate supplier orders if the projects in the customer orders are different
 UseCostPriceAsBuyingPrice=Use cost price as buying price for free lines
+SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER=Default product category filter
+DeleteFilter=Delete filter
+NoFilter=No filter

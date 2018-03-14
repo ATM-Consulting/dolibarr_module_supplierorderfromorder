@@ -91,6 +91,37 @@ $offset = $limit * $page ;
 
 
 
+$TCategories = array();
+
+if(! empty($conf->categorie->enabled)) {
+
+	if(! isset($_REQUEST['categorie']))
+	{
+		$TCategories = unserialize($conf->global->SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER);
+	}
+	else
+	{
+		$categories = GETPOST('categorie');
+
+		if(is_array($categories))
+		{
+			if(in_array(-1, $categories) && count($categories) > 1) {
+				unset($categories[array_search(-1, $categories)]);
+			}
+			$TCategories = array_map('intval', $categories);
+		}
+		elseif($categories > 0)
+		{
+			$TCategories = array(intval($categories));
+		}
+		else {
+			$TCategories = array(-1);
+		}
+	}
+}
+
+
+
 /*
  * Actions
  */
@@ -102,6 +133,7 @@ if (isset($_POST['button_removefilter']) || in_array($action, array('valid-propa
     $snom = '';
     $sal = '';
     $salert = '';
+    $TCategories = array(-1);
 }
 
 /*echo "<pre>";
@@ -475,7 +507,7 @@ $sql .= $dolibarr_version35 ? ', p.desiredstock' : "";
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
 $sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd ON (p.rowid = cd.fk_product)';
 
-if (!empty($conf->categorie->enabled))
+if (! empty($TCategories))
 {
 	$sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'categorie_product as cp ON (p.rowid = cp.fk_product)';
 }
@@ -487,20 +519,7 @@ $fk_commande = GETPOST('id','int');
 
 if($fk_commande > 0) $sql .= ' AND cd.fk_commande = '.$fk_commande;
 
-if (!empty($conf->categorie->enabled))
-{
-	$fk_categorie = GETPOST('categorie');
-	if(is_array($fk_categorie))
-	{
-		$fk_categorie = array_map('intval', $fk_categorie);
-	}
-	else
-	{
-		$fk_categorie = array(intval($fk_categorie));
-	}
-	
-	if($fk_categorie > 0) $sql .= ' AND cp.fk_categorie IN ( '.implode(',', $fk_categorie ) .' ) ' ;
-}
+if(! empty($TCategories)) $sql .= ' AND cp.fk_categorie IN ( '.implode(',', $TCategories) .' ) ' ;
 
 if ($sall) {
     $sql .= ' AND (p.ref LIKE "%'.$db->escape($sall).'%" ';
@@ -655,27 +674,25 @@ if ($resql || $resql2) {
          '<input type="hidden" name="fk_commande" value="' . GETPOST('fk_commande','int'). '">'.
          '<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need'). '">'.
 
-         '<div style="text-align:right"><a href="'.$_SERVER["PHP_SELF"].'?'.$_SERVER["QUERY_STRING"].'&show_stock_no_need=yes">'.$langs->trans('ShowLineEvenIfStockIsSuffisant').'</a></div>'.
+         '<div style="text-align:right"><a href="'.$_SERVER["PHP_SELF"].'?'.http_build_query($_REQUEST).'&show_stock_no_need=yes">'.$langs->trans('ShowLineEvenIfStockIsSuffisant').'</a></div>'.
          '<table class="liste" width="100%">';
 
-    $colspan = 7;
-    
-    if($conf->global->SOFO_USE_DELIVERY_TIME) {
-            $week_to_replenish = (int)GETPOST('week_to_replenish','int');
 
-            $colspan = empty($conf->global->FOURN_PRODUCT_AVAILABILITY) ? 7 : 8;
-            if (!empty($conf->of->enabled) && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)){$colspan ++;}
-            if (!empty( $conf->global->SOFO_USE_DELIVERY_TIME)){$colspan ++;}
-            if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN) ){$colspan ++;}
-            if (!empty($conf->service->enabled) && $type == 1){$colspan ++;}
-            if($dolibarr_version35){$colspan ++;}
+    $colspan = 9;
+    if (! empty($conf->global->FOURN_PRODUCT_AVAILABILITY)) $colspan++;
+    if (!empty($conf->of->enabled) && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)){$colspan ++;}
+    if (!empty( $conf->global->SOFO_USE_DELIVERY_TIME)){$colspan ++;}
+    if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN) ){$colspan ++;}
+    if (!empty($conf->service->enabled) && $type == 1){$colspan ++;}
+    if($dolibarr_version35){$colspan ++;}
+   
+    if(! empty($conf->global->SOFO_USE_DELIVERY_TIME)) {
+            $week_to_replenish = (int)GETPOST('week_to_replenish','int');
             
             
         print '<tr class="liste_titre">'.
             '<td colspan="'.$colspan.'">'.$langs->trans('NbWeekToReplenish').'<input type="text" name="week_to_replenish" value="'.$week_to_replenish.'" size="2"> '
-            .'<input type="submit" value="'.$langs->trans('ReCalculate').'" /></td><td></td>';
-
-        if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) print '<td></td>';
+            .'<input type="submit" value="'.$langs->trans('ReCalculate').'" /></td>';
 
 			print '</tr>';
 
@@ -684,20 +701,23 @@ if ($resql || $resql2) {
     
     if (!empty($conf->categorie->enabled))
     {
-    	$colspan = empty($conf->global->FOURN_PRODUCT_AVAILABILITY) ? 6 : 7;
-    	
-    	if (!empty($conf->of->enabled) && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)){$colspan ++;}
-    	if (!empty( $conf->global->SOFO_USE_DELIVERY_TIME)){$colspan ++;}
-    	if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN) ){$colspan ++;}
-    	if (!empty($conf->service->enabled) && $type == 1){$colspan ++;}
-    	if($dolibarr_version35){$colspan ++;}
-    	
     	print '<tr class="liste_titre">';
     	print '<td colspan="2" >';
     	print $langs->trans("Categories");
     	print '</td>';
-    	print '<td  colspan="'.$colspan.'" >';
-    	print _getCatMultiselect($form);
+    	print '<td colspan="'.($colspan-2).'" >';
+    	print getCatMultiselect('categorie', $TCategories);
+    	print '<a id="clearfilter" href="javascript:;">'.$langs->trans('DeleteFilter').'</a>';
+?>
+	<script type="text/javascript">
+	$('a#clearfilter').click(function() {
+		$('option:selected', $('select#categorie')).prop('selected', false);
+		$('option[value=-1]', $('select#categorie')).prop('selected', true);
+		$('form[name=formulaire]').submit();
+		return false;
+	})
+	</script>
+<?php
     	print '</td>';
     	print '</tr>';
     }
@@ -710,7 +730,7 @@ if ($resql || $resql2) {
 
     // Lignes des titres
     print '<tr class="liste_titre">'.
-         '<td><input type="checkbox" onClick="toggle(this)" /></td>';
+         '<th class="liste_titre"><input type="checkbox" onClick="toggle(this)" /></th>';
     print_liste_field_titre(
     		$langs->trans('Ref'),
     		'ordercustomer.php',
@@ -1596,29 +1616,6 @@ function _appliCond($order, $commandeClient){
 		$order->cond_reglement_code = $commandeClient->cond_reglement_code;
 		$order->date_livraison = $commandeClient->date_livraison;
 	}
-}
-
-
-
-function _getCatMultiselect($form)
-{
-
-	$maxlength=64;
-	$excludeafterid=0;
-	$outputmode=1;
-	$htmlname='categorie';
-	$array=$form->select_all_categories('product',GETPOST('categorie'), $htmlname,$maxlength,$excludeafterid,$outputmode);
-	$selected=GETPOST('categorie');
-	$key_in_label=0;
-	$value_as_key=0;
-	$morecss='';
-	$translate=0;
-	$width='90%';
-	$moreattrib='';
-	$elemtype='';
-	
-	return $form->multiselectarray($htmlname, $array, $selected, $key_in_label, $value_as_key, $morecss, $translate, $width, $moreattrib,$elemtype);
-
 }
 
 
