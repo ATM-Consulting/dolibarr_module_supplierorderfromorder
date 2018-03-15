@@ -40,7 +40,9 @@ dol_include_once("/fourn/class/fournisseur.class.php");
 dol_include_once('/supplierorderfromorder/lib/function.lib.php');
 dol_include_once("/commande/class/commande.class.php");
 dol_include_once("/supplier_proposal/class/supplier_proposal.class.php");
-
+if(! empty($conf->categorie->enabled)) {
+	dol_include_once('/categories/class/categorie.class.php');
+}
 
 global $bc, $conf, $db, $langs, $user;
 
@@ -120,6 +122,25 @@ if(! empty($conf->categorie->enabled)) {
 	}
 }
 
+$TCategoriesQuery = $TCategories;
+
+foreach($TCategories as $categID) {
+	if($categID <= 0) continue;
+
+	$cat = new Categorie($db);
+	$cat->fetch($categID);
+
+	$TSubCat = get_categs_enfants($cat);
+	foreach($TSubCat as $subCatID) {
+		if(! in_array($subCatID, $TCategories)) {
+			$TCategoriesQuery[] = $subCatID;
+		}
+	}
+}
+
+if(count($TCategoriesQuery) == 1 && in_array(-1, $TCategoriesQuery)) {
+	$TCategoriesQuery = array();
+}
 
 
 /*
@@ -133,6 +154,7 @@ if (isset($_POST['button_removefilter']) || in_array($action, array('valid-propa
     $snom = '';
     $sal = '';
     $salert = '';
+    $TCategoriesQuery = array();
     $TCategories = array(-1);
 }
 
@@ -507,7 +529,7 @@ $sql .= $dolibarr_version35 ? ', p.desiredstock' : "";
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
 $sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd ON (p.rowid = cd.fk_product)';
 
-if (! empty($TCategories))
+if (! empty($TCategoriesQuery))
 {
 	$sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'categorie_product as cp ON (p.rowid = cp.fk_product)';
 }
@@ -519,7 +541,7 @@ $fk_commande = GETPOST('id','int');
 
 if($fk_commande > 0) $sql .= ' AND cd.fk_commande = '.$fk_commande;
 
-if(! empty($TCategories)) $sql .= ' AND cp.fk_categorie IN ( '.implode(',', $TCategories) .' ) ' ;
+if(! empty($TCategoriesQuery)) $sql .= ' AND cp.fk_categorie IN ( '.implode(',', $TCategoriesQuery) .' ) ' ;
 
 if ($sall) {
     $sql .= ' AND (p.ref LIKE "%'.$db->escape($sall).'%" ';
@@ -1621,3 +1643,18 @@ function _appliCond($order, $commandeClient){
 
 $db->close();
 
+function get_categs_enfants(&$cat) {
+
+    $TCat = array();
+
+    $filles = $cat->get_filles();
+    if(!empty($filles)) {
+        foreach($filles as &$cat_fille) {
+            $TCat[] = $cat_fille->id;
+
+            get_categs_enfants($cat_fille);
+        }
+    }
+
+    return $TCat;
+}
