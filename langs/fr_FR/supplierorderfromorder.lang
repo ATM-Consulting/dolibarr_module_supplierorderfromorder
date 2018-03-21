@@ -27,3 +27,5 @@ SOFO_USE_MAX_DELIVERY_DATE=Utiliser la date de livraison la plus grande (date de
 GenerateSupplierPropal=Créer les demandes de prix
 ProductAddToSupplierQuotation=Produit %s ajouté à la à la demande de prix du fournisseur '%s'
 ProductAddToSupplierOrder=Produit %s ajouté à la commande du fournisseur '%s'
+SelectSameSupplier=Utiliser le fournisseur pour tous les produits
+NoCommonSupplier=Aucun fournisseur en commun

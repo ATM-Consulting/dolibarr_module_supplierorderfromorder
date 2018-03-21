@@ -77,6 +77,7 @@ $salert = GETPOST('salert', 'alpha');
 $sortfield = GETPOST('sortfield','alpha');
 $sortorder = GETPOST('sortorder','alpha');
 $page = GETPOST('page','int');
+$selectedSupplier = GETPOST('useSameSupplier', 'int');
 
 if (!$sortfield) {
     $sortfield = 'cd.rang';
@@ -887,6 +888,7 @@ if ($resql || $resql2) {
 		$limit = 999999;
 	}
 
+	$TSupplier = array();
     while ($i < min($num, $limit)) {
     	$objp = $db->fetch_object($resql);
 //if($objp->rowid == 4666) { var_dump($objp); }
@@ -1201,9 +1203,12 @@ if ($resql || $resql2) {
 
 
                  $champs.='<td align="right" data-info="fourn-price" >'.
-                 $form->select_product_fourn_price($prod->id, 'fourn'.$i, 1).
+                 $form->select_product_fourn_price($prod->id, 'fourn'.$i, (! empty($selectedSupplier) ? $selectedSupplier : '')).
                  '</td>';
 				print $champs;
+
+				if(empty($TSupplier)) $TSupplier = $prod->list_suppliers();
+				else $TSupplier = array_intersect($prod->list_suppliers(), $TSupplier);
 
 				if($conf->of->enabled && $user->rights->of->of->write && empty($conf->global->SOFO_REMOVE_MAKE_BTN)) {
 		print '<td><a href="'.dol_buildpath('/of/fiche_of.php',1).'?action=new&fk_product='.$prod->id.'" class="butAction">Fabriquer</a></td>';
@@ -1276,11 +1281,36 @@ if ($resql || $resql2) {
 	        $i++; $j++;
 	    }
     }
-    
-    
+
+	// Formatage du tableau
+	$TCommonSupplier = array();
+	foreach($TSupplier as $fk_fourn) {
+		if(!isset($TCommonSupplier[0])) $TCommonSupplier[0] = '';
+
+		$fourn = new Fournisseur($db);
+		$fourn->fetch($fk_fourn);
+
+		$TCommonSupplier[$fk_fourn] = $fourn->name;
+	}
+
     print '</table>'.
-         '<table width="100%" style="margin-top:15px;">'.
-         '<tr><td align="right">'.
+         '<table width="100%" style="margin-top:15px;">';
+    print '<tr>';
+	print '<td align="right">';
+
+	print $langs->trans('SelectSameSupplier').' :&nbsp;';
+	if(empty($TCommonSupplier)) {
+		print '<a class="butActionRefused" href="javascript:" title="'.$langs->trans('NoCommonSupplier').'">'.$langs->trans('Apply').'</a>';
+	}
+	else {
+		print $form->selectarray('useSameSupplier', $TCommonSupplier);
+		print '<button type="submit" class="butAction">'.$langs->trans('Apply').'</button>';
+	}
+
+	print '</td>';
+	print '</tr>';
+	print '<tr><td>&nbsp;</td></tr>';
+	print '<tr><td align="right">'.
          '<button class="butAction" type="submit" name="action" value="valid-propal">'.$langs->trans("GenerateSupplierPropal").'</button>'.
          '<button class="butAction" type="submit" name="action" value="valid-order">'.$langs->trans("GenerateSupplierOrder").'</button>'.
          '</td></tr></table>'.
