@@ -467,7 +467,7 @@ if(empty($TCachedProductId)) $TCachedProductId=array();
 if(GETPOST('purge_cached_product')=='yes') $TCachedProductId =array();
 
 $title = $langs->trans('ProductsToOrder');
-
+$db->query("SET SQL_MODE=''");
 $sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
 $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte, p.finished, cd.rang,';
