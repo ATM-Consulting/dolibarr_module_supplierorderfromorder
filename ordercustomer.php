@@ -74,7 +74,7 @@ $salert = GETPOST('salert', 'alpha');
 
 $sortfield = GETPOST('sortfield','alpha');
 $sortorder = GETPOST('sortorder','alpha');
-$page = GETPOST('page','int');
+$page = (int) GETPOST('page','int');
 
 if (!$sortfield) {
     $sortfield = 'cd.rang';
