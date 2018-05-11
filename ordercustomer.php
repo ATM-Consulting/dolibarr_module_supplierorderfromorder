@@ -581,6 +581,12 @@ elseif(!isset($_REQUEST['button_search_x']) && isset($conf->global->SOFO_DEFAUT_
 if (!empty($canvas)) {
     $sql .= ' AND p.canvas = "' . $db->escape($canvas) . '"';
 }
+
+if($salert=='on') {
+	$sql.= " AND p.seuil_stock_alerte is not NULL ";
+
+}
+
 $sql .= ' GROUP BY p.rowid, p.ref, p.label, p.price';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type, p.tms';
 $sql .= ', p.duration, p.tobuy, p.seuil_stock_alerte';
@@ -593,7 +599,7 @@ if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
 //$sql .= ' HAVING p.desiredstock > SUM(COALESCE(s.reel, 0))';
 //$sql .= ' HAVING p.desiredstock > 0';
 if ($salert == 'on') {
-    $sql .= ' HAVING SUM(COALESCE(stock_physique, 0)) < p.seuil_stock_alerte AND p.seuil_stock_alerte is not NULL';
+    $sql .= ' HAVING stock_physique < p.seuil_stock_alerte ';
     $alertchecked = 'checked="checked"';
 }
 
@@ -610,6 +616,9 @@ if($_REQUEST['id'] && $conf->global->SOFO_ADD_FREE_LINES){
 	//echo $sql2;
 }
 $sql .= $db->order($sortfield,$sortorder);
+
+//echo $sql;
+
 if(!$conf->global->SOFO_USE_DELIVERY_TIME) $sql .= $db->plimit($limit + 1, $offset);
 $resql = $db->query($sql);
 
