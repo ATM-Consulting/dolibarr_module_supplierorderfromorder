@@ -309,7 +309,11 @@ if (in_array($action, array('valid-propal', 'valid-order') )) {
 								,0
 								,$line->product_type
 								,$line->info_bits
-								);
+								,FALSE // $notrigger
+								,NULL // $date_start
+								,NULL // $date_end
+								,$line->array_options
+						);
 					}
 					else if($order->element == 'supplier_proposal')
 					{
@@ -332,7 +336,7 @@ if (in_array($action, array('valid-propal', 'valid-order') )) {
 								$line->fk_prod_fourn_price, //$fk_fournprice=0, ,
 								0, //$pa_ht=0, ,
 								'', //$label='',,
-								0, //$array_option=0, ,
+								$line->array_options, //$array_option=0, ,
 								$line->ref_fourn, //$ref_fourn='', ,
 								'', //$fk_unit='', ,
 								'', //$origin='', ,
@@ -471,6 +475,7 @@ $title = $langs->trans('ProductsToOrder');
 $sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
 $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte, p.finished, cd.rang,';
+$sql .= ' GROUP_CONCAT(cd.rowid SEPARATOR "@") as lineid,';
 $sql .= ' ( SELECT SUM(s.reel) FROM ' . MAIN_DB_PREFIX . 'product_stock s WHERE s.fk_product=p.rowid ) as stock_physique';
 $sql .= $dolibarr_version35 ? ', p.desiredstock' : "";
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
@@ -1120,20 +1125,30 @@ if ($resql || $resql2) {
 			}
 
 			$var =! $var;
-			print '<tr ' . $bc[$var] . ' data-productid="'.$objp->rowid.'"  data-i="'.$i.'"   >'.
-                 '<td><input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '></td>'.
-                 '<td style="height:35px;" class="nowrap">'.
+			print '<tr ' . $bc[$var] . ' data-productid="'.$objp->rowid.'"  data-i="'.$i.'"   >
+						<td>
+							<input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '>';
+
+			$lineid = '';
+
+			if(strpos($objp->lineid, '@') === false) { // Une seule ligne d'origine
+				$lineid = $objp->lineid;
+			}
+
+			print '<input type="hidden" name="lineid' . $i . '" value="' . $lineid .'" />';
+
+			if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
+				print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" >';
+			}
+
+			print '</td>
+                 <td style="height:35px;" class="nowrap">'.
                  (!empty($TDemandes) ? $form->textwithpicto($prod->getNomUrl(1), 'Demande(s) de prix en cours :<br />'.implode(', ', $TDemandes), 1, 'help') : $prod->getNomUrl(1)).
                  '</td>'.
                  '<td>' . $objp->label . '</td>';
 
 	        print '<td>'.$statutarray[$objp->finished].'</td>';
 
-
-	        
-				if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
-					print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" >';
-				}
 				
 			if (!empty($conf->categorie->enabled))
 			{
@@ -1429,7 +1444,7 @@ function _prepareLine($i,$actionTarget = 'order')
 	{
 		$line = new CommandeFournisseurLigne($db); //$actionTarget = 'order'
 	}
-	
+
 	//Lignes de produit
 	if(!GETPOST('tobuy_free'.$i)){
 		$box = $i;
@@ -1437,7 +1452,23 @@ function _prepareLine($i,$actionTarget = 'order')
 		//get all the parameters needed to create a line
 		$qty = GETPOST('tobuy'.$i, 'int');
 		$desc = GETPOST('desc'.$i, 'alpha');
-		
+		$lineid = GETPOST('lineid'.$i, 'int');
+
+		$array_options = array();
+
+		if(! empty($lineid)) {
+			$commandeline = new OrderLine($db);
+			$commandeline->fetch($lineid);
+			if(empty($commandeline->id) && ! empty($commandeline->rowid)) {
+				$commandeline->id = $commandeline->rowid; // Pas positionné par OrderLine::fetch() donc le fetch_optionals() foire...
+			}
+
+			if(empty($commandeline->array_options) && method_exists($commandeline, 'fetch_optionals')) {
+				$commandeline->fetch_optionals();
+			}
+
+			$array_options = $commandeline->array_options;
+		}
 
 		$obj = _getSupplierPriceInfos($supplierpriceid);
 		
@@ -1457,6 +1488,7 @@ function _prepareLine($i,$actionTarget = 'order')
 			// FIXME: Ugly hack to get the right purchase price since supplier references can collide
 			// (eg. same supplier ref for multiple suppliers with different prices).
 			$line->fk_prod_fourn_price = $supplierpriceid;
+			$line->array_options = $array_options;
 			
 			if(!empty($_REQUEST['tobuy'.$i])) {
 				$suppliers[$obj->fk_soc]['lines'][] = $line;
@@ -1483,7 +1515,15 @@ function _prepareLine($i,$actionTarget = 'order')
 		$fournid = GETPOST('fourn_free'.$i, 'int');
 		$commandeline = new OrderLine($db);
 		$commandeline->fetch($lineid);
-		
+
+		if(empty($commandeline->id) && ! empty($commandeline->rowid)) {
+			$commandeline->id = $commandeline->rowid; // Pas positionné par OrderLine::fetch() donc le fetch_optionals() foire...
+		}
+
+		if(empty($commandeline->array_options) && method_exists($commandeline, 'fetch_optionals')) {
+			$commandeline->fetch_optionals();
+		}
+
 		$line->qty = $qty;
 		$line->desc = $desc;
 		$line->product_type = $product_type;
@@ -1495,6 +1535,7 @@ function _prepareLine($i,$actionTarget = 'order')
 		$line->total_ttc = $line->total_ht + $line->total_tva;
 		//$line->ref_fourn = $obj->ref_fourn;
 		$line->remise_percent = $commandeline->remise_percent;
+		$line->array_options = $array_options;
 		
 		unset($_POST['fourn_free' . $i]);
 		
