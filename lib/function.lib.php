@@ -93,3 +93,30 @@ function getExpedie($fk_product) {
     }
     
 }
+
+function getPaiementCode($id) {
+	
+	global $db;
+	
+	if(empty($id)) return '';
+	
+	$sql = 'SELECT code FROM '.MAIN_DB_PREFIX.'c_paiement WHERE id = '.$id;
+	$resql = $db->query($sql);
+	$res = $db->fetch_object($resql);
+	
+	return $res->code;
+}
+
+
+function getPaymentTermCode($id) {
+	
+	global $db;
+	
+	if(empty($id)) return '';
+	
+	$sql = 'SELECT code FROM '.MAIN_DB_PREFIX.'c_payment_term WHERE rowid = '.$id;
+	$resql = $db->query($sql);
+	$res = $db->fetch_object($resql);
+	
+	return $res->code;
+}

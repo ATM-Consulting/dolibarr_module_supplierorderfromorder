@@ -21,17 +21,21 @@ class TSOFO {
 		}
 		
 	}
-	static function getMinAvailability($fk_product, $qty, $only_with_delai = false) {
+	static function getMinAvailability($fk_product, $qty, $only_with_delai = false ,$fk_soc=0) {
 	global $db,$form;
 		
 		$sql = "SELECT fk_availability".((float)DOL_VERSION>5 ? ',delivery_time_days' : '')." 
 				FROM ".MAIN_DB_PREFIX."product_fournisseur_price
-				WHERE fk_product=". $fk_product ." AND quantity <= ".$qty;
-//		if($only_with_delai) $sql.=" AND (fk_availability>0 || delivery_time_days>0 || fk_availability IS NOT NULL) ";
-
-				
-		$res_av = $db->query($sql);
+				WHERE fk_product=". intval($fk_product) ." AND quantity <= ".$qty;
 		
+		
+		if(!empty($fk_soc))
+		{
+			$sql .=  ' AND fk_soc='. intval($fk_soc)  ;
+		}
+		
+		$res_av = $db->query($sql);
+
 		$min = false;
 		
 		if(empty($form))$form=new Form($db);
@@ -54,6 +58,5 @@ class TSOFO {
 		return $min;
 		
 	}
-	
 	
 }
