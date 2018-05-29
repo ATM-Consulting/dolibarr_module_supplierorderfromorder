@@ -775,7 +775,7 @@ print '	  </div>'.
 	    );
 	}
 
-    if ($conf->global->USE_VIRTUAL_STOCK)
+	if (empty($justOFforNeededProduct) && ($week_to_replenish > 0 || ! empty($conf->global->USE_VIRTUAL_STOCK) || ! empty($conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) || empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)))
     {
         $stocklabel = $langs->trans('VirtualStock');
     }
