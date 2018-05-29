@@ -775,6 +775,10 @@ print '	  </div>'.
 	    );
 	}
 
+	/* On n'affiche "Stock Physique" que lorsque c'est effectivement le cas :
+	 * - Si on est dans le cas d'un OF avec les produits nécessaires
+	 * - Si on utilise les stocks virtuels (soit avec la conf globale Dolibarr, soit celle du module) ou qu'on utilise une plage de temps pour le besoin ou qu'on ne prend pas en compte les commandes clients
+	 */
 	if (empty($justOFforNeededProduct) && ($week_to_replenish > 0 || ! empty($conf->global->USE_VIRTUAL_STOCK) || ! empty($conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) || empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)))
     {
         $stocklabel = $langs->trans('VirtualStock');
