@@ -29,3 +29,6 @@ ProductAddToSupplierQuotation=Produit %s ajouté à la à la demande de prix du 
 ProductAddToSupplierOrder=Produit %s ajouté à la commande du fournisseur '%s'
 SelectSameSupplier=Utiliser le fournisseur pour tous les produits
 NoCommonSupplier=Aucun fournisseur en commun
+SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER=Filtre par défaut sur les catégories
+DeleteFilter=Supprimer le filtre
+NoFilter=Filtre vide

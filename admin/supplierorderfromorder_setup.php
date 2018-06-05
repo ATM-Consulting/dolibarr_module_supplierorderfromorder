@@ -5,6 +5,8 @@ if (! $res) $res=@include("../../../main.inc.php");			// For "custom" directory
 
 require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
 
+dol_include_once('/supplierorderfromorder/lib/function.lib.php');
+
 $langs->load("admin");
 $langs->load('supplierorderfromorder@supplierorderfromorder');
 
@@ -22,7 +24,30 @@ $id=GETPOST('id');
 if (preg_match('/set_(.*)/',$action,$reg))
 {
 	$code=$reg[1];
-	if (dolibarr_set_const($db, $code, GETPOST($code), 'chaine', 0, '', $conf->entity) > 0)
+
+	$value = GETPOST($code);
+
+	if($code == 'SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER') {
+
+		if(is_array($value))
+		{
+			if(in_array(-1, $value) && count($value) > 1) {
+				unset($value[array_search(-1, $value)]);
+			}
+			$TCategories = array_map('intval', $value);
+		}
+		elseif($value > 0)
+		{
+			$TCategories = array(intval($value));
+		}
+		else {
+			$TCategories = array(-1);
+		}
+
+		$value = serialize($TCategories);
+	}
+
+	if (dolibarr_set_const($db, $code, $value, 'chaine', 0, '', $conf->entity) > 0)
 	{
 
 		if($code=='SOFO_USE_DELIVERY_TIME' && GETPOST($code) == 1) {
@@ -266,6 +291,32 @@ print $form->selectyesno("SOFO_USE_MAX_DELIVERY_DATE",$conf->global->SOFO_USE_MA
 print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
 print '</form>';
 print '</td></tr>';
+
+if(! empty($conf->categorie->enabled)) {
+	$var=!$var;
+	print '<tr '.$bc[$var].'>';
+	print '<td>'.$langs->trans("SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER").'</td>';
+	print '<td align="center" width="20">&nbsp;</td>';
+	print '<td align="right" width="300">';
+	print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'" id="form_SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER">';
+	print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
+	print '<input type="hidden" name="action" value="set_SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER">';
+	print getCatMultiselect("SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER", ! empty($conf->global->SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER) ? unserialize($conf->global->SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER) : array(-1));
+	print '<a href="javascript:;" id="clearfilter">Supprimer le filtre</a>';
+	print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
+	print '</form>';
+?>
+	<script type="text/javascript">
+	$('a#clearfilter').click(function() {
+		$('option:selected', $('select#SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER')).prop('selected', false);
+		$('option[value=-1]', $('select#SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER')).prop('selected', true);
+		$('form#form_SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER').submit();
+		return false;
+	})
+	</script>
+<?php
+	print '</td></tr>';
+}
 
 print '</table>';
 

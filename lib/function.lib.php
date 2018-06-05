@@ -120,3 +120,25 @@ function getPaymentTermCode($id) {
 	
 	return $res->code;
 }
+
+
+function getCatMultiselect($htmlname, $TCategories)
+{
+	global $form, $langs;
+
+	$maxlength=64;
+	$excludeafterid=0;
+	$outputmode=1;
+	$array=$form->select_all_categories('product', $TCategories, $htmlname, $maxlength, $excludeafterid, $outputmode);
+	$array[-1] = '('.$langs->trans('NoFilter').')';
+
+	$key_in_label=0;
+	$value_as_key=0;
+	$morecss='';
+	$translate=0;
+	$width='80%';
+	$moreattrib='';
+	$elemtype='';
+
+	return $form->multiselectarray($htmlname, $array, $TCategories, $key_in_label, $value_as_key, $morecss, $translate, $width, $moreattrib,$elemtype);
+}
