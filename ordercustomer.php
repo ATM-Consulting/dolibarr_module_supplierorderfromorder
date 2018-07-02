@@ -913,9 +913,9 @@ print '	  </div>'.
     while ($i < min($num, $limit)) {
     	$objp = $db->fetch_object($resql);
 //if($objp->rowid == 4666) { var_dump($objp); }
-
-        if ($conf->global->STOCK_SUPPORTS_SERVICES
-           || $objp->fk_product_type == 0) {
+		
+    	if ($conf->global->SOFO_DISPLAY_SERVICES || $objp->fk_product_type == 0) {
+    	
             // Multilangs
             if (! empty($conf->global->MAIN_MULTILANGS)) {
                 $sql = 'SELECT label';
@@ -1135,7 +1135,7 @@ print '	  </div>'.
 
 			if($stocktobuy < 0) $stocktobuy = 0;
 
-			if($stocktobuy == 0 && GETPOST('show_stock_no_need')!='yes') {
+			if((empty($prod->type) && $stocktobuy == 0 && GETPOST('show_stock_no_need')!='yes') || ($prod->type == 1 && $stocktobuy == 0 && GETPOST('show_stock_no_need')!='yes' && !empty($conf->global->STOCK_SUPPORTS_SERVICES))) {
 				$i++;
 				continue;
 			}
@@ -1163,7 +1163,7 @@ print '	  </div>'.
                  '</td>'.
                  '<td>' . $objp->label . '</td>';
 
-	        print '<td>'.$statutarray[$objp->finished].'</td>';
+	        print '<td>'.(empty($prod->type) ? $statutarray[$objp->finished] : '').'</td>';
 
 				
 			if (!empty($conf->categorie->enabled))
@@ -1196,11 +1196,11 @@ print '	  </div>'.
 
 
             //print $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : "".
-
+            
             	$champs = "";
             	$champs .= $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : '';
                 $champs.= '<td align="right">'.
-                  $warning . $stock. //$stocktobuy
+                  $warning . ((($conf->global->STOCK_SUPPORTS_SERVICES && $prod->type == 1) || empty($prod->type)) ? $stock : img_picto('', './img/no', '', 1)). //$stocktobuy
                  '</td>';
 				if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL))
 				{
@@ -1251,8 +1251,8 @@ print '	  </div>'.
 
 	  if(empty($fk_commande)) $TCachedProductId[] = $prod->id; //mise en cache
 
-        }
-
+    }
+    	
 //	if($prod->ref=='A0000753') exit;
 
         $i++;

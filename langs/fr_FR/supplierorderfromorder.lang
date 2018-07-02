@@ -30,3 +30,4 @@ ProductAddToSupplierQuotation=Produit %s ajouté à la à la demande de prix du 
 ProductAddToSupplierOrder=Produit %s ajouté à la commande du fournisseur '%s'
 SelectSameSupplier=Utiliser le fournisseur pour tous les produits
 NoCommonSupplier=Aucun fournisseur en commun
+SOFO_DISPLAY_SERVICES=Autoriser la commande des services
