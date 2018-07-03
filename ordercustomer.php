@@ -1271,7 +1271,7 @@ print '	  </div>'.
                  '<td>'.
                  $picto." ".$objp->description.
                  '</td>'.
-                 '<td>' . $objp->description . '</td>';
+                 '<td>' . $objp->description;
 
 			$picto = img_picto('', './img/no', '', 1);
 
@@ -1281,6 +1281,11 @@ print '	  </div>'.
 				print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" />';
 				print '<input type="hidden" name="product_type' . $i . '" value="' . $objp->product_type . '" >';
 		//	}
+
+			print '</td>';
+
+			print '<td></td>'; // Nature
+			if (!empty($conf->categorie->enabled)) print '<td></td>'; // Categories
 
             if (!empty($conf->service->enabled) && $type == 1) {
                 if (preg_match('/([0-9]+)y/i', $objp->duration, $regs)) {
@@ -1296,21 +1301,21 @@ print '	  </div>'.
                      $duration.
                      '</td>';
             }
-			print '<td colspan=2></td>';
-			print '<td align="right">'.$picto.'</td>';
-			print '<td align="right">'.$picto.'</td>';
-		    print '<td align="right">'.
-                 '<input type="text" name="tobuy_free' . $i .
-                 '" value="' . $objp->qty . '">'.
-                 '</td>';
 
-			print '<input type="hidden" name="lineid_free' . $i . '" value="' . $objp->rowid . '" >';
+            if($dolibarr_version35) print '<td align="right">'.$picto.'</td>'; // Desired stock
+			print '<td align="right">'.$picto.'</td>'; // Physical/virtual stock
+			if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) print '<td align="right">'.$picto.'</td>'; // Stock théorique OF
+
+		    print '<td align="right">
+						<input type="text" name="tobuy_free' . $i . '" value="' . $objp->qty . '">
+						<input type="hidden" name="lineid_free' . $i . '" value="' . $objp->rowid . '" >
+					</td>'; // Ordered
 
 			print '<td align="right">
 						<input type="text" name="price_free'.$i.'" value="'.(empty($conf->global->SOFO_COST_PRICE_AS_BUYING)?$objp->price:price($objp->buy_price_ht)).'" size="5" style="text-align:right">€
 						'.$form->select_company((empty($socid)?'':$socid),'fourn_free'.$i,'s.fournisseur = 1',1, 0, 0, array(), 0, 'minwidth100 maxwidth300').'
-				   </td>';
-			print '<td></td>';
+				   </td>'; // Supplier
+			print '<td></td>'; // Action
 	        print '</tr>';
 	        $i++; $j++;
 	    }
