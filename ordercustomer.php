@@ -292,7 +292,7 @@ if (in_array($action, array('valid-propal', 'valid-order') )) {
 
 					if($order->element == 'order_supplier')
 					{
-						
+
 						$order->addline(
 								$line->desc,
 								$line->subprice,
@@ -1483,6 +1483,7 @@ function _prepareLine($i,$actionTarget = 'order')
 		if(! empty($lineid)) {
 			$commandeline = new OrderLine($db);
 			$commandeline->fetch($lineid);
+			if(empty($desc))$desc = $commandeline->desc;
 			if(empty($commandeline->id) && ! empty($commandeline->rowid)) {
 				$commandeline->id = $commandeline->rowid; // Pas positionné par OrderLine::fetch() donc le fetch_optionals() foire...
 			}
@@ -1539,6 +1540,7 @@ function _prepareLine($i,$actionTarget = 'order')
 		$fournid = GETPOST('fourn_free'.$i, 'int');
 		$commandeline = new OrderLine($db);
 		$commandeline->fetch($lineid);
+		if(empty($desc))$desc = $commandeline->desc;
 
 		if(empty($commandeline->id) && ! empty($commandeline->rowid)) {
 			$commandeline->id = $commandeline->rowid; // Pas positionné par OrderLine::fetch() donc le fetch_optionals() foire...
