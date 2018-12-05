@@ -28,7 +28,7 @@ require 'config.php';
 ini_set('memory_limit','1024M');
 set_time_limit(0);
 
-ini_set('display_errors', 1);
+//ini_set('display_errors', 1);
 //error_reporting(E_ALL);
 
 dol_include_once('/product/class/product.class.php');
@@ -1212,7 +1212,7 @@ if ($resql || $resql2) {
 			print '<input type="hidden" name="lineid' . $i . '" value="' . $lineid .'" />';
 
 			if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
-				print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" >';
+				print '<input type="hidden" name="desc' . $i . '" value="' . strip_tags($objp->description) . '" >';
 			}
 
 			print '</td>
@@ -1333,7 +1333,7 @@ if ($resql || $resql2) {
 			//pre($conf->global,1);
 			//if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
 				//var_dump('toto');
-				print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" />';
+				print '<input type="hidden" name="desc' . $i . '" value="' . strip_tags($objp->description) . '" />';
 				print '<input type="hidden" name="product_type' . $i . '" value="' . $objp->product_type . '" >';
 		//	}
 
