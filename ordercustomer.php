@@ -79,6 +79,7 @@ $salert = GETPOST('salert', 'alpha');
 $sortfield = GETPOST('sortfield','alpha');
 $sortorder = GETPOST('sortorder','alpha');
 $page = GETPOST('page','int');
+$page = intval($page);
 $selectedSupplier = GETPOST('useSameSupplier', 'int');
 
 if (!$sortfield) {
@@ -124,22 +125,24 @@ if(! empty($conf->categorie->enabled)) {
 }
 
 $TCategoriesQuery = $TCategories;
-
-foreach($TCategories as $categID) {
-	if($categID <= 0) continue;
-
-	$cat = new Categorie($db);
-	$cat->fetch($categID);
-
-	$TSubCat = get_categs_enfants($cat);
-	foreach($TSubCat as $subCatID) {
-		if(! in_array($subCatID, $TCategories)) {
-			$TCategoriesQuery[] = $subCatID;
-		}
-	}
+if(!empty($TCategoriesQuery) && is_array($TCategoriesQuery) )
+{
+    foreach($TCategories as $categID) {
+    	if($categID <= 0) continue;
+    
+    	$cat = new Categorie($db);
+    	$cat->fetch($categID);
+    
+    	$TSubCat = get_categs_enfants($cat);
+    	foreach($TSubCat as $subCatID) {
+    		if(! in_array($subCatID, $TCategories)) {
+    			$TCategoriesQuery[] = $subCatID;
+    		}
+    	}
+    }
 }
 
-if(count($TCategoriesQuery) == 1 && in_array(-1, $TCategoriesQuery)) {
+if(is_array($TCategoriesQuery) && count($TCategoriesQuery) == 1 && in_array(-1, $TCategoriesQuery)) {
 	$TCategoriesQuery = array();
 }
 
@@ -596,12 +599,13 @@ if($salert=='on') {
 $sql .= ' GROUP BY p.rowid, p.ref, p.label, p.price';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type, p.tms';
 $sql .= ', p.duration, p.tobuy, p.seuil_stock_alerte';
+$sql .= ', cd.rang';
 //$sql .= ', p.desiredstock';
 //$sql .= ', s.fk_product';
 
-if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
+//if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
 	$sql.= ', cd.description';
-}
+//}
 //$sql .= ' HAVING p.desiredstock > SUM(COALESCE(s.reel, 0))';
 //$sql .= ' HAVING p.desiredstock > 0';
 if ($salert == 'on') {
