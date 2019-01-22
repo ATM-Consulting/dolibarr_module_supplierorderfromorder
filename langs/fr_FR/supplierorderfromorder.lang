@@ -32,3 +32,17 @@ NoCommonSupplier=Aucun fournisseur en commun
 SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER=Filtre par défaut sur les catégories
 DeleteFilter=Supprimer le filtre
 NoFilter=Filtre vide
+
+# dispatch_dispatch_to_supplier_order
+FournDispatch=Passer commande(s) fournisseur(s)
+PrepareFournDispatch=Préparation des commandes fournisseur  à partir de la client N°
+Stock_reel=Stock reel
+Stock_theorique=Stock theorique
+QtyToOrder=Qté à commander
+QtyToOrderHelp=Par defaut les quantités affichées sont calculées à partir du stock théorique
+DeliveryHelp=Si la commande fournisseur doit être livrée directement chez le client, il est possible de selectionner le contact de livraison parmi les contacts de la commande client.
+servicesAreNotDispatch=Les services ne peuvent pas faire l'objet d'une commande fournisseur
+PleaseCheckAtLeastOneCheckbox=Vous devez sélectionner au moins une ligne.
+AllreadyImported=Cette ligne fait déjà l'objet d'une commande fournisseur
+FournDispatchResult=Résultat de la ventilation de la commande client N°
+ErrorFournDoesNotExist=Fournisseur non trouvé

@@ -142,3 +142,160 @@ function getCatMultiselect($htmlname, $TCategories)
 
 	return $form->multiselectarray($htmlname, $array, $TCategories, $key_in_label, $value_as_key, $morecss, $translate, $width, $moreattrib,$elemtype);
 }
+
+
+
+function getSupplierOrderAvailable($supplierSocId,$shippingContactId=0,$array_options=array())
+{
+    global $db, $conf;
+    $shippingContactId = intval($shippingContactId);
+    $status = intval($status);
+    
+    $Torder = array();
+    
+    $sql = 'SELECT cf.rowid ';
+    $sql .= ' FROM ' . MAIN_DB_PREFIX . 'commande_fournisseur cf ';
+    $sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'commande_fournisseur_extrafields cfext ON (cfext.fk_object = cf.rowid) ';
+    
+    if(!empty($shippingContactId))
+    {
+        $sql .= ' JOIN  ' . MAIN_DB_PREFIX . 'element_contact ec ON (ec.element_id = fk_target AND ec.fk_socpeople = '.$shippingContactId.') ';
+    }
+    
+    $sql .= ' WHERE cf.fk_soc = '.intval($supplierSocId).' ';
+    
+    $sql .= ' AND cf.fk_statut = 0 ';
+    $sql .= ' AND cf.ref LIKE "(PROV%" ';
+    
+    
+    if(!empty($array_options))
+    {
+        foreach ($array_options as $col => $value)
+        {
+            $sql .= ' AND cfext.`'.$col.'` = \''.$value.'\' ';
+        }
+    }
+    //print $sql;
+    $resql=$db->query($sql);
+    if ($resql)
+    {
+        while ($obj = $db->fetch_object($resql))
+        {
+            $Torder[] = $obj->rowid;
+        }
+        
+        return $Torder;
+    }
+    
+    return -1;
+    
+}
+
+function getLinkedSupplierOrderFromOrder($sourceCommandeId,$supplierSocId,$shippingContactId=0,$status=-1,$array_options=array())
+{
+    global $db, $conf;
+    $shippingContactId = intval($shippingContactId);
+    $status = intval($status);
+    
+    $Torder = array();
+    
+    $sql = 'SELECT ee.fk_target ';
+    $sql .= ' FROM ' . MAIN_DB_PREFIX . 'element_element ee';
+    $sql .= ' JOIN ' . MAIN_DB_PREFIX . 'commande_fournisseur cf ON (ee.fk_target = cf.rowid) ';
+    $sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'commande_fournisseur_extrafields cfext ON (cfext.fk_object = cf.rowid) ';
+    
+    if(!empty($shippingContactId))
+    {
+        $sql .= ' JOIN  ' . MAIN_DB_PREFIX . 'element_contact ec ON (ec.element_id = fk_target AND ec.fk_socpeople = '.$shippingContactId.') ';
+    }
+    
+    $sql .= ' WHERE ee.fk_source = '.intval($sourceCommandeId).' ';
+    $sql .= ' AND ee.sourcetype = \'commande\' ';
+    $sql .= ' AND cf.fk_soc =  '.intval($supplierSocId).' ';
+    $sql .= ' AND ee.targettype = \'order_supplier\' ';
+    
+    if($status>=0)
+    {
+        $sql .= ' AND cf.fk_statut = '.$status.' ';
+    }
+    
+    if(!empty($array_options))
+    {
+        foreach ($array_options as $col => $value)
+        {
+            $sql .= ' AND cfext.`'.$col.'` = \''.$value.'\' ';
+        }
+    }
+    
+    $resql=$db->query($sql);
+    if ($resql)
+    {
+        while ($obj = $db->fetch_object($resql))
+        {
+            $Torder[] = $obj->fk_target;
+        }
+        
+        return $Torder;
+    }
+    
+    return -1;
+    
+}
+
+function getLinkedSupplierOrderLineFromElementLine($sourceCommandeLineId, $sourcetype = 'commandedet')
+{
+    global $db;
+    
+    $sql = 'SELECT fk_target ';
+    $sql .= ' FROM ' . MAIN_DB_PREFIX . 'element_element ee';
+    $sql .= ' WHERE ee.fk_source = '.intval($sourceCommandeLineId).' ';
+    $sql .= ' AND ee.sourcetype = \''.$db->escape($sourcetype).'\' ';
+    $sql .= ' AND ee.targettype = \'commande_fournisseurdet\' ';
+    
+    $resql=$db->query($sql);
+    if ($resql && $obj = $db->fetch_object($resql))
+    {
+        return $obj->fk_target;
+    }
+    return 0;
+    
+}
+
+function getLinkedOrderLineFromSupplierOrderLine($sourceCommandeLineId)
+{
+    global $db;
+    
+    $sql = 'SELECT fk_source ';
+    $sql .= ' FROM ' . MAIN_DB_PREFIX . 'element_element ee';
+    $sql .= ' WHERE ee.fk_target = '.intval($sourceCommandeLineId).' ';
+    $sql .= ' AND ee.sourcetype = \'commandedet\' ';
+    $sql .= ' AND ee.targettype = \'commande_fournisseurdet\' ';
+    
+    $resql=$db->query($sql);
+    if ($resql && $obj = $db->fetch_object($resql))
+    {
+        return $obj->fk_source;
+    }
+    return 0;
+    
+}
+
+function getUnitLabel($fk_unit, $return = 'code')
+{
+    global $db, $langs;
+    
+    $sql = 'SELECT label, code from '.MAIN_DB_PREFIX.'c_units';
+    $sql.= ' WHERE rowid = '.intval($fk_unit);
+    
+    $resql=$db->query($sql);
+    if ($resql && $obj = $db->fetch_object($resql))
+    {
+        if($return == 'label'){
+            return $langs->trans('unit'.$obj->code);
+        }else{
+            return $obj->code;
+        }
+        
+    }
+    return '';
+}
