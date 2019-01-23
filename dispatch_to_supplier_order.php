@@ -6,17 +6,30 @@ include_once __DIR__ . '/config.php';
 dol_include_once('subtotal/class/subtotal.class.php');
 dol_include_once('fourn/class/fournisseur.commande.class.php');
 dol_include_once('fourn/class/fournisseur.product.class.php');
-dol_include_once('commande/class/commande.class.php');
-dol_include_once('supplierorderfromorder/lib/load.lib.php');
+dol_include_once('supplierorderfromorder/lib/function.lib.php');
 
 if(empty($user->rights->fournisseur->commande->creer)) accessforbidden();
 
-$langs->load('supplierorderfromorder@supplierorderfromorder');
-$langs->loadLangs(array('admin','orders','sendings','companies','bills','supplier_proposal','deliveries','products'));
+$langs->loadLangs(array(
+     'admin'
+    ,'orders'
+    ,'sendings'
+    ,'companies'
+    ,'bills'
+    ,'supplier_proposal'
+    ,'deliveries'
+    ,'products'
+    , 'stocks'
+    ,'supplierorderfromorder@supplierorderfromorder'
+    
+));
+
+
 
 
 $action = GETPOST('action');
 $fromid = GETPOST('fromid', 'int');
+$from = GETPOST('from');
 $TDispatch = array();
 
 if(empty($action)){
@@ -26,12 +39,15 @@ if(empty($action)){
 $form = new Form($db);
 
 
-
-if(empty($fromid) ){
+if(empty($from) || $from != 'commande'){
     exit();
 }
 
-$origin = New Commande($db);
+if($from ==  'commande'){
+	dol_include_once('commande/class/commande.class.php');
+	$origin = New Commande($db);
+}
+
 if($origin->fetch($fromid) <= 0)
 {
     exit($langs->trans('NothingToView'));
@@ -51,7 +67,12 @@ $Tqty = GETPOST('qty','array');
  * Actions
  */
 
+$parameters=array();
+$reshook=$hookmanager->executeHooks('doActions',$parameters,$object);    // Note that $action and $object may have been modified by some hooks
+if ($reshook < 0) setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
 
+if (empty($reshook))
+{
 	// do action from GETPOST ... 
 	if($action == 'dispatch')
 	{
@@ -290,25 +311,56 @@ $Tqty = GETPOST('qty','array');
 	    $action = 'showdispatchresult';
 	}
 	
+}
 
 
 /*
  * View
  */
+	
+$title = $langs->trans('ProductsToOrder');
+$helpurl = 'EN:Module_Stocks_En|FR:Module_Stock|';
+$helpurl .= 'ES:M&oacute;dulo_Stocks';
+llxHeader('', $langs->trans('Dispath'), $helpurl, $title);
 
-llxHeader('',$langs->trans('Dispath'),'','');
+
+
+$head = array();
+$head[0][0] = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id='.$fromid,1);
+$head[0][1] = $title;
+$head[0][2] = 'supplierorderfromorder';
+
+$head[1][0] = dol_buildpath('/supplierorderfromorder/dispatch_to_supplier_order.php',1).'?from='.$from.'&fromid='.$fromid;
+$head[1][1] = $title;
+$head[1][2] = 'supplierorderfromorder_dispatch';
+
+
+dol_fiche_head($head, 'supplierorderfromorder_dispatch', $langs->trans('Replenishment'), 0, 'stock');
+
 
 
 
 $productDefault = new Product($db);
 
-$thisUrlStart = dol_buildpath('supplierorderfromorder/dispatch_to_suppliers_order.php',2). '?fromid='.$fromid;
+$thisUrlStart = dol_buildpath('supplierorderfromorder/dispatch_to_supplier_order.php',2). '?from='.$from.'&amp;fromid='.$fromid;
 
 if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origin->lines)){
     
     $origin->fetch_optionals();
     //$TlistContact = $origin->liste_contact(-1,'external',0,'SHIPPING');
     
+    ?>
+    <table width="100%" border="0" class="notopnoleftnoright" style="margin-bottom: 6px;">
+        <tbody>
+            <tr>
+                <td class="nobordernopadding valignmiddle">
+                    <img src="<?php echo dol_buildpath('theme/eldy/img/title_generic.png',2); ?>" alt="" class="hideonsmartphone valignmiddle" id="pictotitle">
+                    <div class="titre inline-block"><?php  print $langs->trans('PrepareFournDispatch'); ?> <?php  print $origin->getNomUrl(); ?></div>
+                </td>
+           </tr>
+       </tbody>
+    </table>
+<?php 
     
     $TFournLines = array();
     
@@ -323,36 +375,22 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
         setEventMessage('Il y a des erreurs...', 'errors');
     }
 
-    ?>
-    
-    
-    
-    <table width="100%" border="0" class="notopnoleftnoright" style="margin-bottom: 6px;">
-        <tbody>
-            <tr>
-                <td class="nobordernopadding valignmiddle">
-                    <img src="<?php echo dol_buildpath('theme/eldy/img/title_generic.png',2); ?>" alt="" class="hideonsmartphone valignmiddle" id="pictotitle">
-                    <div class="titre inline-block"><?php  print $langs->trans('PrepareFournDispatch'); ?> <?php  print $origin->getNomUrl(); ?></div>
-                </td>
-           </tr>
-       </tbody>
-    </table>
-    <?php 
+
     
     print '<div class="div-table-responsive">';
     print '<form id="crea_commande" name="crea_commande" action="'.$thisUrlStart.'" method="POST">';
     print '<table width="100%" class="noborder noshadow" >';
     
     print '<thead>';
-    print '   <tr class="liste_titre">';
+    print '   <tr >';
     print '       <th class="liste_titre" >' . $langs->trans('Description') . '</th>';
     print '       <th class="liste_titre" >' . $langs->trans('Supplier') . '</th>';
     print '       <th class="liste_titre center" >' . $langs->trans('Commande client') . '</th>';
     print '       <th class="liste_titre center" >' . $langs->trans('Stock_reel') . '</th>';
     print '       <th class="liste_titre center" >' . $langs->trans('Stock_theorique') . '</th>';
     print '       <th class="liste_titre" >' . $form->textwithtooltip($langs->trans('QtyToOrder'), $langs->trans('QtyToOrderHelp'),2,1,img_help(1,'')) . '</th>';
-//    print '       <th class="liste_titre" >' . $form->textwithtooltip($langs->trans('Delivery'), $langs->trans('DeliveryHelp'),2,1,img_help(1,'')) . '<br/><small style="cursor:pointer;" id="emptydelivery" ><i class="fa fa-truck" ></i>Vider</small></th>';
-    //print '       <th class="liste_titre" >' . $form->textwithtooltip($langs->trans('Price'), $langs->trans('dispatch_Price_Help'),2,1,img_help(1,'')) . '</th>';
+    print '       <th class="liste_titre" >' . $form->textwithtooltip($langs->trans('Delivery'), $langs->trans('DeliveryHelp'),2,1,img_help(1,'')) . '<br/><small style="cursor:pointer;" id="emptydelivery" ><i class="fa fa-truck" ></i>Vider</small></th>';
+//    print '       <th class="liste_titre" >' . $form->textwithtooltip($langs->trans('Price'), $langs->trans('dispatch_Price_Help'),2,1,img_help(1,'')) . '</th>';
     print '       <th class="liste_titre" style="text-align:center;" ><input id="checkToggle" type="checkbox" name="togglecheckall" value="0"   ></th>';
     print '   </tr>';
     print '</thead>';
@@ -392,7 +430,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
             
             // TODO : Detect subtotal lines without subtotal
             $line->isModSubtotalLine = 0;
-            if(class_exists(TSubtotal) && TSubtotal::isModSubtotalLine($line)){
+            if(class_exists('TSubtotal') && TSubtotal::isModSubtotalLine($line)){
                 $line->isModSubtotalLine = 1;
                 
                 // Use to know line's title
@@ -469,11 +507,11 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                 $line->fk_soc_dest = $origin->socid;
                 
                 // récupération du contact de livraison
-               /* if(!empty($TlistContact))
+                if(!empty($TlistContact))
                 {
                     $select_shipping_dest_filter = $TlistContact[0]['id'];
                     $line->fk_soc_dest = $TlistContact[0]['socid'];
-                }*/
+                }
                 
                 
                 
@@ -530,7 +568,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                 
                 
                 // QTY
-                print '<td class="center" ><strong title="Cliquer pour remplacer la quantité à commander" class="handpointer addvalue2target classfortooltip" data-value="'.$line->qty.'" data-target="#qty-'.$line->id.'"  >'.$line->qty.'</strong></td>';
+                print '<td class="center" ><strong title="'.$langs->trans('clicToReplaceQty').'" class="addvalue2target classfortooltip" style="cursor:pointer" data-value="'.$line->qty.'" data-target="#qty-'.$line->id.'"  >'.$line->qty.'</strong></td>';
                 
                 // STOCK REEL
                 print '<td  class="center col-realstock">';
@@ -599,7 +637,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                  */
                 
                 
-                /*print '<td>';
+                print '<td>';
                 
                 
                 if(isset($TShipping[$line->id])){
@@ -614,11 +652,16 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                     
                     print '<br/>'.$socDest->getNomUrl(1); //.' : <span class="error" >'.$langs->trans('ProductionFactoryShippingNotDefined').'</span>';
                 }
-                print '</td>';*/
+                print '</td>';
                 
                 
                 
+                // UNIT PRICE
+                //print '<td ><input type="number" name="fournUnitPrice['.$line->id.']" value="'.$line->fournUnitPrice.'"  required ></td>';
                 
+
+                // LINE PRICE
+                //print '<td ><input type="number" name="fournPrice['.$line->id.']" value="'.$line->fournPrice.'" ></td>';
                 
                 // CHECKBOX
                 print '<td  style="text-align:center;"  >';

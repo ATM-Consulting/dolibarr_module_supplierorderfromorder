@@ -48,6 +48,9 @@ class ActionsSupplierorderfromorder
 	    
 	    if (in_array('ordersuppliercard',explode(':',$parameters['context'])))
 	    {
+	        
+	        dol_include_once('supplierorderfromorder/lib/function.lib.php');
+	        
 	        //$parameters = array('line'=>$line,'var'=>$var,'num'=>$num,'i'=>$i,'dateSelector'=>$dateSelector,'seller'=>$seller,'buyer'=>$buyer,'selected'=>$selected, 'extrafieldsline'=>$extrafieldsline);
 	        
 	        extract($parameters, EXTR_SKIP);
@@ -114,6 +117,7 @@ class ActionsSupplierorderfromorder
 	    if (in_array('ordercard',explode(':',$parameters['context'])))
 	    {
 	        extract($parameters, EXTR_SKIP);
+	        dol_include_once('supplierorderfromorder/lib/function.lib.php');
 	        
 	        // DISPLAY EXTRA INFORMATIONS ON DESCRIPTION FROM SUPPLIER ORDERS LINES
 	        if ($action != 'editline' || $selected != $line->id)

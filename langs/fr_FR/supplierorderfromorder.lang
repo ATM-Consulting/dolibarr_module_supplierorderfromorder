@@ -46,3 +46,8 @@ PleaseCheckAtLeastOneCheckbox=Vous devez sélectionner au moins une ligne.
 AllreadyImported=Cette ligne fait déjà l'objet d'une commande fournisseur
 FournDispatchResult=Résultat de la ventilation de la commande client N°
 ErrorFournDoesNotExist=Fournisseur non trouvé
+clicToReplaceQty=Cliquer pour remplacer la quantité à commander
+
+
+
+
