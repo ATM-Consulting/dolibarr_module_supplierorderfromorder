@@ -134,12 +134,15 @@ class InterfaceSupplierorderfromorder
 
 		}
 
-		if($action == 'LINEORDER_DELETE') {
+		if($action == 'LINEORDER_DELETE' || $action == 'LINEORDER_SUPPLIER_DELETE') {
 		    
 		    dol_syslog( "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id );
 		    
 		    // Delete linked object
 		    if($object->element == 'commandedet'){
+		        return $object->deleteObjectLinked();
+		    }
+		    elseif($object->element == 'commande_fournisseurdet'){
 		        return $object->deleteObjectLinked();
 		    }
 		    

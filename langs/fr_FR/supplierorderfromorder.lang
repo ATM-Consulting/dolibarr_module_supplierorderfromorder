@@ -47,7 +47,12 @@ AllreadyImported=Cette ligne fait déjà l'objet d'une commande fournisseur
 FournDispatchResult=Résultat de la ventilation de la commande client N°
 ErrorFournDoesNotExist=Fournisseur non trouvé
 clicToReplaceQty=Cliquer pour remplacer la quantité à commander
-
+ProductToOrderManuellement=Produit à commander manuellement
+ForceDispatch=Forcer la ventilation
+DisplayNomenclature=Afficher/Cacher le détail de la nomenclature
+YouNeedToSelectAtLeastOneSupplierPrice=Vous devez selectionner un prix fournisseur
+YouNeedToGiveASupplierPrice=Vous devez saisir un prix unitaire
+YouNeedToGiveAQty=Vous devez saisir une quantité
 
 
 

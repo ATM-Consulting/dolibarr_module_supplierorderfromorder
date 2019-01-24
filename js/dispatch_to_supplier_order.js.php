@@ -122,25 +122,25 @@ $( document ).ready(function() {
 
     		if( productfournpriceid.length ){
 				if(isBlank(productfournpriceid.val()) || productfournpriceid.val() == 0 ){
-					productfournpriceid.get(0).setCustomValidity('Vous devez selectionner un prix fournisseur');
+					productfournpriceid.get(0).setCustomValidity("<?php print $langs->transnoentitiesnoconv('YouNeedToSelectAtLeastOneSupplierPrice'); ?>");
 				}
     		}
     		
     		if( search_fk_soc_fourn.length ){
 				if(isBlank(search_fk_soc_fourn.val())){
-					search_fk_soc_fourn.get(0).setCustomValidity('Vous devez selectionner un fournisseur');
+					search_fk_soc_fourn.get(0).setCustomValidity("<?php print $langs->transnoentitiesnoconv('YouNeedToSelectAtLeastOneSupplierPrice'); ?>");
 				}
     		}
 
     		if( fournUnitPrice.length ){
 				if(isBlank(fournUnitPrice.val())  || fournUnitPrice.val() == 0  ){
-					fournUnitPrice.get(0).setCustomValidity('Vous devez saisir un prix unitaire');
+					fournUnitPrice.get(0).setCustomValidity("<?php print $langs->transnoentitiesnoconv('YouNeedToGiveASupplierPrice'); ?>");
 				}
     		}
 
     		if( inputqty.length ){
 				if(isBlank(inputqty.val())  || inputqty.val() == 0  ){
-					inputqty.get(0).setCustomValidity('Vous devez saisir une quantité');
+					inputqty.get(0).setCustomValidity("<?php print $langs->transnoentitiesnoconv('YouNeedToGiveAQty'); ?>");
 				}
     		}
 
@@ -165,8 +165,13 @@ $( document ).ready(function() {
     		}
         }
     });
+
     
-    
+    $( ".toggle-display-nomenclature-detail" ).click(function() {
+        console.log($(this).data('target'));
+  		$('.nomenclature-row[data-parentlineid="' + $(this).data('target') + '"]').slideToggle();
+	});
+	
     $( "#emptydelivery" ).click(function() {
   		$('[name^="shipping"]' ).val(0);
 	});

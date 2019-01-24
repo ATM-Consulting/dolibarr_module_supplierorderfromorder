@@ -255,7 +255,7 @@ function getLinkedSupplierOrderLineFromElementLine($sourceCommandeLineId, $sourc
     $resql=$db->query($sql);
     if ($resql && $obj = $db->fetch_object($resql))
     {
-        return $obj->fk_target;
+        return (int)$obj->fk_target;
     }
     return 0;
     
@@ -299,3 +299,94 @@ function getUnitLabel($fk_unit, $return = 'code')
     }
     return '';
 }
+
+
+function  sofo_nomenclatureProductDeepCrawl($fk_element, $element, $fk_product,$qty = 1, $deep = 0, $maxDeep = 0){
+    global $db,$conf;
+    
+    $maxDeepConf = empty($conf->global->NOMENCLATURE_MAX_NESTED_LEVEL) ? 50 : $conf->global->NOMENCLATURE_MAX_NESTED_LEVEL;
+    $maxDeep = !empty($maxDeep)?$maxDeep:$maxDeepConf ;
+    
+    if($deep>$maxDeep){ return array(); }
+    
+    
+    
+    dol_include_once('/nomenclature/class/nomenclature.class.php');
+    
+    if(!class_exists('TNomenclature')){
+        return false;
+    }
+    
+    $nomenclature = new TNomenclature($db);
+    $PDOdb = new TPDOdb($db);
+    
+    
+    $nomenclature->loadByObjectId($PDOdb,$fk_element, $element, false, $fk_product, $qty); //get lines of nomenclature
+    
+    $Tlines= array();
+    
+    $i=0;
+    if(!empty($nomenclature->TNomenclatureDet)){
+        $detailsNomenclature=$nomenclature->getDetails($qty);
+        // PARCOURS DE LA NOMENCLATURE
+        foreach ($nomenclature->TNomenclatureDet as &$det)
+        {
+            $i++;
+            
+            $Tlines[$i] = array(
+                'element' => 'nomenclaturedet',
+                'id'      =>  !empty($det->id)?$det->id:$det->rowid,
+                'fk_product'=>$det->fk_product,
+                'infos'   => array(
+                    'label' => '',
+                    'desc' => '',
+                    'qty' => $qty * $det->qty,
+                    //'object' => $det,
+                ),
+            );
+            
+            $childs = sofo_nomenclatureProductDeepCrawl($det->fk_product, 'product', $det->fk_product,$qty * $det->qty, $deep+1, $maxDeep);
+            
+            if(!empty($childs))
+            {
+                $Tlines[$i]['children'] = $childs;
+            }
+            
+        }
+        
+    }
+    
+    return $Tlines;
+}
+
+
+function sofo_getFournMinPrice($fk_product)
+{
+    global $db; 
+    
+    $ProductFournisseur = new ProductFournisseur($db);
+    $TfournPrices = $ProductFournisseur->list_product_fournisseur_price($fk_product, '', '', 1);
+    
+    
+    $minFournPrice = 0;
+    $minFournPriceId = 0;
+    if(!empty($TfournPrices))
+    {
+        foreach ($TfournPrices as $fournPrices){
+            
+            if(empty($minFournPrice)){
+                $minFournPrice = $fournPrices->fourn_unitprice;
+                $minFournPriceId = $fournPrices->fourn_id;
+            }
+            
+            if(!empty($fournPrices->fourn_unitprice) && $fournPrices->fourn_unitprice < $minFournPrice && !empty($minFournPriceId) )
+            {
+                $minFournPrice = $fournPrices->fourn_unitprice;
+                $minFournPriceId = $fournPrices->fourn_id;
+            }
+        }
+    }
+    
+    return $minFournPriceId;
+}
+
