@@ -44,6 +44,8 @@ DeliveryHelp=Si la commande fournisseur doit être livrée directement chez le c
 servicesAreNotDispatch=Les services ne peuvent pas faire l'objet d'une commande fournisseur
 PleaseCheckAtLeastOneCheckbox=Vous devez sélectionner au moins une ligne.
 AllreadyImported=Cette ligne fait déjà l'objet d'une commande fournisseur
+AllreadyDispatched=Cette ligne fait déjà l'objet d'une commande fournisseur
+AllreadyDispatcheds=Cette ligne fait déjà l'objet de commande(s) fournisseur
 FournDispatchResult=Résultat de la ventilation de la commande client N°
 ErrorFournDoesNotExist=Fournisseur non trouvé
 clicToReplaceQty=Cliquer pour remplacer la quantité à commander
@@ -53,6 +55,8 @@ DisplayNomenclature=Afficher/Cacher le détail de la nomenclature
 YouNeedToSelectAtLeastOneSupplierPrice=Vous devez selectionner un prix fournisseur
 YouNeedToGiveASupplierPrice=Vous devez saisir un prix unitaire
 YouNeedToGiveAQty=Vous devez saisir une quantité
-
+MoreOptions=Plus d'options
+ForceFourn=Forcer le fournisseur
+ForceFournHelp=En forçant le fournisseur, tous les produits de la nomenclature seront commandés chez ce fournisseur
 
 

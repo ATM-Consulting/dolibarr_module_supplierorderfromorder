@@ -197,4 +197,28 @@ $( document ).ready(function() {
 	});
 
 
+	
+	$( ".qtyform-nomenclature" ).change(function() {
+
+    	if($( this ).val() > 0)
+    	{
+    		$( "#linecheckbox" + $( this ).data("nomenclature") + "-nomenclature" ).prop("checked", 1);
+    		$( "#linecheckbox" + $( this ).data("nomenclature") + "-nomenclature" ).trigger("change");
+    	}
+    	else
+    	{
+    		$( "#linecheckbox" + $( this ).data("nomenclature") + "-nomenclature" ).prop("checked", 0);
+    		$( "#linecheckbox" + $( this ).data("nomenclature") + "-nomenclature" ).trigger("change");
+    	}
+  		
+	});
+
+
+
+	// MORE OPTION SLIDE
+    $(".moreoptionbtn").click(function(){
+        $($(this).data('target')).slideToggle();
+    });
+
+	
 });

@@ -244,6 +244,16 @@ function getLinkedSupplierOrderFromOrder($sourceCommandeId,$supplierSocId,$shipp
 
 function getLinkedSupplierOrderLineFromElementLine($sourceCommandeLineId, $sourcetype = 'commandedet')
 {
+    $TElement = getLinkedSupplierOrdersLinesFromElementLine($sourceCommandeLineId, $sourcetype);
+    if (!empty($TElement))
+    {
+        return (int)$TElement[0];
+    }
+    return 0;
+}
+
+function getLinkedSupplierOrdersLinesFromElementLine($sourceCommandeLineId, $sourcetype = 'commandedet')
+{
     global $db;
     
     $sql = 'SELECT fk_target ';
@@ -252,11 +262,19 @@ function getLinkedSupplierOrderLineFromElementLine($sourceCommandeLineId, $sourc
     $sql .= ' AND ee.sourcetype = \''.$db->escape($sourcetype).'\' ';
     $sql .= ' AND ee.targettype = \'commande_fournisseurdet\' ';
     
+    $TElement=array();
+    
     $resql=$db->query($sql);
-    if ($resql && $obj = $db->fetch_object($resql))
+    if ($resql)
     {
-        return (int)$obj->fk_target;
+        while($obj = $db->fetch_object($resql))
+        {
+            $TElement[] = $obj->fk_target;
+        }
+        
+        return $TElement;
     }
+    
     return 0;
     
 }
