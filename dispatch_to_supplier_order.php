@@ -557,7 +557,7 @@ dol_fiche_head($head, 'supplierorderfromorder_dispatch', $langs->trans('Replenis
 
 $productDefault = new Product($db);
 
-$thisUrlStart = dol_buildpath('supplierorderfromorder/dispatch_to_supplier_order.php',2);
+$thisUrlStart = dol_buildpath('supplierorderfromorder/dispatch_to_supplier_order.php',1);
 
 if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origin->lines)){
     
