@@ -557,7 +557,7 @@ dol_fiche_head($head, 'supplierorderfromorder_dispatch', $langs->trans('Replenis
 
 $productDefault = new Product($db);
 
-$thisUrlStart = dol_buildpath('supplierorderfromorder/dispatch_to_supplier_order.php',2). '?from='.$from.'&amp;fromid='.$fromid;
+$thisUrlStart = dol_buildpath('supplierorderfromorder/dispatch_to_supplier_order.php',2);
 
 if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origin->lines)){
     
@@ -594,6 +594,10 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
     
     print '<div class="div-table-responsive">';
     print '<form id="crea_commande" name="crea_commande" action="'.$thisUrlStart.'" method="POST">';
+    
+    print '<input type="hidden" name="from" value="'.$from.'" />';
+    print '<input type="hidden" name="fromid" value="'.$fromid.'" />';
+    
     print '<table width="100%" class="noborder noshadow" >';
     
     $totalNbCols = 7;
