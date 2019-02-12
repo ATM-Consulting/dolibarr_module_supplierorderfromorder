@@ -58,5 +58,4 @@ YouNeedToGiveAQty=Vous devez saisir une quantité
 MoreOptions=Plus d'options
 ForceFourn=Forcer le fournisseur
 ForceFournHelp=En forçant le fournisseur, tous les produits de la nomenclature seront commandés chez ce fournisseur
-
-
+ProductsAssetsToOrder=Composants à commander

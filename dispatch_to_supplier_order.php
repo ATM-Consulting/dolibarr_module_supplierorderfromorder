@@ -546,7 +546,7 @@ $head[0][1] = $title;
 $head[0][2] = 'supplierorderfromorder';
 
 $head[1][0] = dol_buildpath('/supplierorderfromorder/dispatch_to_supplier_order.php',1).'?from='.$from.'&fromid='.$fromid;
-$head[1][1] = $title;
+$head[1][1] = $langs->trans('ProductsAssetsToOrder');
 $head[1][2] = 'supplierorderfromorder_dispatch';
 
 
