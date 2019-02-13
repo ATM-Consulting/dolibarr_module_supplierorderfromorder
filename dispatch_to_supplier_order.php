@@ -600,13 +600,17 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
     
     print '<table width="100%" class="noborder noshadow" >';
     
-    $totalNbCols = 7;
+    $totalNbCols = 6;
     print '<thead>';
     print '   <tr >';
     print '       <th class="liste_titre" >' . $langs->trans('Description') . '</th>';
     print '       <th class="liste_titre center" >' . $langs->trans('Commande client') . '</th>';
-    print '       <th class="liste_titre center" >' . $langs->trans('Stock_reel') . '</th>';
-    print '       <th class="liste_titre center" >' . $langs->trans('Stock_theorique') . '</th>';
+    if (!empty($conf->stock->enabled)){
+        $totalNbCols++;
+        print '       <th class="liste_titre center" >' . $langs->trans('Stock_reel') . '</th>';
+        $totalNbCols++;
+        print '       <th class="liste_titre center" >' . $langs->trans('Stock_theorique') . '</th>';
+    }
     print '       <th class="liste_titre" >' . $form->textwithtooltip($langs->trans('QtyToOrder'), $langs->trans('QtyToOrderHelp'),2,1,img_help(1,'')) . '</th>';
     print '       <th class="liste_titre" >' . $langs->trans('Supplier') . '</th>';
     
@@ -614,8 +618,9 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
         $totalNbCols++;
         print '       <th class="liste_titre" >' . $form->textwithtooltip($langs->trans('Delivery'), $langs->trans('DeliveryHelp'),2,1,img_help(1,'')) . '<br/><small style="cursor:pointer;" id="emptydelivery" ><i class="fa fa-truck" ></i>Vider</small></th>';
     }
-//    print '       <th class="liste_titre" >' . $form->textwithtooltip($langs->trans('Price'), $langs->trans('dispatch_Price_Help'),2,1,img_help(1,'')) . '</th>';
-    print '       <th class="liste_titre" style="text-align:center;" ><input id="checkToggle" type="checkbox" name="togglecheckall" value="0"   ></th>';
+    //    print '       <th class="liste_titre" >' . $form->textwithtooltip($langs->trans('Price'), $langs->trans('dispatch_Price_Help'),2,1,img_help(1,'')) . '</th>';
+    print '       <th class="liste_titre" style="text-align:center;" ><input id="checkToggle" class="checkboxtoggletrigger" type="checkbox" name="togglecheckall" value="0"   ></th>';
+    print '       <th class="liste_titre" style="text-align:center;" ><input id="checkToggleNomenclature" class="checkboxtoggletrigger" type="checkbox" name="togglecheckallnomenclature" value="0"   ></th>';
     print '   </tr>';
     print '</thead>';
     
@@ -760,21 +765,23 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                 // QTY
                 print '<td class="center col-qtyordered"  ><strong title="'.$langs->trans('clicToReplaceQty').'" class="addvalue2target classfortooltip" style="cursor:pointer" data-value="'.$line->qty.'" data-target="#qty-'.$line->id.'"  >'.$line->qty.'</strong></td>';
                 
-                // STOCK REEL
-                print '<td  class="center col-realstock">';
-                if(!empty($line->fk_product) && $line->product_type == Product::TYPE_PRODUCT)
-                {
-                    print $product->stock_reel;
+                if (!empty($conf->stock->enabled)){
+                    // STOCK REEL
+                    print '<td  class="center col-realstock">';
+                    if(!empty($line->fk_product) && $line->product_type == Product::TYPE_PRODUCT)
+                    {
+                        print $product->stock_reel;
+                    }
+                    print '</td>';
+                    
+                    // STOCK THEORIQUE
+                    print '<td  class="center col-theoreticalstock">';
+                    if(!empty($line->fk_product) && $line->product_type == Product::TYPE_PRODUCT)
+                    {
+                        print $product->stock_theorique;
+                    }
+                    print '</td>';
                 }
-                print '</td>';
-                
-                // STOCK THEORIQUE
-                print '<td  class="center col-theoreticalstock">';
-                if(!empty($line->fk_product) && $line->product_type == Product::TYPE_PRODUCT)
-                {
-                    print $product->stock_theorique;
-                }
-                print '</td>';
                 
                 if(!empty($line->fk_product))
                 {
@@ -790,21 +797,21 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                 if($line->product_type == Product::TYPE_PRODUCT)
                 {
                     
-                    if( $stocktheoBeforeOrder - $line->qty >= 0){
-                        $qty2Order = 0;
+                    if (!empty($conf->stock->enabled)){
+
+                        if( $stocktheoBeforeOrder - $line->qty >= 0){
+                            $qty2Order = 0;
+                        }
+                        elseif($stocktheoBeforeOrder > 0)
+                        {
+                            $qty2Order = abs($stocktheoBeforeOrder - $line->qty) ;
+                        }
+                        else
+                        {
+                            $qty2Order =  $line->qty ;
+                        }
                     }
-                    elseif($stocktheoBeforeOrder > 0)
-                    {
-                        $qty2Order = abs($stocktheoBeforeOrder - $line->qty) ;
-                    }
-                    else
-                    {
-                        $qty2Order =  $line->qty ;
-                    }
-                    
-                    if($qty2Order>$line->qty){
-                        $qty2Order = $line->qty;
-                    }
+
                 }
                 
                 
@@ -908,7 +915,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                     if(!empty($TChecked[$line->id])){
                         $check = true;
                     }
-                    elseif(empty($qty2Order)||empty($line->fk_product)){
+                    elseif(empty($qty2Order)||empty($line->fk_product)||!empty($Tnomenclature)){
                         $check = false;
                     }
                     
@@ -919,6 +926,11 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                     print $langs->trans('CheckErrorsBeforeInport');
                 }
                 
+                print '</td>';
+                
+                // NOMENCLATURE CHECKBOX COL
+                print '<td  style="text-align:center;"  >';
+                //print '<input class="checkboxtoggletrigger" type="checkbox" name="togglecheckallProductNomenclature" value="0"   >';
                 print '</td>';
             
             }
@@ -1025,7 +1037,7 @@ llxFooter('');
 
 function _nomenclatureViewToHtml($line, $TNomenclatureLines, $overrideParam = array())
 {
-    global $db,$langs, $TChecked, $nomenclatureI,$form, $TDispatchNomenclature;
+    global $db,$langs, $TChecked, $nomenclatureI,$form, $TDispatchNomenclature, $conf;
     global $TNomenclature_productfournpriceid, $TNomenclature_qty, $TNomenclature_fournUnitPrice;
     
     
@@ -1108,21 +1120,28 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $overrideParam = ar
             $print.=  '<strong title="'.$langs->trans('clicToReplaceQty').'" class="addvalue2target classfortooltip" style="cursor:pointer" data-value="'.$productPart['infos']['qty'].'" data-target="#qty-'.$line->id.'-n'.$nomenclatureI.'"  >'.$productPart['infos']['qty'].'</strong>';
             $print.=  '</td>';
             
-            // STOCK REEL
-            $colspan--;
-            $print.=  '<td  class="center col-realstock">';
-            $print.=  $product->stock_reel;
-            $print.=  '</td>';
-            
-            // STOCK THEORIQUE
-            $colspan--;
-            $print.=  '<td  class="center col-theoreticalstock">';
-            $print.=  $product->stock_theorique;
-            $print.=  '</td>';
-            
+            if (!empty($conf->stock->enabled)){
+
+                // STOCK REEL
+                $colspan--;
+                $print.=  '<td  class="center col-realstock">';
+                $print.=  $product->stock_reel;
+                $print.=  '</td>';
+                
+                // STOCK THEORIQUE
+                $colspan--;
+                $print.=  '<td  class="center col-theoreticalstock">';
+                $print.=  $product->stock_theorique;
+                $print.=  '</td>';
+            }
             
             // QTY TO ORDER
             $colspan--;
+            
+            if (empty($conf->stock->enabled) && $conf->global->SOFO_FILL_QTY){
+                $qty2Order = $productPart['infos']['qty'];
+            }
+            
             if(!empty($TNomenclature_qty[$line->id][$nomenclatureI])){
                 $qty2Order = $TNomenclature_qty[$line->id][$nomenclatureI];
             }

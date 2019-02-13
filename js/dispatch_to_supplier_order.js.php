@@ -88,10 +88,18 @@ $( document ).ready(function() {
     
 	
     $("#checkToggle").click(function() {
-         var checkBoxes = $(".checkboxToggle");
+         var checkBoxes = $(".checkboxToggle:not(.checkboxToggle-nomenclature)");
          checkBoxes.prop("checked", this.checked);
          checkBoxes.trigger("change");
     });
+
+    $("#checkToggleNomenclature").click(function() {
+        var checkBoxes = $(".checkboxToggle.checkboxToggle-nomenclature");
+        checkBoxes.prop("checked", this.checked);
+        checkBoxes.trigger("change");
+   });
+    
+    
     
     $("#crea_commande").submit(function(){
 

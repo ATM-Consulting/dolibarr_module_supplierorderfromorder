@@ -660,7 +660,7 @@ if ($resql || $resql2) {
     
 
     $head[1][0] = dol_buildpath('/supplierorderfromorder/dispatch_to_supplier_order.php?from=commande&fromid='.$_REQUEST['id'],2);
-    $head[1][1] = $title;
+    $head[1][1] = $langs->trans('ProductsAssetsToOrder');
     $head[1][2] = 'supplierorderfromorder_dispatch';
     
 	/*$head[1][0] = DOL_URL_ROOT.'/product/stock/replenishorders.php';
