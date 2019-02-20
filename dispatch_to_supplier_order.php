@@ -1205,6 +1205,12 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $overrideParam = ar
             {
                 $check = true;
                 if(!empty($TChecked[$line->id])){
+                    // If line is checked remove this nomenclature checkbox
+                    $check = false;
+                }
+                elseif(!empty($param['searchSupplierOrderLine']))
+                {
+                    // Don't check in this case because lines are hidden
                     $check = false;
                 }
                 elseif(empty($qty2Order)){
