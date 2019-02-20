@@ -593,29 +593,29 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
     print '<input type="hidden" name="from" value="'.$from.'" />';
     print '<input type="hidden" name="fromid" value="'.$fromid.'" />';
     
-    print '<table width="100%" class="border noshadow" >';
+    print '<table width="100%" class="noborder noshadow" >';
     
     $totalNbCols = 6;
     print '<thead>';
-    print '   <tr >';
-    print '       <th class="liste_titre" >' . $langs->trans('Description') . '</th>';
-    print '       <th class="liste_titre center" >' . $langs->trans('Commande client') . '</th>';
+    print '   <tr class="liste_titre" >';
+    print '       <th >' . $langs->trans('Description') . '</th>';
+    print '       <th class="center" >' . $langs->trans('Commande client') . '</th>';
     if (!empty($conf->stock->enabled)){
         $totalNbCols++;
-        print '       <th class="liste_titre center" >' . $langs->trans('Stock_reel') . '</th>';
+        print '       <th class="center" >' . $langs->trans('Stock_reel') . '</th>';
         $totalNbCols++;
-        print '       <th class="liste_titre center" >' . $langs->trans('Stock_theorique') . '</th>';
+        print '       <th class="center" >' . $langs->trans('Stock_theorique') . '</th>';
     }
-    print '       <th class="liste_titre" >' . $form->textwithtooltip($langs->trans('QtyToOrder'), $langs->trans('QtyToOrderHelp'),2,1,img_help(1,'')) . '</th>';
-    print '       <th class="liste_titre left" >' . $langs->trans('Supplier') . '</th>';
+    print '       <th >' . $form->textwithtooltip($langs->trans('QtyToOrder'), $langs->trans('QtyToOrderHelp'),2,1,img_help(1,'')) . '</th>';
+    print '       <th class="left" >' . $langs->trans('Supplier') . '</th>';
     
     if(!empty($conf->global->SOFO_USE_DELIVERY_CONTACT)){
         $totalNbCols++;
-        print '       <th class="liste_titre" >' . $form->textwithtooltip($langs->trans('Delivery'), $langs->trans('DeliveryHelp'),2,1,img_help(1,'')) . '<br/><small style="cursor:pointer;" id="emptydelivery" ><i class="fa fa-truck" ></i>Vider</small></th>';
+        print '       <th  >' . $form->textwithtooltip($langs->trans('Delivery'), $langs->trans('DeliveryHelp'),2,1,img_help(1,'')) . '<br/><small style="cursor:pointer;" id="emptydelivery" ><i class="fa fa-truck" ></i>Vider</small></th>';
     }
-    //    print '       <th class="liste_titre" >' . $form->textwithtooltip($langs->trans('Price'), $langs->trans('dispatch_Price_Help'),2,1,img_help(1,'')) . '</th>';
-    print '       <th class="liste_titre" style="text-align:center;" ><input id="checkToggle" class="checkboxtoggletrigger" type="checkbox" name="togglecheckall" value="0"   ></th>';
-    print '       <th class="liste_titre" style="text-align:center;" ><input id="checkToggleNomenclature" class="checkboxtoggletrigger" type="checkbox" name="togglecheckallnomenclature" value="0"   ></th>';
+    //    print '       <th  >' . $form->textwithtooltip($langs->trans('Price'), $langs->trans('dispatch_Price_Help'),2,1,img_help(1,'')) . '</th>';
+    print '       <th  style="text-align:center;" ><input id="checkToggle" class="checkboxtoggletrigger" type="checkbox" name="togglecheckall" value="0"   ></th>';
+    print '       <th  style="text-align:center;" ><input id="checkToggleNomenclature" class="checkboxtoggletrigger" type="checkbox" name="togglecheckallnomenclature" value="0"   ></th>';
     print '   </tr>';
     print '</thead>';
     
