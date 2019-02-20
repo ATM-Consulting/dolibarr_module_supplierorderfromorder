@@ -304,7 +304,7 @@ if (empty($reshook))
                 // Nomenclature
                 foreach($TCheckedNomenclature[$line->id] as $nomenclatureI)
                 {
-                    
+                   
                     /*$TNomenclature_productfournpriceid[$line->id][$nomenclatureI];
                     $TNomenclature_qty[$line->id][$nomenclatureI];
                     $TNomenclature_fournUnitPrice[$line->id][$nomenclatureI];*/
@@ -335,14 +335,15 @@ if (empty($reshook))
                     
                     
                     
-                    $supplierSocId = GETPOST('fk_soc_fourn_'.$line->id.'_n'.$nomenclatureI, 'int');
                     
+                    $supplierSocId = GETPOST('fk_soc_fourn_'.$line->id.'_n'.$nomenclatureI, 'int');
+
                     if(!empty($forceSupplierSocId)){
                         $supplierSocId = $forceSupplierSocId;
                     }
-                    
+
                     // Get fourn from supplier price
-                    if(!empty($forceSupplierSocId) && isset($TNomenclature_productfournpriceid[$line->id][$nomenclatureI])){
+                    if(empty($forceSupplierSocId) && isset($TNomenclature_productfournpriceid[$line->id][$nomenclatureI])){
                         $prod_supplier = new ProductFournisseur($db);
                         if($prod_supplier->fetch_product_fournisseur_price($TNomenclature_productfournpriceid[$line->id][$nomenclatureI]) < 1){
                             // ERROR
@@ -362,8 +363,8 @@ if (empty($reshook))
                         
                     }
                     
-                    
-                    if(empty($supplierSocId) && ( empty($TDispatchNomenclature[$line->id]['status']) || $TDispatchNomenclature[$line->id]['status'] < 0) ){
+
+                    if(empty($supplierSocId) && ( empty($TDispatchNomenclature[$line->id][$nomenclatureI]['status']) || $TDispatchNomenclature[$line->id][$nomenclatureI]['status'] < 0) ){
                         $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
                             'status' => -1,
                             'msg' => $langs->trans('ErrorFournDoesNotExist').' : '.$supplierSocId
@@ -372,7 +373,7 @@ if (empty($reshook))
                         continue;
                     }
                     
-                    
+
                     // vérification si la ligne fait déjà l'objet d'une commande fournisseur
                     $searchSupplierOrderLine = false; // TODO : find a way to detect this for nomenclature 
                     
@@ -545,13 +546,18 @@ $head[0][0] = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id='.$fro
 $head[0][1] = $title;
 $head[0][2] = 'supplierorderfromorder';
 
+
 $head[1][0] = dol_buildpath('/supplierorderfromorder/dispatch_to_supplier_order.php',1).'?from='.$from.'&fromid='.$fromid;
 $head[1][1] = $langs->trans('ProductsAssetsToOrder');
 $head[1][2] = 'supplierorderfromorder_dispatch';
 
 
 dol_fiche_head($head, 'supplierorderfromorder_dispatch', $langs->trans('Replenishment'), 0, 'stock');
-
+$morehtmlref='<div class="refidno">';
+$morehtmlref.= $langs->trans('PrepareFournDispatch').$origin->getNomUrl();
+$morehtmlref.='</div>';
+dol_banner_tab($origin, 'ref', '', 1, 'ref', 'ref', $morehtmlref );
+dol_fiche_end();
 
 
 
@@ -564,18 +570,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
     $origin->fetch_optionals();
     //$TlistContact = $origin->liste_contact(-1,'external',0,'SHIPPING');
     
-    ?>
-    <table width="100%" border="0" class="notopnoleftnoright" style="margin-bottom: 6px;">
-        <tbody>
-            <tr>
-                <td class="nobordernopadding valignmiddle">
-                    <img src="<?php echo dol_buildpath('theme/eldy/img/title_generic.png',2); ?>" alt="" class="hideonsmartphone valignmiddle" id="pictotitle">
-                    <div class="titre inline-block"><?php  print $langs->trans('PrepareFournDispatch'); ?> <?php  print $origin->getNomUrl(); ?></div>
-                </td>
-           </tr>
-       </tbody>
-    </table>
-<?php 
+
     
     $TFournLines = array();
     
@@ -598,7 +593,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
     print '<input type="hidden" name="from" value="'.$from.'" />';
     print '<input type="hidden" name="fromid" value="'.$fromid.'" />';
     
-    print '<table width="100%" class="noborder noshadow" >';
+    print '<table width="100%" class="border noshadow" >';
     
     $totalNbCols = 6;
     print '<thead>';
@@ -612,7 +607,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
         print '       <th class="liste_titre center" >' . $langs->trans('Stock_theorique') . '</th>';
     }
     print '       <th class="liste_titre" >' . $form->textwithtooltip($langs->trans('QtyToOrder'), $langs->trans('QtyToOrderHelp'),2,1,img_help(1,'')) . '</th>';
-    print '       <th class="liste_titre" >' . $langs->trans('Supplier') . '</th>';
+    print '       <th class="liste_titre left" >' . $langs->trans('Supplier') . '</th>';
     
     if(!empty($conf->global->SOFO_USE_DELIVERY_CONTACT)){
         $totalNbCols++;
@@ -698,7 +693,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
             
             
             // START NEW LINE
-            print '<tr class="oddeven" data-lineid="'.$line->id.'" style="'.$lineStyle.'" >';
+            print '<tr class="objectline-row"  data-lineid="'.$line->id.'" style="'.$lineStyle.'" >';
             
             // COL DESC
             print '<td class="col-desc" >';
@@ -1040,12 +1035,10 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $overrideParam = ar
     global $db,$langs, $TChecked, $nomenclatureI,$form, $TDispatchNomenclature, $conf;
     global $TNomenclature_productfournpriceid, $TNomenclature_qty, $TNomenclature_fournUnitPrice;
     
-    
+
     if(empty($TNomenclatureLines)){
         return '';
     }
-    
-    
     
     $print='';
     
@@ -1109,9 +1102,14 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $overrideParam = ar
             
             if(!empty($TDispatchNomenclature[$line->id][$nomenclatureI]))
             {
-                $print.=  $TDispatchNomenclature[$line->id][$nomenclatureI]['msg'];
-            }
+                $msgClass = 'dispatch-msg';
+                if($TDispatchNomenclature[$line->id][$nomenclatureI]['status'] < 0)
+                {
+                    $msgClass = 'dispatch-err';
+                }
             
+                $print.=  '<div class="'.$msgClass.'" >'.$TDispatchNomenclature[$line->id][$nomenclatureI]['msg'].'</div>';
+            }
             $print.= '</td>';
             
             // QTY
@@ -1119,6 +1117,12 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $overrideParam = ar
             $print.=  '<td class="center col-qtyordered" >';
             $print.=  '<strong title="'.$langs->trans('clicToReplaceQty').'" class="addvalue2target classfortooltip" style="cursor:pointer" data-value="'.$productPart['infos']['qty'].'" data-target="#qty-'.$line->id.'-n'.$nomenclatureI.'"  >'.$productPart['infos']['qty'].'</strong>';
             $print.=  '</td>';
+            
+            
+            if (!empty($conf->global->SOFO_FILL_QTY)){
+                $qty2Order = $productPart['infos']['qty'];
+            }
+            
             
             if (!empty($conf->stock->enabled)){
 
@@ -1133,14 +1137,13 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $overrideParam = ar
                 $print.=  '<td  class="center col-theoreticalstock">';
                 $print.=  $product->stock_theorique;
                 $print.=  '</td>';
+               
             }
             
             // QTY TO ORDER
             $colspan--;
             
-            if (empty($conf->stock->enabled) && $conf->global->SOFO_FILL_QTY){
-                $qty2Order = $productPart['infos']['qty'];
-            }
+
             
             if(!empty($TNomenclature_qty[$line->id][$nomenclatureI])){
                 $qty2Order = $TNomenclature_qty[$line->id][$nomenclatureI];

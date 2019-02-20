@@ -59,3 +59,10 @@ MoreOptions=Plus d'options
 ForceFourn=Forcer le fournisseur
 ForceFournHelp=En forçant le fournisseur, tous les produits de la nomenclature seront commandés chez ce fournisseur
 ProductsAssetsToOrder=Composants à commander
+
+# admin 
+SOFO_USE_NOMENCLATURE=Ajouter l'onglet "Composants à commander"
+SOFO_USE_NOMENCLATURE_HELP=En activant cette option, un nouvel onglet "Composants à commander" apparaît sur la page de réapprovisionnement
+SOFO_USE_DELIVERY_CONTACT=Permettre le choix du contact de livraison
+SOFO_FILL_QTY=Pré-remplir les quantitées des composants
+

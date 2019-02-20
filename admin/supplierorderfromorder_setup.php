@@ -84,8 +84,22 @@ if (preg_match('/del_(.*)/',$action,$reg))
 
 llxHeader('',$langs->trans("SupplierOrderFromOrder"));
 
+
+// Configuration header
+$head = supplierorderfromorderAdminPrepareHead();
+dol_fiche_head(
+    $head,
+    'settings',
+    $langs->trans("Module104130Name"),
+    0,
+    "supplierorderfromorder@supplierorderfromorder"
+    );
+
 $linkback='<a href="'.DOL_URL_ROOT.'/admin/modules.php">'.$langs->trans("BackToModuleList").'</a>';
 print_fiche_titre($langs->trans("SupplierOrderFromOrder"),$linkback,'supplierorderfromorder@supplierorderfromorder');
+
+
+dol_fiche_end();
 
 print '<br>';
 

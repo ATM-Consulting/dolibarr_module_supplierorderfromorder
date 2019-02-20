@@ -408,3 +408,37 @@ function sofo_getFournMinPrice($fk_product)
     return $minFournPriceId;
 }
 
+
+function supplierorderfromorderAdminPrepareHead()
+{
+    global $langs, $conf;
+    
+    $langs->load("supplierorderfromorder@supplierorderfromorder");
+    
+    $h = 0;
+    $head = array();
+    
+    $head[$h][0] = dol_buildpath("/supplierorderfromorder/admin/supplierorderfromorder_setup.php", 1);
+    $head[$h][1] = $langs->trans("Parameters");
+    $head[$h][2] = 'settings';
+    $h++;
+    
+    if (!empty($conf->nomenclature->enabled)){
+        $head[$h][0] = dol_buildpath("/supplierorderfromorder/admin/dispatch_to_supplier_order_setup.php", 1);
+        $head[$h][1] = $langs->trans("Nomenclature");
+        $head[$h][2] = 'nomenclature';
+        $h++;
+    }
+    
+    // Show more tabs from modules
+    // Entries must be declared in modules descriptor with line
+    //$this->tabs = array(
+    //	'entity:+tabname:Title:@supplierorderfromorder:/supplierorderfromorder/mypage.php?id=__ID__'
+    //); // to add new tab
+    //$this->tabs = array(
+    //	'entity:-tabname:Title:@supplierorderfromorder:/supplierorderfromorder/mypage.php?id=__ID__'
+    //); // to remove a tab
+    complete_head_from_modules($conf, $langs, $object, $head, $h, 'supplierorderfromorderadmin');
+    
+    return $head;
+}
