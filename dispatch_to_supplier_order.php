@@ -667,7 +667,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                 
             }
             
-            
+            $lineStyleColor='';
             // Add background color to line
             if(!empty($line->isModSubtotalLine))
             {
