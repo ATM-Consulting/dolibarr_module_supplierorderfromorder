@@ -246,7 +246,7 @@ if (empty($reshook))
                         $txlocaltax2=0.0, 
                         $line->fk_product, 
                         $fk_prod_fourn_price, 
-                        $ref_supplier, 
+                        $ref_supplier,
                         $remise_percent, 
                         'HT', 
                         0, //$pu_ttc=0.0, 
@@ -255,7 +255,7 @@ if (empty($reshook))
                         false, //$notrigger=false, 
                         null, //$date_start=null, 
                         null, //$date_end=null, 
-                        0, //$array_options=0, 
+                        $line->array_options, //$array_options=0, 
                         $line->fk_unit, 
                         0,//$pu_ht_devise=0, 
                         'commandedet', //$origin= // peut être un jour ça sera géré...
