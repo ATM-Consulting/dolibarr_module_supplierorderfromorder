@@ -125,6 +125,10 @@ llxHeader('', $langs->trans($page_name));
     setup_print_on_off('SOFO_USE_DELIVERY_CONTACT',false, '', 'DeliveryHelp');
     
     
+    // USE DELIVERY CONTACT
+    setup_print_on_off('SOFO_USE_RESTRICTION_TO_CUSTOMER_ORDER');
+    
+    
     // Example with imput
     //setup_print_input_form_part('CONSTNAME', 'ParamLabel');
     

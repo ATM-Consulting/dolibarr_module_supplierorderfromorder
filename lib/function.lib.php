@@ -145,7 +145,7 @@ function getCatMultiselect($htmlname, $TCategories)
 
 
 
-function getSupplierOrderAvailable($supplierSocId,$shippingContactId=0,$array_options=array())
+function getSupplierOrderAvailable($supplierSocId,$shippingContactId=0,$array_options=array(),$restrictToCustomerOrder = 0)
 {
     global $db, $conf;
     $shippingContactId = intval($shippingContactId);
@@ -181,8 +181,31 @@ function getSupplierOrderAvailable($supplierSocId,$shippingContactId=0,$array_op
     {
         while ($obj = $db->fetch_object($resql))
         {
-            $Torder[] = $obj->rowid;
+            $restriction = false;
+            
+            if($restrictToCustomerOrder>0){
+                // recherche des commandes client liées
+                $TLinkedObject = getLinkedObject($obj->rowid,'order_supplier','commande');
+                if(!empty($TLinkedObject) && is_array($TLinkedObject)){
+                    foreach($TLinkedObject as $commandeId){
+                        // comparaison avec la commande recherchée
+                        if((int)$commandeId != (int)$restrictToCustomerOrder){
+                            $restriction = true;
+                            break;
+                        }
+                    }
+                }
+                else{
+                    $restriction = true;
+                }
+            }
+            
+            if(!$restriction){
+                $Torder[] = $obj->rowid;
+            }
         }
+        
+
         
         return $Torder;
     }
@@ -241,6 +264,54 @@ function getLinkedSupplierOrderFromOrder($sourceCommandeId,$supplierSocId,$shipp
     return -1;
     
 }
+
+
+function getLinkedObject($sourceid=null,$sourcetype='',$targettype='')
+{
+    global $db;
+    $TElement=array();
+    
+    $sql = 'SELECT fk_target ';
+    $sql .= ' FROM ' . MAIN_DB_PREFIX . 'element_element ee';
+    $sql .= ' WHERE ee.fk_source = '.intval($sourceid).' ';
+    $sql .= ' AND ee.sourcetype = \''.$db->escape($sourcetype).'\' ';
+    if(!empty($targettype)){
+        $sql .= ' AND ee.targettype = \''.$db->escape($targettype).'\' ';
+    }
+    
+    $resql=$db->query($sql);
+    if ($resql)
+    {
+        while($obj = $db->fetch_object($resql))
+        {
+            $TElement[] = $obj->fk_target;
+        }
+    }
+    
+    // search for opposite
+    
+    $sql = 'SELECT fk_target ';
+    $sql .= ' FROM ' . MAIN_DB_PREFIX . 'element_element ee';
+    $sql .= ' WHERE ee.fk_target = '.intval($sourceid).' ';
+    $sql .= ' AND ee.targettype = \''.$db->escape($sourcetype).'\' ';
+    if(!empty($targettype)){
+        $sql .= ' AND ee.sourcetype = \''.$db->escape($targettype).'\' ';
+    }
+    
+    $resql=$db->query($sql);
+    if ($resql)
+    {
+        while($obj = $db->fetch_object($resql))
+        {
+            $TElement[] = $obj->fk_source;
+        }
+    }
+    
+    
+    return !empty($TElement)?$TElement:0;
+    
+}
+
 
 function getLinkedSupplierOrderLineFromElementLine($sourceCommandeLineId, $sourcetype = 'commandedet')
 {

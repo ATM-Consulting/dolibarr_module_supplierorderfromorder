@@ -75,7 +75,7 @@ $TCheckedNomenclature = GETPOST('checkedNomenclature','array');
  */
 
 $parameters=array();
-$reshook=$hookmanager->executeHooks('doActions',$parameters,$object);    // Note that $action and $object may have been modified by some hooks
+$reshook=$hookmanager->executeHooks('doActions',$parameters,$origin);    // Note that $action and $object may have been modified by some hooks
 if ($reshook < 0) setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
 
 if (empty($reshook))
@@ -162,7 +162,12 @@ if (empty($reshook))
                     if(empty($searchSupplierOrder))
                     {
                         // search draft supplier order with same critera 
-                        $searchSupplierOrder = getSupplierOrderAvailable($supplierSocId,$shippingContactId,$array_options);
+                        $restrictToCustomerOrder=0;
+                        if(!empty($conf->global->SOFO_USE_RESTRICTION_TO_CUSTOMER_ORDER)){
+                            $restrictToCustomerOrder = $origin->id;
+                        }
+                        
+                        $searchSupplierOrder = getSupplierOrderAvailable($supplierSocId,$shippingContactId,$array_options,$restrictToCustomerOrder);
                     }
                     
                     
