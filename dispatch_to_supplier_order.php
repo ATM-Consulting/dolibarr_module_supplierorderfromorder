@@ -811,9 +811,14 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                 
                 
                 // QTY
+                if(!empty($Tnomenclature)){
+                    $qty2Order = 0;
+                }
+                
                 if(!empty($Tqty[$line->id])){
                     $qty2Order = $Tqty[$line->id];
                 }
+                
                 print '<td class="center col-qtytoorder" >';
                 print '<input id="qty-'.$line->id.'" class="qtyform col-qtytoorder" data-lineid="'.$line->id.'" type="number" name="qty['.$line->id.']" value="'.$qty2Order.'" min="0"  >';
                 print '</td>';
@@ -1119,7 +1124,7 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $overrideParam = ar
             $print.=  '</td>';
             
             
-            if (!empty($conf->global->SOFO_FILL_QTY)){
+            if (!empty($conf->global->SOFO_FILL_QTY_NOMENCLATURE)){
                 $qty2Order = $productPart['infos']['qty'];
             }
             

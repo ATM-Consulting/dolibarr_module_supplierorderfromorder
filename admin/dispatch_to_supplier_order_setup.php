@@ -118,7 +118,7 @@ llxHeader('', $langs->trans($page_name));
     setup_print_on_off('SOFO_USE_NOMENCLATURE',false, '', 'SOFO_USE_NOMENCLATURE_HELP');
     
     // Fill qty for nomenclature
-    setup_print_on_off('SOFO_FILL_QTY',false, '', 'SOFO_FILL_QTY_HELP');
+    setup_print_on_off('SOFO_FILL_QTY_NOMENCLATURE',false, '', 'SOFO_FILL_QTY_NOMENCLATURE_HELP');
     
     
     // USE DELIVERY CONTACT
