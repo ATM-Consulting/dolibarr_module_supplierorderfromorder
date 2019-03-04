@@ -241,56 +241,127 @@ if (empty($reshook))
                     }
                    
                     
-                    // ADD LINE
-                    $addRes = $CommandeFournisseur->addline(
-                        $line->desc,
-                        $price,
-                        $qty,
-                        $tva_tx,
-                        $txlocaltax1=0.0, 
-                        $txlocaltax2=0.0, 
-                        $line->fk_product, 
-                        $fk_prod_fourn_price, 
-                        $ref_supplier,
-                        $remise_percent, 
-                        'HT', 
-                        0, //$pu_ttc=0.0, 
-                        $line->product_type, 
-                        $line->info_bits, 
-                        false, //$notrigger=false, 
-                        null, //$date_start=null, 
-                        null, //$date_end=null, 
-                        $line->array_options, //$array_options=0, 
-                        $line->fk_unit, 
-                        0,//$pu_ht_devise=0, 
-                        'commandedet', //$origin= // peut être un jour ça sera géré...
-                        $line->id //$origin_id=0 // peut être un jour ça sera géré...
-                        );
-                   
+                    // SEARCH in supplier order if same product exist
+                    $supplierLineRowidExist = 0 ;
+                    if(!empty($CommandeFournisseur->lines) && $conf->global->SOFO_ADD_QUANTITY_RATHER_THAN_CREATE_LINES)
+                    {
+                        foreach ($CommandeFournisseur->lines as $li => $fournLine)
+                        {
+                            if(
+                                $fournLine->ref_supplier == $ref_supplier
+                                && $fournLine->fk_product == $product->id
+                                )
+                            {
+                                $supplierLineRowidExist = $fournLine->id;
+                                break;
+                            }
+                        }
+                    }
                     
-                    if($addRes>0)
+                    // UPDATE SUPPLIER LINE
+                    if($supplierLineRowidExist>0)
                     {
                         
-                        // add order line in linked element
-                        $commandeFournisseurLigne = new CommandeFournisseurLigne($db);
-                        $commandeFournisseurLigne->fetch($addRes);
-                        $commandeFournisseurLigne->add_object_linked('commandedet', $line->id);
+                        $updateRes = $CommandeFournisseur->updateline(
+                            $fournLine->id,
+                            $fournLine->desc,
+                            $fournLine->subprice,
+                            $fournLine->qty + $qty,
+                            $fournLine->remise_percent,
+                            $fournLine->tva_tx,
+                            $fournLine->localtax1_tx,
+                            $fournLine->localtax2_tx,
+                            'HT',
+                            0,
+                            $product->type,
+                            0, // $notrigger
+                            '',
+                            '',
+                            $fournLine->array_options,
+                            $product->fk_unit,
+                            0, // $pu_ht_devise
+                            $fournLine->ref_supplier
+                            );
                         
-                        // sauvegarde des infos pour l'affichage du resultat
-                        $TDispatch[$line->id] = array(
-                            'status' => 1,
-                            'id' => $CommandeFournisseur->id,
-                            'msg' => $CommandeFournisseur->getNomUrl(1)
-                        );
+                        
+                        
+                        if($updateRes>=0) // yes $CommandeFournisseur->updateline can return 0 on success
+                        {
+                            // add order line in linked element
+                            $commandeFournisseurLigne = new CommandeFournisseurLigne($db);
+                            $commandeFournisseurLigne->fetch($addRes);
+                            $commandeFournisseurLigne->add_object_linked('commandedet', $line->id);
+                            
+                            // sauvegarde des infos pour l'affichage du resultat
+                            $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
+                                'status' => 1,
+                                'id' => $CommandeFournisseur->id,
+                                'msg' => $CommandeFournisseur->getNomUrl(1)
+                            );
+                        }
+                        else {
+                            // sauvegarde des infos pour l'affichage du resultat
+                            $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
+                                'status' => -1,
+                                'id' => $CommandeFournisseur->id,
+                                'msg' => $CommandeFournisseur->getNomUrl(1).' '.$langs->trans('ErrorUpdateSupplierLine').' #'.$updateRes.' : '.$commandeFournisseurLigne->error
+                            );
+                        }
                     }
-                    else {
-                        // sauvegarde des infos pour l'affichage du resultat
-                        $TDispatch[$line->id] = array(
-                            'status' => -1,
-                            'id' => $CommandeFournisseur->id,
-                            'msg' => $CommandeFournisseur->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$commandeFournisseurLigne->error
-                        );
+                    else
+                    {
+                        // ADD LINE
+                        $addRes = $CommandeFournisseur->addline(
+                            $line->desc,
+                            $price,
+                            $qty,
+                            $tva_tx,
+                            $txlocaltax1=0.0,
+                            $txlocaltax2=0.0,
+                            $line->fk_product,
+                            $fk_prod_fourn_price,
+                            $ref_supplier,
+                            $remise_percent,
+                            'HT',
+                            0, //$pu_ttc=0.0,
+                            $line->product_type,
+                            $line->info_bits,
+                            false, //$notrigger=false,
+                            null, //$date_start=null,
+                            null, //$date_end=null,
+                            $line->array_options, //$array_options=0,
+                            $line->fk_unit,
+                            0,//$pu_ht_devise=0,
+                            'commandedet', //$origin= // peut être un jour ça sera géré...
+                            $line->id //$origin_id=0 // peut être un jour ça sera géré...
+                            );
+                        
+                        
+                        if($addRes>0)
+                        {
+                            
+                            // add order line in linked element
+                            $commandeFournisseurLigne = new CommandeFournisseurLigne($db);
+                            $commandeFournisseurLigne->fetch($addRes);
+                            $commandeFournisseurLigne->add_object_linked('commandedet', $line->id);
+                            
+                            // sauvegarde des infos pour l'affichage du resultat
+                            $TDispatch[$line->id] = array(
+                                'status' => 1,
+                                'id' => $CommandeFournisseur->id,
+                                'msg' => $CommandeFournisseur->getNomUrl(1)
+                            );
+                        }
+                        else {
+                            // sauvegarde des infos pour l'affichage du resultat
+                            $TDispatch[$line->id] = array(
+                                'status' => -1,
+                                'id' => $CommandeFournisseur->id,
+                                'msg' => $CommandeFournisseur->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$commandeFournisseurLigne->error
+                            );
+                        }
                     }
+                    
                     
                     
                     
@@ -397,6 +468,12 @@ if (empty($reshook))
                         if(empty($searchSupplierOrder))
                         {
                             // search draft supplier order with same critera
+                            $restrictToCustomerOrder=0;
+                            if(!empty($conf->global->SOFO_USE_RESTRICTION_TO_CUSTOMER_ORDER)){
+                                $restrictToCustomerOrder = $origin->id;
+                            }
+                            
+                            // search draft supplier order with same critera
                             $searchSupplierOrder = getSupplierOrderAvailable($supplierSocId,$shippingContactId,$array_options);
                         }
                         
@@ -464,59 +541,132 @@ if (empty($reshook))
                             $price = $line->pa_ht;
                         }*/
                         
+                        // SEARCH in supplier order if same product exist
+                        $supplierLineRowidExist = 0 ;
+                        if(!empty($CommandeFournisseur->lines) && $conf->global->SOFO_ADD_QUANTITY_RATHER_THAN_CREATE_LINES)
+                        {
+                            foreach ($CommandeFournisseur->lines as $li => $fournLine)
+                            {
+                                if(
+                                       $fournLine->ref_supplier == $ref_supplier
+                                    && $fournLine->fk_product == $product->id
+                                )
+                                {
+                                    $supplierLineRowidExist = $fournLine->id;
+                                    break;
+                                }
+                            }
+                        }
                         
-                        // ADD LINE
-                        $addRes = $CommandeFournisseur->addline(
-                            $line->desc,
-                            $price,
-                            $qty,
-                            $tva_tx,
-                            $txlocaltax1=0.0,
-                            $txlocaltax2=0.0,
-                            $product->id,
-                            $fk_prod_fourn_price,
-                            $ref_supplier,
-                            $remise_percent,
-                            'HT',
-                            0, //$pu_ttc=0.0,
-                            $product->type,
-                            0,
-                            false, //$notrigger=false,
-                            null, //$date_start=null,
-                            null, //$date_end=null,
-                            0, //$array_options=0,
-                            $product->fk_unit,
-                            0,//$pu_ht_devise=0,
-                            'commandedet', //$origin= // peut être un jour ça sera géré...
-                            $line->id //$origin_id=0 // peut être un jour ça sera géré...
-                            );
-                        
-                        
-                        if($addRes>0)
+                        // UPDATE SUPPLIER LINE
+                        if($supplierLineRowidExist>0)
                         {
                             
-                            // add order line in linked element
-                            $commandeFournisseurLigne = new CommandeFournisseurLigne($db);
-                            $commandeFournisseurLigne->fetch($addRes);
-                            $commandeFournisseurLigne->add_object_linked('commandedet', $line->id);
+                            $updateRes = $CommandeFournisseur->updateline(
+                                $fournLine->id,
+                                $fournLine->desc,
+                                $fournLine->subprice,
+                                $fournLine->qty + $qty,
+                                $fournLine->remise_percent,
+                                $fournLine->tva_tx,
+                                $fournLine->localtax1_tx,
+                                $fournLine->localtax2_tx,
+                                'HT',
+                                0,
+                                $product->type, 
+                                0, // $notrigger
+                                '',
+                                '',
+                                $fournLine->array_options,
+                                $product->fk_unit,
+                                0, // $pu_ht_devise
+                                $fournLine->ref_supplier
+                             );
                             
-                            // sauvegarde des infos pour l'affichage du resultat
-                            $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
-                                'status' => 1,
-                                'id' => $CommandeFournisseur->id,
-                                'msg' => $CommandeFournisseur->getNomUrl(1)
-                            );
+                            if($updateRes>=0) // yes $CommandeFournisseur->updateline can return 0 on success
+                            {
+                                // add order line in linked element
+                                $commandeFournisseurLigne = new CommandeFournisseurLigne($db);
+                                $commandeFournisseurLigne->fetch($addRes);
+                                $commandeFournisseurLigne->add_object_linked('commandedet', $line->id);
+                                
+                                // sauvegarde des infos pour l'affichage du resultat
+                                $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
+                                    'status' => 1,
+                                    'id' => $CommandeFournisseur->id,
+                                    'msg' => $CommandeFournisseur->getNomUrl(1)
+                                );
+                            }
+                            else {
+                                // sauvegarde des infos pour l'affichage du resultat
+                                $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
+                                    'status' => -1,
+                                    'id' => $CommandeFournisseur->id,
+                                    'msg' => $CommandeFournisseur->getNomUrl(1).' '.$langs->trans('ErrorUpdateSupplierLine').' #'.$updateRes.' : '.$commandeFournisseurLigne->error
+                                );
+                            }
                         }
-                        else {
-                            // sauvegarde des infos pour l'affichage du resultat
-                            $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
-                                'status' => -1,
-                                'id' => $CommandeFournisseur->id,
-                                'msg' => $CommandeFournisseur->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$commandeFournisseurLigne->error
+                        // ADD NEW SUPPLIER LINE
+                        else
+                        {
+
+                            
+                            
+                            // ADD LINE
+                            $addRes = $CommandeFournisseur->addline(
+                                '',
+                                $price,
+                                $qty,
+                                $tva_tx,
+                                $txlocaltax1=0.0,
+                                $txlocaltax2=0.0,
+                                $product->id,
+                                $fk_prod_fourn_price,
+                                $ref_supplier,
+                                $remise_percent,
+                                'HT',
+                                0, //$pu_ttc=0.0,
+                                $product->type,
+                                0,
+                                false, //$notrigger=false,
+                                null, //$date_start=null,
+                                null, //$date_end=null,
+                                0, //$array_options_line=0,
+                                $product->fk_unit,
+                                0,//$pu_ht_devise=0,
+                                'commandedet', //$origin= // peut être un jour ça sera géré...
+                                $line->id //$origin_id=0 // peut être un jour ça sera géré...
                             );
+                            
+                            
+                    
+                            
+                            
+                            if($addRes>0)
+                            {
+                                
+                                // add order line in linked element
+                                $commandeFournisseurLigne = new CommandeFournisseurLigne($db);
+                                $commandeFournisseurLigne->fetch($addRes);
+                                $commandeFournisseurLigne->add_object_linked('commandedet', $line->id);
+                                
+                                // sauvegarde des infos pour l'affichage du resultat
+                                $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
+                                    'status' => 1,
+                                    'id' => $CommandeFournisseur->id,
+                                    'msg' => $CommandeFournisseur->getNomUrl(1)
+                                );
+                            }
+                            else {
+                                // sauvegarde des infos pour l'affichage du resultat
+                                $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
+                                    'status' => -1,
+                                    'id' => $CommandeFournisseur->id,
+                                    'msg' => $CommandeFournisseur->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$commandeFournisseurLigne->error
+                                );
+                            }
+                        
                         }
-                        
-                        
                         
                         
                         

@@ -68,3 +68,4 @@ SOFO_FILL_QTY_NOMENCLATURE=Pré-remplir les quantitées des composants
 SOFO_USE_RESTRICTION_TO_CUSTOMER_ORDER=Restraindre les commandes fournisseurs à une seule commande client
 SOFO_DISABLE_ORDER_POSIBILITY_TO_PRODUCT_WITH_NOMENCLATURE=Désactiver la possibilité du commander directement le produit avec une nomenclature
 ParametersNeedSOFO_USE_NOMENCLATURE=Paramètres : l'onglet "Composants à commander" est nécessaire pour utiliser ces paramètres<small>
+SOFO_ADD_QUANTITY_RATHER_THAN_CREATE_LINES=Privilègier l'ajout de quantité à une ligne de commande fournisseur au lieu d'ajouter une ligne pour chaque ligne de commande client
