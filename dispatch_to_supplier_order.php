@@ -293,7 +293,7 @@ if (empty($reshook))
                             $commandeFournisseurLigne->add_object_linked('commandedet', $line->id);
                             
                             // sauvegarde des infos pour l'affichage du resultat
-                            $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
+                            $TDispatch[$line->id] = array(
                                 'status' => 1,
                                 'id' => $CommandeFournisseur->id,
                                 'msg' => $CommandeFournisseur->getNomUrl(1)
@@ -301,7 +301,7 @@ if (empty($reshook))
                         }
                         else {
                             // sauvegarde des infos pour l'affichage du resultat
-                            $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
+                            $TDispatch[$line->id] = array(
                                 'status' => -1,
                                 'id' => $CommandeFournisseur->id,
                                 'msg' => $CommandeFournisseur->getNomUrl(1).' '.$langs->trans('ErrorUpdateSupplierLine').' #'.$updateRes.' : '.$commandeFournisseurLigne->error
@@ -375,6 +375,9 @@ if (empty($reshook))
             /**********************/
             /* NOMENCLATURE PART  */
             /**********************/
+            
+            // Note pour PH : j'ai pas factorisé avec les lignes standards car j'ai le sentiment que pleins de choses vont êtres ajoutées... et pour le coup la factorisation risque de complexifier pour rien... pour l'instant je veux garder un truc à peu près lisible 
+            
             if(!empty($TCheckedNomenclature[$line->id]) && is_array($TCheckedNomenclature[$line->id]))
             {
                 // Nomenclature
@@ -457,7 +460,7 @@ if (empty($reshook))
                     {
                         $createNewOrder = true;
                         
-                        $shippingContactId = 0; // Les produits issue d'une nomenclature ne doivent pas partir dirrectement chez un client
+                        $shippingContactId = 0; // Les produits issue d'une nomenclature ne doivent pas partir dirrectement chez un client (pour l'instant en tout cas)
                         
                         $societe = new Societe($db);
                         $societe->fetch($supplierSocId);
