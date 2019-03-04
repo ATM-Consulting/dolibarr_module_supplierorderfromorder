@@ -117,8 +117,14 @@ llxHeader('', $langs->trans($page_name));
     // USE Nomenclature tab
     setup_print_on_off('SOFO_USE_NOMENCLATURE',false, '', 'SOFO_USE_NOMENCLATURE_HELP');
     
+    
+    setup_print_title("ParametersNeedSOFO_USE_NOMENCLATURE");
+    
     // Fill qty for nomenclature
     setup_print_on_off('SOFO_FILL_QTY_NOMENCLATURE',false, '', 'SOFO_FILL_QTY_NOMENCLATURE_HELP');
+    
+    // Disable product order if nomenclature
+    setup_print_on_off('SOFO_DISABLE_ORDER_POSIBILITY_TO_PRODUCT_WITH_NOMENCLATURE',false, '', 'SOFO_DISABLE_ORDER_POSIBILITY_TO_PRODUCT_WITH_NOMENCLATURE');
     
     
     // USE DELIVERY CONTACT

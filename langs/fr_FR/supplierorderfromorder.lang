@@ -66,4 +66,5 @@ SOFO_USE_NOMENCLATURE_HELP=En activant cette option, un nouvel onglet "Composant
 SOFO_USE_DELIVERY_CONTACT=Permettre le choix du contact de livraison
 SOFO_FILL_QTY_NOMENCLATURE=Pré-remplir les quantitées des composants
 SOFO_USE_RESTRICTION_TO_CUSTOMER_ORDER=Restraindre les commandes fournisseurs à une seule commande client
-
+SOFO_DISABLE_ORDER_POSIBILITY_TO_PRODUCT_WITH_NOMENCLATURE=Désactiver la possibilité du commander directement le produit avec une nomenclature
+ParametersNeedSOFO_USE_NOMENCLATURE=Paramètres : l'onglet "Composants à commander" est nécessaire pour utiliser ces paramètres<small>

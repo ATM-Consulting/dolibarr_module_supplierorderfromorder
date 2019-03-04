@@ -823,9 +823,11 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                 if(!empty($Tqty[$line->id])){
                     $qty2Order = $Tqty[$line->id];
                 }
-                
+                                
                 print '<td class="center col-qtytoorder" >';
-                print '<input id="qty-'.$line->id.'" class="qtyform col-qtytoorder" data-lineid="'.$line->id.'" type="number" name="qty['.$line->id.']" value="'.$qty2Order.'" min="0"  >';
+                if(empty($conf->global->SOFO_DISABLE_ORDER_POSIBILITY_TO_PRODUCT_WITH_NOMENCLATURE)){
+                    print '<input id="qty-'.$line->id.'" class="qtyform col-qtytoorder" data-lineid="'.$line->id.'" type="number" name="qty['.$line->id.']" value="'.$qty2Order.'" min="0"  >';
+                }
                 print '</td>';
                 
                
@@ -836,45 +838,52 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                  */
                 
                 print '<td class="col-fourn" >';
-                if(!empty($line->fk_product))
+                if(empty($conf->global->SOFO_DISABLE_ORDER_POSIBILITY_TO_PRODUCT_WITH_NOMENCLATURE))
                 {
-                    // get min fourn price id
-                    $minFournPriceId = sofo_getFournMinPrice($line->fk_product);
-                    
-                    
-                    if(!empty($Tproductfournpriceid[$line->id])){
-                        $minFournPriceId = $Tproductfournpriceid[$line->id];
+                
+                    if(!empty($line->fk_product))
+                    {
+                        // get min fourn price id
+                        $minFournPriceId = sofo_getFournMinPrice($line->fk_product);
+                        
+                        
+                        if(!empty($Tproductfournpriceid[$line->id])){
+                            $minFournPriceId = $Tproductfournpriceid[$line->id];
+                        }
+                        
+                        print $form->select_product_fourn_price($line->fk_product, 'productfournpriceid['.$line->id.']', $minFournPriceId);
+                        
                     }
-                    
-                    print $form->select_product_fourn_price($line->fk_product, 'productfournpriceid['.$line->id.']', $minFournPriceId);
-                    
-                }
-                else
-                {
-                    // In case of a free line
-                    
-                    print $form->select_company(GETPOST('fk_soc_fourn_'.$line->id,'int'),'fk_soc_fourn_'.$line->id, '',1,'supplier');
-                    print ' &nbsp;&nbsp;&nbsp; <input class="unitPriceField" type="number" name="fournUnitPrice['.$line->id.']" value="'.price2num($line->pa_ht).'" min="0" step="any" placeholder="'.$langs->trans('UnitPrice').'" >&euro; ';
-                    //print $form->selectUnits($line->fk_unit, 'units['.$line->id.']', 1);
-                    
-                    $productDefault->fk_unit = $line->fk_unit;
-                    print $productDefault->getLabelOfUnit();
+                    else
+                    {
+                        // In case of a free line
+                        
+                        print $form->select_company(GETPOST('fk_soc_fourn_'.$line->id,'int'),'fk_soc_fourn_'.$line->id, '',1,'supplier');
+                        print ' &nbsp;&nbsp;&nbsp; <input class="unitPriceField" type="number" name="fournUnitPrice['.$line->id.']" value="'.price2num($line->pa_ht).'" min="0" step="any" placeholder="'.$langs->trans('UnitPrice').'" >&euro; ';
+                        //print $form->selectUnits($line->fk_unit, 'units['.$line->id.']', 1);
+                        
+                        $productDefault->fk_unit = $line->fk_unit;
+                        print $productDefault->getLabelOfUnit();
+                    }
                 }
                 
                 // Additionnal options for nomenclature
                 if(!empty($Tnomenclature))
                 {
-                    print '<i class="sofo_pointeur fa fa-plus classfortooltip moreoptionbtn" data-target="#moreoption'.$line->id.'"  title="'.$langs->trans('MoreOptions').'"  ></i>';
-                    print '<div class="moreoptionblock" id="moreoption'.$line->id.'" >';
+                    if(empty($conf->global->SOFO_DISABLE_ORDER_POSIBILITY_TO_PRODUCT_WITH_NOMENCLATURE)){
+                        print '<i class="sofo_pointeur fa fa-plus classfortooltip moreoptionbtn" data-target="#moreoption'.$line->id.'"  title="'.$langs->trans('MoreOptions').'"  ></i>';
+                        print '<div class="moreoptionblock" id="moreoption'.$line->id.'" >';
+                        print '<fieldset><legend>'.$langs->trans('Nomenclature').'</legend>';
+                    }
                     
-                    print '<fieldset><legend>'.$langs->trans('Nomenclature').'</legend>';
                     $selectFournFormName = 'force_nomenclature_fk_soc_fourn_'.$line->id;
                     $selectFournForm = $form->select_company(GETPOST($selectFournFormName,'int'),$selectFournFormName, '',1,'supplier', $forcecombo=0, array(), 0, 'minwidth100', '', '', 2);
                     print '<div>'.$selectFournForm.' '.$form->textwithtooltip( $langs->trans('ForceFourn') , $langs->trans('ForceFournHelp'),2,1,img_help(1,'')) .'</div>';
                     
-                    print '</fieldset>';
-                    
-                    print '</div>';
+                    if(empty($conf->global->SOFO_DISABLE_ORDER_POSIBILITY_TO_PRODUCT_WITH_NOMENCLATURE)){
+                        print '</fieldset>';
+                        print '</div>';
+                    }
                 }
                 
                 print '</td>';
@@ -889,19 +898,21 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                 {
                     print '<td>';
                     
-                    if(isset($TShipping[$line->id])){
-                        $select_shipping_dest_filter = $TShipping[$line->id];
-                    }
-                    
-                    $selecContactRes = $form->select_contacts($line->fk_soc_dest,$select_shipping_dest_filter,'shipping['.$line->id.']',1);
-                    if(empty($selecContactRes))
-                    {
-                        $socDest = new Societe($db);
-                        $socDest->fetch($line->fk_soc_dest);
+                    if(empty($conf->global->SOFO_DISABLE_ORDER_POSIBILITY_TO_PRODUCT_WITH_NOMENCLATURE)){
+                        if(isset($TShipping[$line->id])){
+                            $select_shipping_dest_filter = $TShipping[$line->id];
+                        }
                         
-                        print '<br/>'.$socDest->getNomUrl(1); //.' : <span class="error" >'.$langs->trans('ProductionFactoryShippingNotDefined').'</span>';
+                        $selecContactRes = $form->select_contacts($line->fk_soc_dest,$select_shipping_dest_filter,'shipping['.$line->id.']',1);
+                        if(empty($selecContactRes))
+                        {
+                            $socDest = new Societe($db);
+                            $socDest->fetch($line->fk_soc_dest);
+                            
+                            print '<br/>'.$socDest->getNomUrl(1); //.' : <span class="error" >'.$langs->trans('ProductionFactoryShippingNotDefined').'</span>';
+                        }
+                        print '</td>';
                     }
-                    print '</td>';
                 }
                 
                 
@@ -924,7 +935,9 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                         $check = false;
                     }
                     
-                    print '<input id="linecheckbox'.$line->id.'" class="checkboxToggle" type="checkbox" '.($check?'checked':'').' name="checked['.$line->id.']" value="'.$line->id.'">';
+                    if(empty($conf->global->SOFO_DISABLE_ORDER_POSIBILITY_TO_PRODUCT_WITH_NOMENCLATURE)){
+                        print '<input id="linecheckbox'.$line->id.'" class="checkboxToggle" type="checkbox" '.($check?'checked':'').' name="checked['.$line->id.']" value="'.$line->id.'">';
+                    }
                 }
                 else
                 {
