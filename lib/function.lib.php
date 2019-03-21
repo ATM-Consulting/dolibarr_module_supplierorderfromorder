@@ -397,9 +397,7 @@ function  sofo_nomenclatureProductDeepCrawl($fk_element, $element, $fk_product,$
     $maxDeep = !empty($maxDeep)?$maxDeep:$maxDeepConf ;
     
     if($deep>$maxDeep){ return array(); }
-    
-    
-    
+
     dol_include_once('/nomenclature/class/nomenclature.class.php');
     
     if(!class_exists('TNomenclature')){
@@ -409,9 +407,8 @@ function  sofo_nomenclatureProductDeepCrawl($fk_element, $element, $fk_product,$
     $nomenclature = new TNomenclature($db);
     $PDOdb = new TPDOdb($db);
     
-    
     $nomenclature->loadByObjectId($PDOdb,$fk_element, $element, false, $fk_product, $qty); //get lines of nomenclature
-    
+
     $Tlines= array();
     
     $i=0;

@@ -883,7 +883,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
             $nomenclatureViewToHtml = '';
             if(!empty($line->fk_product)){
                 $deep = 0; $maxDeep = 1; $qty = 1 ; //$line->qty
-                $Tnomenclature = sofo_nomenclatureProductDeepCrawl($line->id, $line->element, $line->fk_product,$line->qty, $deep, $maxDeep);
+                $Tnomenclature = sofo_nomenclatureProductDeepCrawl($line->id, $origin->element, $line->fk_product,$line->qty, $deep, $maxDeep);
                 
                 if(!empty($Tnomenclature)){
                     $param = array(
