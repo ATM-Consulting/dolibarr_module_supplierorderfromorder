@@ -881,19 +881,16 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
             
             // GET NOMENCLATURE (show display nomenclature lines for print part)
             $nomenclatureViewToHtml = '';
-            if(!empty($line->fk_product)){
-                $deep = 0; $maxDeep = 1; $qty = 1 ; //$line->qty
-                $Tnomenclature = sofo_nomenclatureProductDeepCrawl($line->id, $origin->element, $line->fk_product,$line->qty, $deep, $maxDeep);
-                
-                if(!empty($Tnomenclature)){
-                    $param = array(
-                        'colspan' => $totalNbCols
-                        ,'searchSupplierOrderLine' => $searchSupplierOrderLine // Si la ligne parente à fait l'objet d'un traitement (ou un produit issue de la nomenclature)
-                    );
-                    
-                    $nomenclatureViewToHtml = _nomenclatureViewToHtml($line, $Tnomenclature, $param);
-                }
-            }
+			$deep = 0; $maxDeep = 1; $qty = 1 ; //$line->qty
+			$Tnomenclature = sofo_nomenclatureProductDeepCrawl($line->id, $origin->element, $line->fk_product,$line->qty, $deep, $maxDeep);
+			if(!empty($Tnomenclature)){
+				$param = array(
+					'colspan' => $totalNbCols
+					,'searchSupplierOrderLine' => $searchSupplierOrderLine // Si la ligne parente à fait l'objet d'un traitement (ou un produit issue de la nomenclature)
+				);
+
+				$nomenclatureViewToHtml = _nomenclatureViewToHtml($line, $Tnomenclature, $param);
+			}
             
             
             // 
@@ -1332,40 +1329,39 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $overrideParam = ar
             // SELECTION FOURNISSEUR
             $colspan--;
             $print.=  '<td class="col-fourn" >';
-            if(!empty($line->fk_product))
-            {
-                // get min fourn price id
-                $minFournPriceId = sofo_getFournMinPrice($product->id);
-                
-                if(!empty($TNomenclature_productfournpriceid[$line->id][$nomenclatureI])){
-                    $minFournPriceId = $TNomenclature_productfournpriceid[$line->id][$nomenclatureI];
-                }
-                
-                if($minFournPriceId>0)
-                {
-                    $print.=  $form->select_product_fourn_price($product->id, 'nomenclature_productfournpriceid['.$line->id.']['.$nomenclatureI.']', $minFournPriceId);
-                }
-                else
-                {
-                    $print.= $langs->trans("NoSupplierPriceDefinedForThisProduct").'<br/>';
-                    $name = 'fk_soc_fourn_'.$line->id.'_n'.$nomenclatureI;
-                    $selected=GETPOST($name,'int');
-                    $print.= $form->select_company($selected, $name, '', 1, 'supplier', $forcecombo=0, array(), 0, 'minwidth100', '', '', 2);
-                    
-                    
-                    $fournPrice = '';
-                    if(!empty($TNomenclature_fournUnitPrice[$line->id][$nomenclatureI])){
-                        $fournPrice =  $TNomenclature_fournUnitPrice[$line->id][$nomenclatureI];
-                    }
-                    
-                    
-                    $print.= ' &nbsp;&nbsp;&nbsp; <input class="unitPriceField" type="number" name="nomenclature_fournUnitPrice['.$line->id.']['.$nomenclatureI.']" value="'.price2num($fournPrice).'" min="0" step="any" placeholder="'.$langs->trans('UnitPrice').'" >';
-                    $print.= $product->getLabelOfUnit();
-                }
-                
+
+			// get min fourn price id
+			$minFournPriceId = sofo_getFournMinPrice($product->id);
+
+			if(!empty($TNomenclature_productfournpriceid[$line->id][$nomenclatureI])){
+				$minFournPriceId = $TNomenclature_productfournpriceid[$line->id][$nomenclatureI];
+			}
+
+			if($minFournPriceId>0)
+			{
+				$print.=  $form->select_product_fourn_price($product->id, 'nomenclature_productfournpriceid['.$line->id.']['.$nomenclatureI.']', $minFournPriceId);
+			}
+			else
+			{
+				$print.= $langs->trans("NoSupplierPriceDefinedForThisProduct").'<br/>';
+				$name = 'fk_soc_fourn_'.$line->id.'_n'.$nomenclatureI;
+				$selected=GETPOST($name,'int');
+				$print.= $form->select_company($selected, $name, '', 1, 'supplier', $forcecombo=0, array(), 0, 'minwidth100', '', '', 2);
+
+
+				$fournPrice = '';
+				if(!empty($TNomenclature_fournUnitPrice[$line->id][$nomenclatureI])){
+					$fournPrice =  $TNomenclature_fournUnitPrice[$line->id][$nomenclatureI];
+				}
+
+
+				$print.= ' &nbsp;&nbsp;&nbsp; <input class="unitPriceField" type="number" name="nomenclature_fournUnitPrice['.$line->id.']['.$nomenclatureI.']" value="'.price2num($fournPrice).'" min="0" step="any" placeholder="'.$langs->trans('UnitPrice').'" >';
+				$print.= $product->getLabelOfUnit();
+			}
                 
                 
-            }
+                
+
             $print.=  '</td>';
             
             // COLSPAN
