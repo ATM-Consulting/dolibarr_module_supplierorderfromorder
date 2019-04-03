@@ -1199,7 +1199,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
 
 
 llxFooter('');
-
+$db->close();
 
 
 
