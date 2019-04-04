@@ -32,3 +32,40 @@ NoCommonSupplier=Aucun fournisseur en commun
 SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER=Filtre par défaut sur les catégories
 DeleteFilter=Supprimer le filtre
 NoFilter=Filtre vide
+
+# dispatch_dispatch_to_supplier_order
+FournDispatch=Passer commande(s) fournisseur(s)
+PrepareFournDispatch=Préparation des commandes fournisseur  à partir de la client N°
+Stock_reel=Stock reel
+Stock_theorique=Stock theorique
+QtyToOrder=Qté à commander
+QtyToOrderHelp=Par defaut les quantités affichées sont calculées à partir du stock théorique
+DeliveryHelp=Si la commande fournisseur doit être livrée directement chez le client, il est possible de selectionner le contact de livraison parmi les contacts de la commande client.
+servicesAreNotDispatch=Les services ne peuvent pas faire l'objet d'une commande fournisseur
+PleaseCheckAtLeastOneCheckbox=Vous devez sélectionner au moins une ligne.
+AllreadyImported=Cette ligne fait déjà l'objet d'une commande fournisseur
+AllreadyDispatched=Cette ligne fait déjà l'objet d'une commande fournisseur
+AllreadyDispatcheds=Cette ligne fait déjà l'objet de commande(s) fournisseur
+FournDispatchResult=Résultat de la ventilation de la commande client N°
+ErrorFournDoesNotExist=Fournisseur non trouvé
+clicToReplaceQty=Cliquer pour remplacer la quantité à commander
+ProductToOrderManuellement=Produit à commander manuellement
+ForceDispatch=Forcer la ventilation
+DisplayNomenclature=Afficher/Cacher le détail de la nomenclature
+YouNeedToSelectAtLeastOneSupplierPrice=Vous devez selectionner un prix fournisseur
+YouNeedToGiveASupplierPrice=Vous devez saisir un prix unitaire
+YouNeedToGiveAQty=Vous devez saisir une quantité
+MoreOptions=Plus d'options
+ForceFourn=Forcer le fournisseur
+ForceFournHelp=En forçant le fournisseur, tous les produits de la nomenclature seront commandés chez ce fournisseur
+ProductsAssetsToOrder=Composants à commander
+
+# admin 
+SOFO_USE_NOMENCLATURE=Ajouter l'onglet "Composants à commander"
+SOFO_USE_NOMENCLATURE_HELP=En activant cette option, un nouvel onglet "Composants à commander" apparaît sur la page de réapprovisionnement
+SOFO_USE_DELIVERY_CONTACT=Permettre le choix du contact de livraison
+SOFO_FILL_QTY_NOMENCLATURE=Pré-remplir les quantitées des composants
+SOFO_USE_RESTRICTION_TO_CUSTOMER_ORDER=Restraindre les commandes fournisseurs à une seule commande client
+SOFO_DISABLE_ORDER_POSIBILITY_TO_PRODUCT_WITH_NOMENCLATURE=Désactiver la possibilité du commander directement le produit avec une nomenclature
+ParametersNeedSOFO_USE_NOMENCLATURE=Paramètres : l'onglet "Composants à commander" est nécessaire pour utiliser ces paramètres<small>
+SOFO_ADD_QUANTITY_RATHER_THAN_CREATE_LINES=Privilègier l'ajout de quantité à une ligne de commande fournisseur au lieu d'ajouter une ligne pour chaque ligne de commande client

@@ -1,0 +1,42 @@
+.sofo_pointeur{
+	cursor:pointer;
+}
+
+.moreoptionblock{
+	padding-top: 15px;
+	display:none;
+}
+
+.checkboxtoggletrigger{
+	
+}
+
+.noborder > tbody > tr.objectline-row:nth-child(even) {background: #e1e0efaa;}
+.noborder > tbody > tr.objectline-row:nth-child(odd) {background: #e1e0ef;}
+.noborder > tbody > tr.objectline-row:hover{background: #dad8ef;}
+.noborder > tbody > tr.nomenclature-row:nth-child(even) {background: #f1f1f1;}
+.noborder > tbody > tr.nomenclature-row:nth-child(odd) {background: #FFF;}
+.noborder > tbody > tr.nomenclature-row:hover{background: #f9f6e4;}
+
+.dispatch-msg, .dispatch-err{
+    display: inline-block;
+    padding: .25em .4em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: .25rem;
+    transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+
+.dispatch-err{
+    color: #fff;
+    background-color: #dc3545;
+}
+
+.dispatch-msg{
+    color: #fff;
+    background-color: #17a2b8;
+}

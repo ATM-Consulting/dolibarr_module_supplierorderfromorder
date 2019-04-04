@@ -10,3 +10,4 @@
 	elseif(!defined('INC_FROM_DOLIBARR')) {
 		include($dir."main.inc.php");
 	}
+	
