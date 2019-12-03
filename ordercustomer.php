@@ -40,6 +40,7 @@ dol_include_once("/fourn/class/fournisseur.class.php");
 dol_include_once('/supplierorderfromorder/lib/function.lib.php');
 dol_include_once("/commande/class/commande.class.php");
 dol_include_once("/supplier_proposal/class/supplier_proposal.class.php");
+dol_include_once('/suppplierorderfromorder/class/sofo.class.php');
 if(! empty($conf->categorie->enabled)) {
 	dol_include_once('/categories/class/categorie.class.php');
 }
@@ -529,7 +530,7 @@ if (in_array($action, array('valid-propal', 'valid-order') )) {
  */
 $title = $langs->trans('ProductsToOrder');
 
-$sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty';
+$sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty, cd.buy_price_ht';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
 $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte, p.finished, cd.rang,';
 $sql .= ' GROUP_CONCAT(cd.rowid SEPARATOR "@") as lineid,';
@@ -1303,9 +1304,10 @@ if ($resql || $resql2) {
 				}
 
 
+				$selectedPrice = $objp->buy_price_ht > 0 ? $objp->buy_price_ht : 0;
 
                  $champs.='<td align="right" data-info="fourn-price" >'.
-                 $form->select_product_fourn_price($prod->id, 'fourn'.$i, (! empty($selectedSupplier) ? $selectedSupplier : '')).
+                 TSOFO::select_product_fourn_price($prod->id, 'fourn'.$i, $selectedSupplier, $selectedPrice ).
                  '</td>';
 				print $champs;
 

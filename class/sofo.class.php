@@ -56,7 +56,125 @@ class TSOFO {
 		}
 		
 		return $min;
-		
+
+	}
+
+
+	/**
+	 *	Return list of suppliers prices for a product
+	 *
+	 *  @param	    int		$productid       	Id of product
+	 *  @param      string	$htmlname        	Name of HTML field
+	 *  @param      int		$selected_supplier  Pre-selected supplier if more than 1 result
+	 *  @return	    void
+	 */
+	public static function select_product_fourn_price($productid, $htmlname = 'productfournpriceid', $selected_supplier = '', $selected_price_ht = 0)
+	{
+		global $db,$langs,$conf;
+
+		$langs->load('stocks');
+
+		$sql = "SELECT p.rowid, p.label, p.ref, p.price, p.duration, pfp.fk_soc,";
+		$sql.= " pfp.ref_fourn, pfp.rowid as idprodfournprice, pfp.price as fprice, pfp.remise_percent, pfp.quantity, pfp.unitprice,";
+		$sql.= " pfp.fk_supplier_price_expression, pfp.fk_product, pfp.tva_tx, s.nom as name";
+		$sql.= " FROM ".MAIN_DB_PREFIX."product as p";
+		$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."product_fournisseur_price as pfp ON p.rowid = pfp.fk_product";
+		$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."societe as s ON pfp.fk_soc = s.rowid";
+		$sql.= " WHERE pfp.entity IN (".getEntity('productsupplierprice').")";
+		$sql.= " AND p.tobuy = 1";
+		$sql.= " AND s.fournisseur = 1";
+		$sql.= " AND p.rowid = ".$productid;
+		$sql.= " ORDER BY s.nom, pfp.ref_fourn DESC";
+
+		dol_syslog(get_class()."::select_product_fourn_price", LOG_DEBUG);
+		$result=$db->query($sql);
+
+		if ($result)
+		{
+			$num = $db->num_rows($result);
+
+			$form = '<select class="flat" id="select_'.$htmlname.'" name="'.$htmlname.'">';
+
+			if (! $num)
+			{
+				$form.= '<option value="0">-- '.$langs->trans("NoSupplierPriceDefinedForThisProduct").' --</option>';
+			}
+			else
+			{
+				require_once DOL_DOCUMENT_ROOT.'/product/dynamic_price/class/price_parser.class.php';
+				$form.= '<option value="0">&nbsp;</option>';
+
+				$i = 0;
+				while ($i < $num)
+				{
+					$objp = $db->fetch_object($result);
+
+					$selected = '';
+
+					$opt = '<option value="'.$objp->idprodfournprice.'"';
+					//if there is only one supplier, preselect it
+					if (
+							$num == 1
+						||  ($selected_supplier > 0 && $objp->fk_soc == $selected_supplier)
+						||  (! empty($conf->global->SOFO_PRESELECT_SUPPLIER_PRICE_FROM_LINE_BUY_PRICE) && $selected_supplier <= 0 && $selected_price_ht > 0 && $selected_price_ht == $objp->unitprice)
+					) {
+						$opt .= ' selected';
+					}
+					$opt.= '>'.$objp->name.' - '.$objp->ref_fourn.' - ';
+
+					if (!empty($conf->dynamicprices->enabled) && !empty($objp->fk_supplier_price_expression)) {
+						$prod_supplier = new ProductFournisseur($db);
+						$prod_supplier->product_fourn_price_id = $objp->idprodfournprice;
+						$prod_supplier->id = $productid;
+						$prod_supplier->fourn_qty = $objp->quantity;
+						$prod_supplier->fourn_tva_tx = $objp->tva_tx;
+						$prod_supplier->fk_supplier_price_expression = $objp->fk_supplier_price_expression;
+						$priceparser = new PriceParser($db);
+						$price_result = $priceparser->parseProductSupplier($prod_supplier);
+						if ($price_result >= 0) {
+							$objp->fprice = $price_result;
+							if ($objp->quantity >= 1)
+							{
+								$objp->unitprice = $objp->fprice / $objp->quantity;
+							}
+						}
+					}
+					if ($objp->quantity == 1)
+					{
+						$opt.= price($objp->fprice * (!empty($conf->global->DISPLAY_DISCOUNTED_SUPPLIER_PRICE)?(1 - $objp->remise_percent / 100):1), 1, $langs, 0, 0, -1, $conf->currency)."/";
+					}
+
+					$opt.= $objp->quantity.' ';
+
+					if ($objp->quantity == 1)
+					{
+						$opt.= $langs->trans("Unit");
+					}
+					else
+					{
+						$opt.= $langs->trans("Units");
+					}
+					if ($objp->quantity > 1)
+					{
+						$opt.=" - ";
+						$opt.= price($objp->unitprice * (!empty($conf->global->DISPLAY_DISCOUNTED_SUPPLIER_PRICE)?(1 - $objp->remise_percent / 100):1), 1, $langs, 0, 0, -1, $conf->currency)."/".$langs->trans("Unit");
+					}
+					if ($objp->duration) $opt .= " - ".$objp->duration;
+					$opt .= "</option>\n";
+
+					$form.= $opt;
+					$i++;
+				}
+			}
+
+			$form.= '</select>';
+			$db->free($result);
+			return $form;
+		}
+		else
+		{
+			dol_print_error($db);
+		}
 	}
 	
 }

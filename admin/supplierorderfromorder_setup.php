@@ -306,6 +306,19 @@ print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">'
 print '</form>';
 print '</td></tr>';
 
+$var=!$var;
+print '<tr '.$bc[$var].'>';
+print '<td>'.$langs->trans('SOFO_PRESELECT_SUPPLIER_PRICE_FROM_LINE_BUY_PRICE').'</td>';
+print '<td align="center" width="20">&nbsp;</td>';
+print '<td align="right" width="300">';
+print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
+print '<input type="hidden" name="action" value="set_SOFO_PRESELECT_SUPPLIER_PRICE_FROM_LINE_BUY_PRICE">';
+print $form->selectyesno('SOFO_PRESELECT_SUPPLIER_PRICE_FROM_LINE_BUY_PRICE', $conf->global->SOFO_PRESELECT_SUPPLIER_PRICE_FROM_LINE_BUY_PRICE,1);
+print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
+print '</form>';
+print '</td></tr>';
+
 if(! empty($conf->categorie->enabled)) {
 	$var=!$var;
 	print '<tr '.$bc[$var].'>';

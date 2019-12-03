@@ -69,3 +69,4 @@ SOFO_USE_RESTRICTION_TO_CUSTOMER_ORDER=Restraindre les commandes fournisseurs à
 SOFO_DISABLE_ORDER_POSIBILITY_TO_PRODUCT_WITH_NOMENCLATURE=Désactiver la possibilité du commander directement le produit avec une nomenclature
 ParametersNeedSOFO_USE_NOMENCLATURE=Paramètres : l'onglet "Composants à commander" est nécessaire pour utiliser ces paramètres<small>
 SOFO_ADD_QUANTITY_RATHER_THAN_CREATE_LINES=Privilègier l'ajout de quantité à une ligne de commande fournisseur au lieu d'ajouter une ligne pour chaque ligne de commande client
+SOFO_PRESELECT_SUPPLIER_PRICE_FROM_LINE_BUY_PRICE=Présélectionner par défaut les prix fournisseur égaux au prix d'achat renseigné sur la ligne de commande client d'origine (nécessite le module Marges)
