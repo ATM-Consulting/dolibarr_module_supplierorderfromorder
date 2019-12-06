@@ -25,3 +25,5 @@ UseCostPriceAsBuyingPrice=Use cost price as buying price for free lines
 SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER=Default product category filter
 DeleteFilter=Delete filter
 NoFilter=No filter
+
+SOFO_PRESELECT_SUPPLIER_PRICE_FROM_LINE_BUY_PRICE=By default, preselect the supplier prices equal to the buying price set in the initial customer order (needs module Margins)
