@@ -95,7 +95,10 @@ class modSupplierorderfromorder extends DolibarrModules
             // Set this to relative path of css if module has its own css file
             //'css' => '/mymodule/css/mycss.css.php',
             // Set here all hooks context managed by module
-            'hooks' => array('ordercard')
+            'hooks' => array(
+                'ordercard'
+                ,'ordersuppliercard'
+            )
             // Set here all workflow context managed by module
             //'workflow' => array('order' => array('WORKFLOW_ORDER_AUTOCREATE_INVOICE'))
         );
@@ -155,6 +158,7 @@ class modSupplierorderfromorder extends DolibarrModules
         $this->rights[$r][1] = 'Convertir les commandes clients en commandes fournisseurs';  // Permission label
         $this->rights[$r][3] = 1;                   // Permission by default for new user (0/1)
         $this->rights[$r][4] = 'read';              // In php code, permission will be checked by test if ($user->rights->permkey->level1->level2)
+	$this->rights[$r][5] = '';		    // In php code, permission will be checked by test if ($user->rights->permkey->level1->level2)
         $r++;
 
         // Main menu entries

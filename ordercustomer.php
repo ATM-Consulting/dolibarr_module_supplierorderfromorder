@@ -40,7 +40,10 @@ dol_include_once("/fourn/class/fournisseur.class.php");
 dol_include_once('/supplierorderfromorder/lib/function.lib.php');
 dol_include_once("/commande/class/commande.class.php");
 dol_include_once("/supplier_proposal/class/supplier_proposal.class.php");
-
+dol_include_once('/suppplierorderfromorder/class/sofo.class.php');
+if(! empty($conf->categorie->enabled)) {
+	dol_include_once('/categories/class/categorie.class.php');
+}
 
 global $bc, $conf, $db, $langs, $user;
 
@@ -76,7 +79,8 @@ $salert = GETPOST('salert', 'alpha');
 
 $sortfield = GETPOST('sortfield','alpha');
 $sortorder = GETPOST('sortorder','alpha');
-$page = (int) GETPOST('page','int');
+$page = GETPOST('page','int');
+$page = intval($page);
 $selectedSupplier = GETPOST('useSameSupplier', 'int');
 
 if (!$sortfield) {
@@ -92,6 +96,58 @@ $offset = $limit * $page ;
 
 
 
+$TCategories = array();
+
+if(! empty($conf->categorie->enabled)) {
+
+	if(! isset($_REQUEST['categorie']))
+	{
+		$TCategories = unserialize($conf->global->SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER);
+	}
+	else
+	{
+		$categories = GETPOST('categorie');
+
+		if(is_array($categories))
+		{
+			if(in_array(-1, $categories) && count($categories) > 1) {
+				unset($categories[array_search(-1, $categories)]);
+			}
+			$TCategories = array_map('intval', $categories);
+		}
+		elseif($categories > 0)
+		{
+			$TCategories = array(intval($categories));
+		}
+		else {
+			$TCategories = array(-1);
+		}
+	}
+}
+
+$TCategoriesQuery = $TCategories;
+if(!empty($TCategoriesQuery) && is_array($TCategoriesQuery) )
+{
+    foreach($TCategories as $categID) {
+    	if($categID <= 0) continue;
+    
+    	$cat = new Categorie($db);
+    	$cat->fetch($categID);
+    
+    	$TSubCat = get_categs_enfants($cat);
+    	foreach($TSubCat as $subCatID) {
+    		if(! in_array($subCatID, $TCategories)) {
+    			$TCategoriesQuery[] = $subCatID;
+    		}
+    	}
+    }
+}
+
+if(is_array($TCategoriesQuery) && count($TCategoriesQuery) == 1 && in_array(-1, $TCategoriesQuery)) {
+	$TCategoriesQuery = array();
+}
+
+
 /*
  * Actions
  */
@@ -103,6 +159,8 @@ if (isset($_POST['button_removefilter']) || in_array($action, array('valid-propa
     $snom = '';
     $sal = '';
     $salert = '';
+    $TCategoriesQuery = array();
+    $TCategories = array(-1);
 }
 
 /*echo "<pre>";
@@ -292,7 +350,7 @@ if (in_array($action, array('valid-propal', 'valid-order') )) {
 
 					if($order->element == 'order_supplier')
 					{
-
+						
 						$order->addline(
 								$line->desc,
 								$line->subprice,
@@ -477,7 +535,7 @@ if(GETPOST('purge_cached_product')=='yes') $TCachedProductId =array();
 
 $title = $langs->trans('ProductsToOrder');
 $db->query("SET SQL_MODE=''");
-$sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty';
+$sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty, cd.buy_price_ht';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
 $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte, p.finished, cd.rang,';
 $sql .= ' GROUP_CONCAT(cd.rowid SEPARATOR "@") as lineid,';
@@ -486,7 +544,7 @@ $sql .= $dolibarr_version35 ? ', p.desiredstock' : "";
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
 $sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd ON (p.rowid = cd.fk_product)';
 
-if (!empty($conf->categorie->enabled))
+if (! empty($TCategoriesQuery))
 {
 	$sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'categorie_product as cp ON (p.rowid = cp.fk_product)';
 }
@@ -498,11 +556,7 @@ $fk_commande = GETPOST('id','int');
 
 if($fk_commande > 0) $sql .= ' AND cd.fk_commande = '.$fk_commande;
 
-if (!empty($conf->categorie->enabled))
-{
-	$fk_categorie = GETPOST('categorie','int');
-	if($fk_categorie > 0) $sql .= ' AND cp.fk_categorie = '.intval($fk_categorie);
-}
+if(! empty($TCategoriesQuery)) $sql .= ' AND cp.fk_categorie IN ( '.implode(',', $TCategoriesQuery) .' ) ' ;
 
 if ($sall) {
     $sql .= ' AND (p.ref LIKE "%'.$db->escape($sall).'%" ';
@@ -542,19 +596,26 @@ elseif(!isset($_REQUEST['button_search_x']) && isset($conf->global->SOFO_DEFAUT_
 if (!empty($canvas)) {
     $sql .= ' AND p.canvas = "' . $db->escape($canvas) . '"';
 }
+
+if($salert=='on') {
+	$sql.= " AND p.seuil_stock_alerte is not NULL ";
+
+}
+
 $sql .= ' GROUP BY p.rowid, p.ref, p.label, p.price';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type, p.tms';
 $sql .= ', p.duration, p.tobuy, p.seuil_stock_alerte';
+$sql .= ', cd.rang';
 //$sql .= ', p.desiredstock';
 //$sql .= ', s.fk_product';
 
-if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
+//if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
 	$sql.= ', cd.description';
-}
+//}
 //$sql .= ' HAVING p.desiredstock > SUM(COALESCE(s.reel, 0))';
 //$sql .= ' HAVING p.desiredstock > 0';
 if ($salert == 'on') {
-    $sql .= ' HAVING SUM(COALESCE(stock_physique, 0)) < p.seuil_stock_alerte AND p.seuil_stock_alerte is not NULL';
+    $sql .= ' HAVING stock_physique < p.seuil_stock_alerte ';
     $alertchecked = 'checked="checked"';
 }
 
@@ -571,6 +632,9 @@ if($_REQUEST['id'] && $conf->global->SOFO_ADD_FREE_LINES){
 	//echo $sql2;
 }
 $sql .= $db->order($sortfield,$sortorder);
+
+//echo $sql;
+
 if(!$conf->global->SOFO_USE_DELIVERY_TIME) $sql .= $db->plimit($limit + 1, $offset);
 $resql = $db->query($sql);
 
@@ -581,7 +645,7 @@ if($sql2 && $fk_commande > 0){
 	$sql2 .= $db->plimit($limit + 1, $offset);
 	$resql2 = $db->query($sql2);
 }
-
+//print $sql ;
 $justOFforNeededProduct = !empty($conf->global->SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT) && empty($fk_commande);
 $statutarray=array('1' => $langs->trans("Finished"), '0' => $langs->trans("RowMaterial"));
 $form = new Form($db);
@@ -598,6 +662,15 @@ if ($resql || $resql2) {
     $head[0][0] = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id='.$_REQUEST['id'],2);
     $head[0][1] = $title;
     $head[0][2] = 'supplierorderfromorder';
+    
+    
+    if(!empty($conf->global->SOFO_USE_NOMENCLATURE))
+    {
+        $head[1][0] = dol_buildpath('/supplierorderfromorder/dispatch_to_supplier_order.php?from=commande&fromid='.$_REQUEST['id'],2);
+        $head[1][1] = $langs->trans('ProductsAssetsToOrder');
+        $head[1][2] = 'supplierorderfromorder_dispatch';
+    }
+    
 	/*$head[1][0] = DOL_URL_ROOT.'/product/stock/replenishorders.php';
 	$head[1][1] = $langs->trans("ReplenishmentOrders");
 	$head[1][2] = 'replenishorders';*/
@@ -667,33 +740,49 @@ if ($resql || $resql2) {
 print '	  </div>'.
          '<table class="liste" width="100%">';
 
-    $colspan = 7;
-    
-    if($conf->global->SOFO_USE_DELIVERY_TIME) {
+
+    $colspan = 9;
+    if (! empty($conf->global->FOURN_PRODUCT_AVAILABILITY)) $colspan++;
+    if (!empty($conf->of->enabled) && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)){$colspan ++;}
+    if (!empty( $conf->global->SOFO_USE_DELIVERY_TIME)){$colspan ++;}
+    if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN) ){$colspan ++;}
+    if (!empty($conf->service->enabled) && $type == 1){$colspan ++;}
+    if($dolibarr_version35){$colspan ++;}
+   
+    if(! empty($conf->global->SOFO_USE_DELIVERY_TIME)) {
             $week_to_replenish = (int)GETPOST('week_to_replenish','int');
-
-            $colspan = empty($conf->global->FOURN_PRODUCT_AVAILABILITY) ? 7 : 8;
-
-            if (!empty($conf->of->enabled) && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)){$colspan ++;}
-            
-            if (!empty( $conf->global->SOFO_USE_DELIVERY_TIME)){$colspan ++;}
-           
-            if (!empty($conf->categorie->enabled)){$colspan ++;}
-           
-            if (!empty($conf->service->enabled) && $type == 1){$colspan ++;}
-            
-            if($dolibarr_version35){$colspan ++;}
             
             
         print '<tr class="liste_titre">'.
             '<td colspan="'.$colspan.'">'.$langs->trans('NbWeekToReplenish').'<input type="text" name="week_to_replenish" value="'.$week_to_replenish.'" size="2"> '
-            .'<input type="submit" value="'.$langs->trans('ReCalculate').'" /></td><td></td>';
-
-        if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) print '<td></td>';
+            .'<input type="submit" value="'.$langs->trans('ReCalculate').'" /></td>';
 
 			print '</tr>';
 
 
+    }
+    
+    if (!empty($conf->categorie->enabled))
+    {
+    	print '<tr class="liste_titre">';
+    	print '<td colspan="2" >';
+    	print $langs->trans("Categories");
+    	print '</td>';
+    	print '<td colspan="'.($colspan-2).'" >';
+    	print getCatMultiselect('categorie', $TCategories);
+    	print '<a id="clearfilter" href="javascript:;">'.$langs->trans('DeleteFilter').'</a>';
+?>
+	<script type="text/javascript">
+	$('a#clearfilter').click(function() {
+		$('option:selected', $('select#categorie')).prop('selected', false);
+		$('option[value=-1]', $('select#categorie')).prop('selected', true);
+		$('form[name=formulaire]').submit();
+		return false;
+	})
+	</script>
+<?php
+    	print '</td>';
+    	print '</tr>';
     }
 
 
@@ -704,7 +793,7 @@ print '	  </div>'.
 
     // Lignes des titres
     print '<tr class="liste_titre">'.
-         '<td><input type="checkbox" onClick="toggle(this)" /></td>';
+         '<th class="liste_titre"><input type="checkbox" onClick="toggle(this)" /></th>';
     print_liste_field_titre(
     		$langs->trans('Ref'),
     		'ordercustomer.php',
@@ -735,7 +824,7 @@ print '	  </div>'.
     		$sortfield,
     		$sortorder
     		);
-    if (!empty($conf->categorie->enabled))
+    if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN) )
     {
 	    print_liste_field_titre(
 	    		$langs->trans("Categories"),
@@ -872,10 +961,9 @@ print '	  </div>'.
 	$liste_titre = "";
 	$liste_titre.= '<td class="liste_titre">'.$form->selectarray('finished',$statutarray,(!isset($_REQUEST['button_search_x']) && $conf->global->SOFO_DEFAUT_FILTER != -1) ? $conf->global->SOFO_DEFAUT_FILTER : GETPOST('finished'),1).'</td>';
     
-	if (!empty($conf->categorie->enabled))
+	if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN) )
 	{
 		$liste_titre.= '<td class="liste_titre">';
-		$liste_titre.= $form->select_all_categories('product',GETPOST('categorie'), 'categorie');
 		$liste_titre.= '</td>';
 	}
 	
@@ -1166,7 +1254,7 @@ print '	  </div>'.
 	        print '<td>'.(empty($prod->type) ? $statutarray[$objp->finished] : '').'</td>';
 
 				
-			if (!empty($conf->categorie->enabled))
+			if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN) )
 			{
 				print '<td >';
 				$categorie = new Categorie($db);
@@ -1196,7 +1284,7 @@ print '	  </div>'.
 
 
             //print $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : "".
-            
+
             	$champs = "";
             	$champs .= $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : '';
                 $champs.= '<td align="right">'.
@@ -1232,9 +1320,10 @@ print '	  </div>'.
 				}
 
 
+				$selectedPrice = $objp->buy_price_ht > 0 ? $objp->buy_price_ht : 0;
 
                  $champs.='<td align="right" data-info="fourn-price" >'.
-                 $form->select_product_fourn_price($prod->id, 'fourn'.$i, (! empty($selectedSupplier) ? $selectedSupplier : '')).
+                 TSOFO::select_product_fourn_price($prod->id, 'fourn'.$i, $selectedSupplier, $selectedPrice ).
                  '</td>';
 				print $champs;
 
@@ -1252,7 +1341,7 @@ print '	  </div>'.
 	  if(empty($fk_commande)) $TCachedProductId[] = $prod->id; //mise en cache
 
     }
-    	
+
 //	if($prod->ref=='A0000753') exit;
 
         $i++;
@@ -1672,5 +1761,21 @@ function _appliCond($order, $commandeClient){
 	}
 }
 
+
 $db->close();
 
+function get_categs_enfants(&$cat) {
+
+    $TCat = array();
+
+    $filles = $cat->get_filles();
+    if(!empty($filles)) {
+        foreach($filles as &$cat_fille) {
+            $TCat[] = $cat_fille->id;
+
+            get_categs_enfants($cat_fille);
+        }
+    }
+
+    return $TCat;
+}
