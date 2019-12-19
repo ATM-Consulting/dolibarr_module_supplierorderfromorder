@@ -114,7 +114,12 @@ class TSOFO {
 					if (
 							$num == 1
 						||  ($selected_supplier > 0 && $objp->fk_soc == $selected_supplier)
-						||  (! empty($conf->global->SOFO_PRESELECT_SUPPLIER_PRICE_FROM_LINE_BUY_PRICE) && $selected_supplier <= 0 && $selected_price_ht > 0 && $selected_price_ht == $objp->unitprice)
+						||  (
+								! empty($conf->global->SOFO_PRESELECT_SUPPLIER_PRICE_FROM_LINE_BUY_PRICE)
+							&&	$selected_supplier <= 0
+							&&	$selected_price_ht > 0
+							&&	$selected_price_ht == $objp->unitprice * (1 - $objp->remise_percent / 100)
+						)
 					) {
 						$opt .= ' selected';
 					}
@@ -139,7 +144,7 @@ class TSOFO {
 					}
 					if ($objp->quantity == 1)
 					{
-						$opt.= price($objp->fprice * (!empty($conf->global->DISPLAY_DISCOUNTED_SUPPLIER_PRICE)?(1 - $objp->remise_percent / 100):1), 1, $langs, 0, 0, -1, $conf->currency)."/";
+						$opt.= price($objp->fprice * (1 - $objp->remise_percent / 100), 1, $langs, 0, 0, -1, $conf->currency)."/";
 					}
 
 					$opt.= $objp->quantity.' ';
@@ -155,7 +160,7 @@ class TSOFO {
 					if ($objp->quantity > 1)
 					{
 						$opt.=" - ";
-						$opt.= price($objp->unitprice * (!empty($conf->global->DISPLAY_DISCOUNTED_SUPPLIER_PRICE)?(1 - $objp->remise_percent / 100):1), 1, $langs, 0, 0, -1, $conf->currency)."/".$langs->trans("Unit");
+						$opt.= price($objp->unitprice * (1 - $objp->remise_percent / 100), 1, $langs, 0, 0, -1, $conf->currency)."/".$langs->trans("Unit");
 					}
 					if ($objp->duration) $opt .= " - ".$objp->duration;
 					$opt .= "</option>\n";
