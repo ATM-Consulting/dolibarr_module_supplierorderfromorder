@@ -1242,7 +1242,7 @@ print '	  </div>'.
 			print '<input type="hidden" name="lineid' . $i . '" value="' . $lineid .'" />';
 
 			if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
-				print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" >';
+				print '<input type="hidden" name="desc' . $i . '" value="' . htmlentities($objp->description, ENT_QUOTES) . '" >';
 			}
 
 			print '</td>
