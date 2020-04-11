@@ -117,15 +117,37 @@ class InterfaceSupplierorderfromorder
         global $db;
         //dol_include_once('/product/class/product.class.php');
         if ($action == 'ORDER_SUPPLIER_DELETE') {
-
-
+            
+            dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id );
+            
+            if(!empty($object->lines))
+            {
+                foreach ($object->lines as $line)
+                {
+                    // Delete linked object
+                    $res = $line->deleteObjectLinked();
+                }
+            }
+            
 			$object->deleteObjectLinked('', 'commande', $object->id, 'order_supplier');
 			
-            dol_syslog(
-                "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
-            );
+
 		}
 
+		if($action == 'LINEORDER_DELETE' || $action == 'LINEORDER_SUPPLIER_DELETE') {
+		    
+		    dol_syslog( "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id );
+		    
+		    // Delete linked object
+		    if($object->element == 'commandedet'){
+		        return $object->deleteObjectLinked();
+		    }
+		    elseif($object->element == 'commande_fournisseurdet'){
+		        return $object->deleteObjectLinked();
+		    }
+		    
+		}
+		
         return 0;
     }
 }
