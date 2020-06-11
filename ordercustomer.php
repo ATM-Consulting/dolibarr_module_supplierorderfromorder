@@ -438,7 +438,8 @@ if (in_array($action, array('valid-propal', 'valid-order') )) {
 				{
 	            	if(count($suppliersid) == 1)
 					{
-						$link = dol_buildpath('/fourn/commande/card.php?id='.$order_id, 1);
+						if($action === 'valid-order') $link = dol_buildpath('/fourn/commande/card.php?id='.$order_id, 1);
+						else $link = dol_buildpath('/supplier_proposal/card.php?id='.$order_id, 1);
 						header('Location:'.$link);
 					}
 				}
