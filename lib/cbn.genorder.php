@@ -209,6 +209,13 @@ if ($action == 'order' && isset($_POST['valid'])) {
                             $remise_percent,
                             $lineOrderFetched->tva_tx
                         );
+                          // add link to element_element between order line and supplier order line if not exist
+
+                          $linkendline = getlinkedobject($lineOrderFetched->id,$linkendline->element,'commande_commandedet');
+                          if($linkendline == 0){
+                                 $lineOrderFetched->add_object_linked($line->id,'commande_commandedet');
+                          }
+
 						$done = true;
 						break;
 
@@ -220,7 +227,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 
 				if(!$done) {
 
-					$order->addline(
+					$newlineid = $order->addline(
                         $line->desc,
                         $line->subprice,
                         $line->qty,
@@ -237,6 +244,13 @@ if ($action == 'order' && isset($_POST['valid'])) {
                         ,$line->product_type
                         ,$line->info_bits
                     );
+
+                     // add link to element_element between order line and supplier order line
+                     $newline = new CommandeFournisseurLigne($db);
+                     $result = $newline->fetch($newlineid);
+                     if($result == 1){
+                           $newline->add_object_linked($line->id,'commandedet');
+                     }
 
 				}
 
