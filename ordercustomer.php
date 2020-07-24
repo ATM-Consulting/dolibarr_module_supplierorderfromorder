@@ -290,7 +290,6 @@ if (in_array($action, array('valid-propal', 'valid-order') )) {
 				$prodfourn->fetch_product_fournisseur_price($_REQUEST['fourn'.$i]);
 
             	foreach($order->lines as $lineOrderFetched) {
-
             		if($line->fk_product == $lineOrderFetched->fk_product) {
 
                         $remise_percent = $lineOrderFetched->remise_percent;
@@ -350,7 +349,6 @@ if (in_array($action, array('valid-propal', 'valid-order') )) {
 
 					if($order->element == 'order_supplier')
 					{
-						
 						$order->addline(
 								$line->desc,
 								$line->subprice,
@@ -371,6 +369,10 @@ if (in_array($action, array('valid-propal', 'valid-order') )) {
 								,NULL // $date_start
 								,NULL // $date_end
 								,$line->array_options
+                                ,null
+                                ,0
+                                ,$line->origin
+                                ,$line->origin_id
 						);
 					}
 					else if($order->element == 'supplier_proposal')
@@ -397,8 +399,8 @@ if (in_array($action, array('valid-propal', 'valid-order') )) {
 								$line->array_options, //$array_option=0, ,
 								$line->ref_fourn, //$ref_fourn='', ,
 								'', //$fk_unit='', ,
-								'', //$origin='', ,
-								0 //$origin_id=0
+                                $line->origin, //$origin='', ,
+                                $line->origin_id//$origin_id=0
 							);
 						
 					
@@ -436,7 +438,8 @@ if (in_array($action, array('valid-propal', 'valid-order') )) {
 				{
 	            	if(count($suppliersid) == 1)
 					{
-						$link = dol_buildpath('/fourn/commande/card.php?id='.$order_id, 1);
+						if($action === 'valid-order') $link = dol_buildpath('/fourn/commande/card.php?id='.$order_id, 1);
+						else $link = dol_buildpath('/supplier_proposal/card.php?id='.$order_id, 1);
 						header('Location:'.$link);
 					}
 				}
@@ -1242,7 +1245,7 @@ print '	  </div>'.
 			print '<input type="hidden" name="lineid' . $i . '" value="' . $lineid .'" />';
 
 			if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
-				print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" >';
+				print '<input type="hidden" name="desc' . $i . '" value="' . htmlentities($objp->description, ENT_QUOTES) . '" >';
 			}
 
 			print '</td>
@@ -1582,6 +1585,9 @@ function _prepareLine($i,$actionTarget = 'order')
 			}
 
 			$array_options = $commandeline->array_options;
+
+            $line->origin = 'commande';
+            $line->origin_id = $commandeline->id;
 		}
 
 		$obj = _getSupplierPriceInfos($supplierpriceid);
@@ -1603,7 +1609,7 @@ function _prepareLine($i,$actionTarget = 'order')
 			// (eg. same supplier ref for multiple suppliers with different prices).
 			$line->fk_prod_fourn_price = $supplierpriceid;
 			$line->array_options = $array_options;
-			
+
 			if(!empty($_REQUEST['tobuy'.$i])) {
 				$suppliers[$obj->fk_soc]['lines'][] = $line;
 			}
@@ -1651,7 +1657,8 @@ function _prepareLine($i,$actionTarget = 'order')
 		//$line->ref_fourn = $obj->ref_fourn;
 		$line->remise_percent = $commandeline->remise_percent;
 		$line->array_options = $array_options;
-		
+
+
 		unset($_POST['fourn_free' . $i]);
 		
 		if(!empty($_REQUEST['tobuy_free'.$i])) {
