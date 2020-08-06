@@ -1057,15 +1057,14 @@ if ($resql || $resql2) {
 						//Requête qui récupère la somme des qty ventilés pour les cmd reçu partiellement
 						$sqlQ = "SELECT SUM(cfd.qty) as qty";
 						$sqlQ .= " FROM " . MAIN_DB_PREFIX . "commande_fournisseur_dispatch as cfd";
-						$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = cfd.fk_commande) AND cf.entityIN (".getEntity('commande_fournisseur').")";
-						$sqlQ .= " LEFT JOIN " . MAIN_DB_PREFIX . "entrepot as e ON cfd.fk_entrepot = e.rowid AND e.entity IN (' . $entityToTest . ')";
+						$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = cfd.fk_commande) AND cf.entity IN (".getEntity('commande_fournisseur').")";
+						$sqlQ .= " LEFT JOIN " . MAIN_DB_PREFIX . 'entrepot as e ON cfd.fk_entrepot = e.rowid AND e.entity IN (' . $entityToTest . ')';
 						$sqlQ .= " WHERE cf.fk_statut = 4";
 						$sqlQ .= " AND cfd.fk_product = " . $prod->id;
 						$sqlQ .= " ORDER BY cfd.rowid ASC";
 						$resqlQ = $db->query($sqlQ);
 
 						$stock_commande_fournisseur = $prod->stats_commande_fournisseur['qty'];
-
 						if ($row = $db->fetch_object($resqlQ))
 							$stock_commande_fournisseur -= $row->qty;
 
