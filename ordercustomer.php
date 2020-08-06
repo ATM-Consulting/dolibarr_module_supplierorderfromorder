@@ -1073,13 +1073,28 @@ if ($resql || $resql2) {
 
 					}
 
+					if (! empty($conf->expedition->enabled)
+						&& (! empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT) || ! empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT_CLOSE)))
+					{
+						require_once DOL_DOCUMENT_ROOT . '/expedition/class/expedition.class.php';
+						$filterShipmentStatus = '';
+						if (!empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT)) {
+							$filterShipmentStatus = Expedition::STATUS_VALIDATED  . ',' . Expedition::STATUS_CLOSED;
+						} elseif (!empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT_CLOSE)) {
+							$filterShipmentStatus = Expedition::STATUS_CLOSED;
+						}
+						$result = $prod->load_stats_sending(0, '1,2', 1, $filterShipmentStatus);
+						if ($result < 0) dol_print_error($this->db, $this->error);
+						$stock_sending_client=$prod->stats_expedition['qty'];
+					} else $stock_sending_client = 0;
+
 					if ($stock_commande_client > 0) {
 						$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float)$stock_commande_client;
 					}
 
 					$help_stock .= ', ' . $langs->trans('SupplierOrders') . ' : ' . (float)$stock_commande_fournisseur;
 
-					$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
+					$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur + $stock_sending_client;
 				} else {
 
 					if (empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)) {
