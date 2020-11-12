@@ -103,7 +103,7 @@ if (!empty($conf->categorie->enabled)) {
 	if (!isset($_REQUEST['categorie'])) {
 		$TCategories = unserialize($conf->global->SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER);
 	} else {
-		$categories = GETPOST('categorie');
+		$categories = GETPOST('categorie', 'none');
 
 		if (is_array($categories)) {
 			if (in_array(-1, $categories) && count($categories) > 1) {
@@ -195,7 +195,7 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 		$nb_orders_created = 0;
 		$orders = array();
 		$suppliersid = array_keys($suppliers);
-		$projectid = GETPOST('projectid');
+		$projectid = GETPOST('projectid', 'int');
 
 		foreach ($suppliers as $idsupplier => $supplier) {
 
@@ -227,7 +227,7 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 				$order->socid = $idsupplier;
 
 				if (!empty($projectid)) {
-					$order->fk_project = GETPOST('projectid');
+					$order->fk_project = GETPOST('projectid', 'int');
 				}
 
 				// On vérifie qu'il n'existe pas déjà un lien entre la commande client et la commande fournisseur dans la table element_element.
@@ -246,7 +246,7 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 
 				$order->socid = $idsupplier;
 				if (!empty($projectid)) {
-					$order->fk_project = GETPOST('projectid');
+					$order->fk_project = GETPOST('projectid', 'int');
 				}
 
 				// cond reglement, mode reglement, delivery date
@@ -505,7 +505,7 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 $TCachedProductId =& $_SESSION['TCachedProductId'];
 if (empty($TCachedProductId))
 	$TCachedProductId = array();
-if (GETPOST('purge_cached_product') == 'yes')
+if (GETPOST('purge_cached_product', 'none') == 'yes')
 	$TCachedProductId = array();
 
 //Do we want include shared sotck to kwon what order
@@ -574,7 +574,7 @@ if ($snom) {
 
 $sql .= ' AND p.tobuy = 1';
 
-$finished = GETPOST('finished');
+$finished = GETPOST('finished', 'none');
 if ($finished != '' && $finished != '-1')
 	$sql .= ' AND p.finished = ' . $finished;
 elseif (!isset($_REQUEST['button_search_x']) && isset($conf->global->SOFO_DEFAUT_FILTER) && $conf->global->SOFO_DEFAUT_FILTER >= 0)
@@ -715,7 +715,7 @@ if ($resql || $resql2) {
 		'<input type="hidden" name="type" value="' . $type . '">' .
 		'<input type="hidden" name="linecount" value="' . ($num + $num2) . '">' .
 		'<input type="hidden" name="fk_commande" value="' . GETPOST('fk_commande', 'int') . '">' .
-		'<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need') . '">' .
+		'<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need', 'none') . '">' .
 
 		'<div style="text-align:right">
 			<a href="' . $_SERVER["PHP_SELF"] . '?' . $_SERVER["QUERY_STRING"] . '&show_stock_no_need=yes">' . $langs->trans('ShowLineEvenIfStockIsSuffisant') . '</a>';
@@ -949,7 +949,7 @@ if ($resql || $resql2) {
 	}
 
 	$liste_titre = "";
-	$liste_titre .= '<td class="liste_titre">' . $form->selectarray('finished', $statutarray, (!isset($_REQUEST['button_search_x']) && $conf->global->SOFO_DEFAUT_FILTER != -1) ? $conf->global->SOFO_DEFAUT_FILTER : GETPOST('finished'), 1) . '</td>';
+	$liste_titre .= '<td class="liste_titre">' . $form->selectarray('finished', $statutarray, (!isset($_REQUEST['button_search_x']) && $conf->global->SOFO_DEFAUT_FILTER != -1) ? $conf->global->SOFO_DEFAUT_FILTER : GETPOST('finished', 'none'), 1) . '</td>';
 
 	if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN)) {
 		$liste_titre .= '<td class="liste_titre">';
@@ -1202,7 +1202,7 @@ if ($resql || $resql2) {
 			if ($stocktobuy < 0)
 				$stocktobuy = 0;
 
-			if ((empty($prod->type) && $stocktobuy == 0 && GETPOST('show_stock_no_need') != 'yes') || ($prod->type == 1 && $stocktobuy == 0 && GETPOST('show_stock_no_need') != 'yes' && !empty($conf->global->STOCK_SUPPORTS_SERVICES))) {
+			if ((empty($prod->type) && $stocktobuy == 0 && GETPOST('show_stock_no_need', 'none') != 'yes') || ($prod->type == 1 && $stocktobuy == 0 && GETPOST('show_stock_no_need', 'none') != 'yes' && !empty($conf->global->STOCK_SUPPORTS_SERVICES))) {
 				$i++;
 				continue;
 			}
@@ -1537,7 +1537,7 @@ function _prepareLine($i, $actionTarget = 'order')
 	}
 
 	//Lignes de produit
-	if (!GETPOST('tobuy_free' . $i)) {
+	if (!GETPOST('tobuy_free' . $i, 'none')) {
 		$box = $i;
 		$supplierpriceid = GETPOST('fourn' . $i, 'int');
 		//get all the parameters needed to create a line
@@ -1604,7 +1604,7 @@ function _prepareLine($i, $actionTarget = 'order')
 		$qty = GETPOST('tobuy_free' . $i, 'int');
 		$desc = GETPOST('desc' . $i, 'alpha');
 		$product_type = GETPOST('product_type' . $i, 'int');
-		$price = price2num(GETPOST('price_free' . $i));
+		$price = price2num(GETPOST('price_free' . $i, 'none'));
 		$lineid = GETPOST('lineid_free' . $i, 'int');
 		$fournid = GETPOST('fourn_free' . $i, 'int');
 		$commandeline = new OrderLine($db);
