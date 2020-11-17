@@ -522,7 +522,7 @@ $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
 $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte, p.finished, cd.rang,';
 $sql .= ' GROUP_CONCAT(cd.rowid SEPARATOR "@") as lineid,';
 $sql .= ' ( SELECT SUM(s.reel) FROM ' . MAIN_DB_PREFIX . 'product_stock s
-		INNER JOIN llx_entrepot as entre ON entre.rowid=s.fk_entrepot WHERE s.fk_product=p.rowid
+		INNER JOIN ' . MAIN_DB_PREFIX . 'entrepot as entre ON entre.rowid=s.fk_entrepot WHERE s.fk_product=p.rowid
 		AND entre.entity IN (' . $entityToTest . ')) as stock_physique';
 $sql .= $dolibarr_version35 ? ', p.desiredstock' : "";
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
