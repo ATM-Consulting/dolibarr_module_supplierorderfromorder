@@ -706,6 +706,56 @@ if ($resql || $resql2) {
 
 		}
 	}
+
+	$TObjs = array();
+
+	while ($i < min($num, $limit)) {
+		$objp = $db->fetch_object($resql);
+
+		array_push($TObjs, $objp);
+
+		$product = new Product($db);
+		$product->fetch($objp->rowid);
+
+
+		$product->get_sousproduits_arbo();
+		$prods_arbo = $product->get_arbo_each_prod();
+
+		//TODO : donner un numero de niveau à chaque produits dans TProds pour donner une indentation + tester car veut pas ccréer de commande fournisseur...
+
+
+		if(!empty($prods_arbo)) {
+
+			foreach ($prods_arbo as $key => $value) {
+
+				$objsp = new stdClass();
+
+				$sousproduit = new Product($db);
+				$sousproduit->fetch($value['id']);
+
+				$objsp->rowid = $sousproduit->id;
+				$objsp->ref = $sousproduit->ref;
+				$objsp->label = $sousproduit->label;
+				$objsp->price = $sousproduit->price;
+				$objsp->price_ttc = $sousproduit->price_ttc;
+				$objsp->price_base_type = $sousproduit->price_base_type;
+				$objsp->fk_product_type = $sousproduit->type;
+				$objsp->datem = $sousproduit->date_modification;
+				$objsp->duration = $sousproduit->duration_value;
+				$objsp->tobuy = $sousproduit->status_buy;
+				$objsp->seuil_stock_alert = $sousproduit->seuil_stock_alerte;
+				$objsp->finished = $sousproduit->finished;
+				$objsp->fk_parent = $value['id_parent'];
+
+				array_push($TObjs, $objsp);
+
+			}
+
+		}
+
+		$i++;
+	}
+
 	print'</div>';
 	print '<form action="' . $_SERVER['PHP_SELF'] . '?id=' . $_REQUEST['id'] . '&projectid=' . $_REQUEST['projectid'] . '" method="post" name="formulaire">' .
 		'<input type="hidden" name="id" value="' . $_REQUEST['id'] . '">' .
@@ -986,9 +1036,8 @@ if ($resql || $resql2) {
 	}
 
 	$TSupplier = array();
-	while ($i < min($num, $limit)) {
-		$objp = $db->fetch_object($resql);
-		//if($objp->rowid == 4666) { var_dump($objp); }
+
+	foreach($TObjs as $objp){
 
 		if ($conf->global->SOFO_DISPLAY_SERVICES || $objp->fk_product_type == 0) {
 
@@ -1333,8 +1382,6 @@ if ($resql || $resql2) {
 		}
 
 		//	if($prod->ref=='A0000753') exit;
-
-		$i++;
 	}
 
 	//Lignes libre
