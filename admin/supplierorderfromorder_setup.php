@@ -15,8 +15,8 @@ global $db;
 // Security check
 if (! $user->admin) accessforbidden();
 
-$action=GETPOST('action');
-$id=GETPOST('id');
+$action=GETPOST('action', 'alpha');
+$id=GETPOST('id', 'int');
 
 /*
  * Action
@@ -25,7 +25,7 @@ if (preg_match('/set_(.*)/',$action,$reg))
 {
 	$code=$reg[1];
 
-	$value = GETPOST($code);
+	$value = GETPOST($code, 'none');
 
 	if($code == 'SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER') {
 
@@ -50,7 +50,7 @@ if (preg_match('/set_(.*)/',$action,$reg))
 	if (dolibarr_set_const($db, $code, $value, 'chaine', 0, '', $conf->entity) > 0)
 	{
 
-		if($code=='SOFO_USE_DELIVERY_TIME' && GETPOST($code) == 1) {
+		if($code=='SOFO_USE_DELIVERY_TIME' && GETPOST($code, 'none') == 1) {
 
 			dolibarr_set_const($db,'FOURN_PRODUCT_AVAILABILITY',1);
 		}
