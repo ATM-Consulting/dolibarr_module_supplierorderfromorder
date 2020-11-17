@@ -14,9 +14,9 @@ if ($action == 'order' && isset($_POST['valid'])) {
 
             if(GETPOST('check'.$i, 'alpha') === 'on' && (GETPOST('fourn' . $i, 'int') > 0 || GETPOST('fourn_free' . $i, 'int') > 0)) { //one line
 
-            	//echo GETPOST('tobuy_free'.$i).'<br>';
+            	//echo GETPOST('tobuy_free'.$i, 'none').'<br>';
             	//Lignes de produit
-            	if(!GETPOST('tobuy_free'.$i)){
+            	if(!GETPOST('tobuy_free'.$i, 'none')){
 	                $box = $i;
 	                $supplierpriceid = GETPOST('fourn'.$i, 'int');
 	                //get all the parameters needed to create a line
@@ -70,7 +70,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$qty = GETPOST('tobuy_free'.$i, 'int');
 	                $desc = GETPOST('desc'.$i, 'alpha');
 					$product_type = GETPOST('product_type'.$i, 'int');
-					$price = price2num(GETPOST('price_free'.$i));
+					$price = price2num(GETPOST('price_free'.$i, 'none'));
 					$lineid = GETPOST('lineid_free'.$i, 'int');
 					$fournid = GETPOST('fourn_free'.$i, 'int');
 					$commandeline = new OrderLine($db);
@@ -103,7 +103,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 		$nb_orders_created = 0;
         $orders = array();
         $suppliersid = array_keys($suppliers);
-		$projectid = GETPOST('projectid');
+		$projectid = GETPOST('projectid', 'int');
         foreach ($suppliers as $idsupplier => $supplier) {
 
         	$sql2 = 'SELECT rowid, ref';
@@ -138,7 +138,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				$order->socid = $idsupplier;
 //				var_dump($obj,$order);exit;
 				if(!empty($projectid)){
-					$order->fk_project = GETPOST('projectid');
+					$order->fk_project = GETPOST('projectid', 'int');
 				}
 				// On vérifie qu'il n'existe pas déjà un lien entre la commande client et la commande fournisseur dans la table element_element.
 				// S'il n'y en a pas, on l'ajoute, sinon, on ne l'ajoute pas
