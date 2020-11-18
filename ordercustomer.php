@@ -642,9 +642,59 @@ $statutarray = array('1' => $langs->trans("Finished"), '0' => $langs->trans("Row
 $form = new Form($db);
 
 if ($resql || $resql2) {
+
 	$num = $db->num_rows($resql);
-	$num2 = $db->num_rows($resql2);
+
+	$TObjs = array();
 	$i = 0;
+
+	while ($i < min($num, $limit)) {
+		$objp = $db->fetch_object($resql);
+
+		array_push($TObjs, $objp);
+
+		$product = new Product($db);
+		$product->fetch($objp->rowid);
+
+
+		$product->get_sousproduits_arbo();
+		$prods_arbo = $product->get_arbo_each_prod();
+
+		if(!empty($prods_arbo)) {
+
+			foreach ($prods_arbo as $key => $value) {
+
+				$objsp = new stdClass();
+
+				$sousproduit = new Product($db);
+				$sousproduit->fetch($value['id']);
+
+				$objsp->rowid = $sousproduit->id;
+				$objsp->ref = $sousproduit->ref;
+				$objsp->label = $sousproduit->label;
+				$objsp->price = $sousproduit->price;
+				$objsp->price_ttc = $sousproduit->price_ttc;
+				$objsp->price_base_type = $sousproduit->price_base_type;
+				$objsp->fk_product_type = $sousproduit->type;
+				$objsp->datem = $sousproduit->date_modification;
+				$objsp->duration = $sousproduit->duration_value;
+				$objsp->tobuy = $sousproduit->status_buy;
+				$objsp->seuil_stock_alert = $sousproduit->seuil_stock_alerte;
+				$objsp->finished = $sousproduit->finished;
+				$objsp->fk_parent = $value['id_parent'];
+				$objsp->level = $value['level'];
+
+				array_push($TObjs, $objsp);
+
+			}
+
+		}
+
+		$i++;
+	}
+
+	$num = count($TObjs);
+	$num2 = $db->num_rows($resql2);
 
 	$helpurl = 'EN:Module_Stocks_En|FR:Module_Stock|';
 	$helpurl .= 'ES:M&oacute;dulo_Stocks';
@@ -705,55 +755,6 @@ if ($resql || $resql2) {
 			);
 
 		}
-	}
-
-	$TObjs = array();
-
-	while ($i < min($num, $limit)) {
-		$objp = $db->fetch_object($resql);
-
-		array_push($TObjs, $objp);
-
-		$product = new Product($db);
-		$product->fetch($objp->rowid);
-
-
-		$product->get_sousproduits_arbo();
-		$prods_arbo = $product->get_arbo_each_prod();
-
-		//TODO : donner un numero de niveau à chaque produits dans TProds pour donner une indentation + tester car veut pas ccréer de commande fournisseur...
-
-
-		if(!empty($prods_arbo)) {
-
-			foreach ($prods_arbo as $key => $value) {
-
-				$objsp = new stdClass();
-
-				$sousproduit = new Product($db);
-				$sousproduit->fetch($value['id']);
-
-				$objsp->rowid = $sousproduit->id;
-				$objsp->ref = $sousproduit->ref;
-				$objsp->label = $sousproduit->label;
-				$objsp->price = $sousproduit->price;
-				$objsp->price_ttc = $sousproduit->price_ttc;
-				$objsp->price_base_type = $sousproduit->price_base_type;
-				$objsp->fk_product_type = $sousproduit->type;
-				$objsp->datem = $sousproduit->date_modification;
-				$objsp->duration = $sousproduit->duration_value;
-				$objsp->tobuy = $sousproduit->status_buy;
-				$objsp->seuil_stock_alert = $sousproduit->seuil_stock_alerte;
-				$objsp->finished = $sousproduit->finished;
-				$objsp->fk_parent = $value['id_parent'];
-
-				array_push($TObjs, $objsp);
-
-			}
-
-		}
-
-		$i++;
 	}
 
 	print'</div>';
@@ -1286,12 +1287,24 @@ if ($resql || $resql2) {
 			if (!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
 				print '<input type="hidden" name="desc' . $i . '" value="' . htmlentities($objp->description, ENT_QUOTES) . '" >';
 			}
+			print '</td>';
 
-			print '</td>
-                 <td style="height:35px;" class="nowrap">' .
-				(!empty($TDemandes) ? $form->textwithpicto($prod->getNomUrl(1), 'Demande(s) de prix en cours :<br />' . implode(', ', $TDemandes), 1, 'help') : $prod->getNomUrl(1)) .
-				'</td>' .
-				'<td>' . $objp->label . '</td>';
+			print '<td  style="height:35px;" class="nowrap">';
+			if (!empty($objp->level)) {
+				$k = 0;
+				while ($k < $objp->level) {
+					print img_picto("Auto fill", 'rightarrow');
+					$k++;
+				}
+			}
+			if (!empty($TDemandes)) {
+				print $form->textwithpicto($prod->getNomUrl(1), 'Demande(s) de prix en cours :<br />' . implode(', ', $TDemandes), 1, 'help');
+			} else {
+				print $prod->getNomUrl(1);
+			}
+
+			print '</td>';
+			print '<td>' . $objp->label . '</td>';
 
 			print '<td>' . (empty($prod->type) ? $statutarray[$objp->finished] : '') . '</td>';
 
@@ -1381,6 +1394,7 @@ if ($resql || $resql2) {
 
 		}
 
+		$i++;
 		//	if($prod->ref=='A0000753') exit;
 	}
 
