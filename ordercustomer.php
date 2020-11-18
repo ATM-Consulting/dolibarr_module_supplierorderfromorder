@@ -651,6 +651,7 @@ if ($resql || $resql2) {
 	while ($i < min($num, $limit)) {
 		$objp = $db->fetch_object($resql);
 
+
 		array_push($TObjs, $objp);
 
 		$product = new Product($db);
@@ -663,6 +664,8 @@ if ($resql || $resql2) {
 		if(!empty($prods_arbo)) {
 
 			foreach ($prods_arbo as $key => $value) {
+
+				if(empty($key)) $qtytohavesave = $objp->qty;
 
 				$objsp = new stdClass();
 
@@ -681,8 +684,12 @@ if ($resql || $resql2) {
 				$objsp->tobuy = $sousproduit->status_buy;
 				$objsp->seuil_stock_alert = $sousproduit->seuil_stock_alerte;
 				$objsp->finished = $sousproduit->finished;
+				$objsp->stock_physique = $sousproduit->stock_reel;
+				$objsp->desiredstock = intval($qtytohavesave) * $value['nb'];
 				$objsp->fk_parent = $value['id_parent'];
 				$objsp->level = $value['level'];
+
+				$qtytohavesave = $objsp->desiredstock;
 
 				array_push($TObjs, $objsp);
 
