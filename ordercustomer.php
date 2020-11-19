@@ -645,27 +645,44 @@ if ($resql || $resql2) {
 
 	$num = $db->num_rows($resql);
 
-	$TObjs = array();
+	//pour chaque produit de la commande client on récupère ses sous-produits
+
+	$TProducts= array(); //on rassemble produit et sous-produit dans ce tableau
 	$i = 0;
 
 	while ($i < min($num, $limit)) {
+
+		//fetch le produit
 		$objp = $db->fetch_object($resql);
 
-
-		array_push($TObjs, $objp);
+		array_push($TProducts, $objp);
 
 		$product = new Product($db);
 		$product->fetch($objp->rowid);
 
-
+		//récupération des sous-produits
 		$product->get_sousproduits_arbo();
 		$prods_arbo = $product->get_arbo_each_prod();
 
 		if(!empty($prods_arbo)) {
 
+			$TProductToHaveQtys= array();		//tableau des dernières quantités nécessaires par niveau pour la commande
+
 			foreach ($prods_arbo as $key => $value) {
 
-				if(empty($key)) $qtytohavesave = $objp->qty;
+				//si on est au premier niveau, on réinitialise
+				if($value['level'] == 1) {
+					$TProductToHaveQtys[$value['level']] = $objp->qty;
+					$qtyParentToHave  = $TProductToHaveQtys[$value['level']];
+				}
+
+				//si on est au niveau supérieur à 1, alors on récupère la quantité de produit parent à avoir
+				if($value['level'] > 1) {
+					$qtyParentToHave  = $TProductToHaveQtys[$value['level']-1];
+				}
+
+
+				//on définit l'objet sous produit
 
 				$objsp = new stdClass();
 
@@ -685,13 +702,15 @@ if ($resql || $resql2) {
 				$objsp->seuil_stock_alert = $sousproduit->seuil_stock_alerte;
 				$objsp->finished = $sousproduit->finished;
 				$objsp->stock_physique = $sousproduit->stock_reel;
-				$objsp->desiredstock = intval($qtytohavesave) * $value['nb'];
+				$objsp->desiredstock = $qtyParentToHave * $value['nb'];		//le stock désiré est égal au stock du produit parent à avoir * le nombre de sous-produit nécessaire pour le produit parent
 				$objsp->fk_parent = $value['id_parent'];
 				$objsp->level = $value['level'];
 
-				$qtytohavesave = $objsp->desiredstock;
+				//Sauvegarde du stock désiré
+				$TProductToHaveQtys[$value['level']] = $objsp->desiredstock;
 
-				array_push($TObjs, $objsp);
+				//ajout du sous-produit dans le tableau
+				array_push($TProducts, $objsp);
 
 			}
 
@@ -700,7 +719,7 @@ if ($resql || $resql2) {
 		$i++;
 	}
 
-	$num = count($TObjs);
+	$num = count($TProducts);
 	$num2 = $db->num_rows($resql2);
 
 	$helpurl = 'EN:Module_Stocks_En|FR:Module_Stock|';
@@ -1045,7 +1064,7 @@ if ($resql || $resql2) {
 
 	$TSupplier = array();
 
-	foreach($TObjs as $objp){
+	foreach($TProducts as $objp){
 
 		if ($conf->global->SOFO_DISPLAY_SERVICES || $objp->fk_product_type == 0) {
 
@@ -1297,6 +1316,7 @@ if ($resql || $resql2) {
 			print '</td>';
 
 			print '<td  style="height:35px;" class="nowrap">';
+			//affichage des indentations suivant le niveau de sous-produit
 			if (!empty($objp->level)) {
 				$k = 0;
 				while ($k < $objp->level) {
