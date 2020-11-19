@@ -188,7 +188,6 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 
 		}
 
-
 		//we now know how many orders we need and what lines they have
 		$i = 0;
 		$id = 0;
@@ -715,10 +714,10 @@ if ($resql || $resql2) {
 			}
 
 		}
-
 		$i++;
 	}
 
+	$i = 0;
 	$num = count($TProducts);
 	$num2 = $db->num_rows($resql2);
 
