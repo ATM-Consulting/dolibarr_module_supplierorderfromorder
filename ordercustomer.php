@@ -667,7 +667,7 @@ if ($resql || $resql2) {
 
 			if (!empty($prods_arbo)) {
 
-				$TProductToHaveQtys = array();        //tableau des dernières quantités nécessaires par niveau pour la commande
+				$TProductToHaveQtys = array();        //tableau des dernières quantités à commander par niveau
 
 				foreach ($prods_arbo as $key => $value) {
 
@@ -703,12 +703,13 @@ if ($resql || $resql2) {
 					$objsp->seuil_stock_alert = $sousproduit->seuil_stock_alerte;
 					$objsp->finished = $sousproduit->finished;
 					$objsp->stock_physique = $sousproduit->stock_reel;
-					$objsp->desiredstock = $qtyParentToHave * $value['nb'];        //le stock désiré est égal au stock du produit parent à avoir * le nombre de sous-produit nécessaire pour le produit parent
+					$objsp->qty =  $qtyParentToHave * $value['nb'];			//qty du produit = quantité du produit parent commandé * nombre du sous-produit nécessaire pour le produit parent
+					$objsp->desiredstock = $sousproduit->desiredstock;
 					$objsp->fk_parent = $value['id_parent'];
 					$objsp->level = $value['level'];
 
-					//Sauvegarde du stock désiré
-					$TProductToHaveQtys[$value['level']] = $objsp->desiredstock;
+					//Sauvegarde du dernier stock commandé pour le niveau du sous-produit
+					$TProductToHaveQtys[$value['level']] = $objsp->qty;
 
 					//ajout du sous-produit dans le tableau
 					array_push($TProducts, $objsp);
@@ -1123,6 +1124,8 @@ if ($resql || $resql2) {
 							dol_print_error($db, $prod->error);
 						}
 						$stock_commande_client = $prod->stats_commande['qty'];
+						//si c'est un sous-produit, on ajoute la quantité à commander calculée plus tôt en plus
+						if(!empty($objp->level)) $stock_commande_client = $stock_commande_client + $objp->qty;
 					} else {
 						$stock_commande_client = 0;
 					}
