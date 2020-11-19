@@ -659,61 +659,65 @@ if ($resql || $resql2) {
 		$product = new Product($db);
 		$product->fetch($objp->rowid);
 
-		//récupération des sous-produits
-		$product->get_sousproduits_arbo();
-		$prods_arbo = $product->get_arbo_each_prod();
+		if(!empty($conf->global->PRODUIT_SOUSPRODUITS) && !empty($conf->global->SOFO_VIRTUAL_PRODUCTS)) {
 
-		if(!empty($prods_arbo)) {
+			//récupération des sous-produits
+			$product->get_sousproduits_arbo();
+			$prods_arbo = $product->get_arbo_each_prod();
 
-			$TProductToHaveQtys= array();		//tableau des dernières quantités nécessaires par niveau pour la commande
+			if (!empty($prods_arbo)) {
 
-			foreach ($prods_arbo as $key => $value) {
+				$TProductToHaveQtys = array();        //tableau des dernières quantités nécessaires par niveau pour la commande
 
-				//si on est au premier niveau, on réinitialise
-				if($value['level'] == 1) {
-					$TProductToHaveQtys[$value['level']] = $objp->qty;
-					$qtyParentToHave  = $TProductToHaveQtys[$value['level']];
+				foreach ($prods_arbo as $key => $value) {
+
+					//si on est au premier niveau, on réinitialise
+					if ($value['level'] == 1) {
+						$TProductToHaveQtys[$value['level']] = $objp->qty;
+						$qtyParentToHave = $TProductToHaveQtys[$value['level']];
+					}
+
+					//si on est au niveau supérieur à 1, alors on récupère la quantité de produit parent à avoir
+					if ($value['level'] > 1) {
+						$qtyParentToHave = $TProductToHaveQtys[$value['level'] - 1];
+					}
+
+
+					//on définit l'objet sous produit
+
+					$objsp = new stdClass();
+
+					$sousproduit = new Product($db);
+					$sousproduit->fetch($value['id']);
+
+					$objsp->rowid = $sousproduit->id;
+					$objsp->ref = $sousproduit->ref;
+					$objsp->label = $sousproduit->label;
+					$objsp->price = $sousproduit->price;
+					$objsp->price_ttc = $sousproduit->price_ttc;
+					$objsp->price_base_type = $sousproduit->price_base_type;
+					$objsp->fk_product_type = $sousproduit->type;
+					$objsp->datem = $sousproduit->date_modification;
+					$objsp->duration = $sousproduit->duration_value;
+					$objsp->tobuy = $sousproduit->status_buy;
+					$objsp->seuil_stock_alert = $sousproduit->seuil_stock_alerte;
+					$objsp->finished = $sousproduit->finished;
+					$objsp->stock_physique = $sousproduit->stock_reel;
+					$objsp->desiredstock = $qtyParentToHave * $value['nb'];        //le stock désiré est égal au stock du produit parent à avoir * le nombre de sous-produit nécessaire pour le produit parent
+					$objsp->fk_parent = $value['id_parent'];
+					$objsp->level = $value['level'];
+
+					//Sauvegarde du stock désiré
+					$TProductToHaveQtys[$value['level']] = $objsp->desiredstock;
+
+					//ajout du sous-produit dans le tableau
+					array_push($TProducts, $objsp);
+
 				}
-
-				//si on est au niveau supérieur à 1, alors on récupère la quantité de produit parent à avoir
-				if($value['level'] > 1) {
-					$qtyParentToHave  = $TProductToHaveQtys[$value['level']-1];
-				}
-
-
-				//on définit l'objet sous produit
-
-				$objsp = new stdClass();
-
-				$sousproduit = new Product($db);
-				$sousproduit->fetch($value['id']);
-
-				$objsp->rowid = $sousproduit->id;
-				$objsp->ref = $sousproduit->ref;
-				$objsp->label = $sousproduit->label;
-				$objsp->price = $sousproduit->price;
-				$objsp->price_ttc = $sousproduit->price_ttc;
-				$objsp->price_base_type = $sousproduit->price_base_type;
-				$objsp->fk_product_type = $sousproduit->type;
-				$objsp->datem = $sousproduit->date_modification;
-				$objsp->duration = $sousproduit->duration_value;
-				$objsp->tobuy = $sousproduit->status_buy;
-				$objsp->seuil_stock_alert = $sousproduit->seuil_stock_alerte;
-				$objsp->finished = $sousproduit->finished;
-				$objsp->stock_physique = $sousproduit->stock_reel;
-				$objsp->desiredstock = $qtyParentToHave * $value['nb'];		//le stock désiré est égal au stock du produit parent à avoir * le nombre de sous-produit nécessaire pour le produit parent
-				$objsp->fk_parent = $value['id_parent'];
-				$objsp->level = $value['level'];
-
-				//Sauvegarde du stock désiré
-				$TProductToHaveQtys[$value['level']] = $objsp->desiredstock;
-
-				//ajout du sous-produit dans le tableau
-				array_push($TProducts, $objsp);
 
 			}
-
 		}
+
 		$i++;
 	}
 
