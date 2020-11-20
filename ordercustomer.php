@@ -1294,9 +1294,15 @@ if ($resql || $resql2) {
 
 			$help_stock .= ', ' . $langs->trans('DesiredStock') . ' : ' . (float)$objp->desiredstock;
 
-
-			if ($stocktobuy < 0)
+			if ($stocktobuy < 0) {
 				$stocktobuy = 0;
+				$objnottobuy = $objp->rowid;
+			}
+
+			//si le produit parent n'a pas besoin d'être commandé, alors les produits fils non plus
+			if($objnottobuy == $objp->fk_parent && !empty($objnottobuy) && !empty($objp->fk_parent)) {
+				$stocktobuy = 0;
+			}
 
 			if ((empty($prod->type) && $stocktobuy == 0 && GETPOST('show_stock_no_need', 'none') != 'yes') || ($prod->type == 1 && $stocktobuy == 0 && GETPOST('show_stock_no_need', 'none') != 'yes' && !empty($conf->global->STOCK_SUPPORTS_SERVICES))) {
 				$i++;
