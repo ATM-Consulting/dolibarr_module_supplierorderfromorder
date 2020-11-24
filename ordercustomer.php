@@ -188,7 +188,6 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 
 		}
 
-
 		//we now know how many orders we need and what lines they have
 		$i = 0;
 		$id = 0;
@@ -642,9 +641,90 @@ $statutarray = array('1' => $langs->trans("Finished"), '0' => $langs->trans("Row
 $form = new Form($db);
 
 if ($resql || $resql2) {
+
 	$num = $db->num_rows($resql);
-	$num2 = $db->num_rows($resql2);
+
+	//pour chaque produit de la commande client on récupère ses sous-produits
+
+	$TProducts= array(); //on rassemble produit et sous-produit dans ce tableau
 	$i = 0;
+
+	while ($i < min($num, $limit)) {
+
+		//fetch le produit
+		$objp = $db->fetch_object($resql);
+
+		array_push($TProducts, $objp);
+
+		$product = new Product($db);
+		$product->fetch($objp->rowid);
+
+		if(!empty($conf->global->PRODUIT_SOUSPRODUITS) && !empty($conf->global->SOFO_VIRTUAL_PRODUCTS)) {
+
+			//récupération des sous-produits
+			$product->get_sousproduits_arbo();
+			$prods_arbo = $product->get_arbo_each_prod();
+
+			if (!empty($prods_arbo)) {
+
+				$TProductToHaveQtys = array();        //tableau des dernières quantités à commander par niveau
+
+				foreach ($prods_arbo as $key => $value) {
+
+					//si on est au premier niveau, on réinitialise
+					if ($value['level'] == 1) {
+						$TProductToHaveQtys[$value['level']] = $objp->qty;
+						$qtyParentToHave = $TProductToHaveQtys[$value['level']];
+					}
+
+					//si on est au niveau supérieur à 1, alors on récupère la quantité de produit parent à avoir
+					if ($value['level'] > 1) {
+						$qtyParentToHave = $TProductToHaveQtys[$value['level'] - 1];
+					}
+
+
+					//on définit l'objet sous produit
+
+					$objsp = new stdClass();
+
+					$sousproduit = new Product($db);
+					$sousproduit->fetch($value['id']);
+
+					$objsp->rowid = $sousproduit->id;
+					$objsp->ref = $sousproduit->ref;
+					$objsp->label = $sousproduit->label;
+					$objsp->price = $sousproduit->price;
+					$objsp->price_ttc = $sousproduit->price_ttc;
+					$objsp->price_base_type = $sousproduit->price_base_type;
+					$objsp->fk_product_type = $sousproduit->type;
+					$objsp->datem = $sousproduit->date_modification;
+					$objsp->duration = $sousproduit->duration_value;
+					$objsp->tobuy = $sousproduit->status_buy;
+					$objsp->seuil_stock_alert = $sousproduit->seuil_stock_alerte;
+					$objsp->finished = $sousproduit->finished;
+					$objsp->stock_physique = $sousproduit->stock_reel;
+					$objsp->qty =  $qtyParentToHave * $value['nb'];			//qty du produit = quantité du produit parent commandé * nombre du sous-produit nécessaire pour le produit parent
+					$objsp->desiredstock = $sousproduit->desiredstock;
+					$objsp->fk_parent = $value['id_parent'];
+					$objsp->level = $value['level'];
+
+					//Sauvegarde du dernier stock commandé pour le niveau du sous-produit
+					$TProductToHaveQtys[$value['level']] = $objsp->qty;
+
+					//ajout du sous-produit dans le tableau
+					array_push($TProducts, $objsp);
+
+				}
+
+			}
+		}
+
+		$i++;
+	}
+
+	$i = 0;
+	$num = count($TProducts);
+	$num2 = $db->num_rows($resql2);
 
 	$helpurl = 'EN:Module_Stocks_En|FR:Module_Stock|';
 	$helpurl .= 'ES:M&oacute;dulo_Stocks';
@@ -706,6 +786,7 @@ if ($resql || $resql2) {
 
 		}
 	}
+
 	print'</div>';
 	print '<form action="' . $_SERVER['PHP_SELF'] . '?id=' . $_REQUEST['id'] . '&projectid=' . $_REQUEST['projectid'] . '" method="post" name="formulaire">' .
 		'<input type="hidden" name="id" value="' . $_REQUEST['id'] . '">' .
@@ -986,9 +1067,8 @@ if ($resql || $resql2) {
 	}
 
 	$TSupplier = array();
-	while ($i < min($num, $limit)) {
-		$objp = $db->fetch_object($resql);
-		//if($objp->rowid == 4666) { var_dump($objp); }
+
+	foreach($TProducts as $objp){
 
 		if ($conf->global->SOFO_DISPLAY_SERVICES || $objp->fk_product_type == 0) {
 
@@ -1044,6 +1124,8 @@ if ($resql || $resql2) {
 							dol_print_error($db, $prod->error);
 						}
 						$stock_commande_client = $prod->stats_commande['qty'];
+						//si c'est un sous-produit, on ajoute la quantité à commander calculée plus tôt en plus
+						if(!empty($objp->level)) $stock_commande_client = $stock_commande_client + $objp->qty;
 					} else {
 						$stock_commande_client = 0;
 					}
@@ -1212,9 +1294,15 @@ if ($resql || $resql2) {
 
 			$help_stock .= ', ' . $langs->trans('DesiredStock') . ' : ' . (float)$objp->desiredstock;
 
-
-			if ($stocktobuy < 0)
+			if ($stocktobuy < 0) {
 				$stocktobuy = 0;
+				$objnottobuy = $objp->rowid;
+			}
+
+			//si le produit parent n'a pas besoin d'être commandé, alors les produits fils non plus
+			if($objnottobuy == $objp->fk_parent && !empty($objnottobuy) && !empty($objp->fk_parent)) {
+				$stocktobuy = 0;
+			}
 
 			if ((empty($prod->type) && $stocktobuy == 0 && GETPOST('show_stock_no_need', 'none') != 'yes') || ($prod->type == 1 && $stocktobuy == 0 && GETPOST('show_stock_no_need', 'none') != 'yes' && !empty($conf->global->STOCK_SUPPORTS_SERVICES))) {
 				$i++;
@@ -1237,12 +1325,25 @@ if ($resql || $resql2) {
 			if (!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
 				print '<input type="hidden" name="desc' . $i . '" value="' . htmlentities($objp->description, ENT_QUOTES) . '" >';
 			}
+			print '</td>';
 
-			print '</td>
-                 <td style="height:35px;" class="nowrap">' .
-				(!empty($TDemandes) ? $form->textwithpicto($prod->getNomUrl(1), 'Demande(s) de prix en cours :<br />' . implode(', ', $TDemandes), 1, 'help') : $prod->getNomUrl(1)) .
-				'</td>' .
-				'<td>' . $objp->label . '</td>';
+			print '<td  style="height:35px;" class="nowrap">';
+			//affichage des indentations suivant le niveau de sous-produit
+			if (!empty($objp->level)) {
+				$k = 0;
+				while ($k < $objp->level) {
+					print img_picto("Auto fill", 'rightarrow');
+					$k++;
+				}
+			}
+			if (!empty($TDemandes)) {
+				print $form->textwithpicto($prod->getNomUrl(1), 'Demande(s) de prix en cours :<br />' . implode(', ', $TDemandes), 1, 'help');
+			} else {
+				print $prod->getNomUrl(1);
+			}
+
+			print '</td>';
+			print '<td>' . $objp->label . '</td>';
 
 			print '<td>' . (empty($prod->type) ? $statutarray[$objp->finished] : '') . '</td>';
 
@@ -1332,9 +1433,8 @@ if ($resql || $resql2) {
 
 		}
 
-		//	if($prod->ref=='A0000753') exit;
-
 		$i++;
+		//	if($prod->ref=='A0000753') exit;
 	}
 
 	//Lignes libre
