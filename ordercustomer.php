@@ -65,7 +65,7 @@ if ((float)DOL_VERSION >= 3.5) {
 if ($user->societe_id) {
 	$socid = $user->societe_id;
 }
-$result = restrictedArea($user, 'produit&supplierorderfromorder');
+$result = restrictedArea($user, 'produit|service&supplierorderfromorder');
 
 //checks if a product has been ordered
 
