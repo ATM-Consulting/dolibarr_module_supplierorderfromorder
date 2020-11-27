@@ -608,6 +608,12 @@ if ($resql || $resql2) {
 	$head[0][1] = $title;
 	$head[0][2] = 'supplierorderfromorder';
 
+	if (count($fk_commande_array) == 1 && !empty($conf->global->SOFO_USE_NOMENCLATURE)) {
+		$head[1][0] = dol_buildpath('/supplierorderfromorder/dispatch_to_supplier_order.php?from=commande&fromid=' . $fk_commande_array[0], 2);
+		$head[1][1] = $langs->trans('ProductsAssetsToOrder');
+		$head[1][2] = 'supplierorderfromorder_dispatch';
+	}
+
 	/*$head[1][0] = DOL_URL_ROOT.'/product/stock/replenishorders.php';
 	$head[1][1] = $langs->trans("ReplenishmentOrders");
 	$head[1][2] = 'replenishorders';*/
