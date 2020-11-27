@@ -555,9 +555,9 @@ if (! empty($TCategoriesQuery))
 //$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s ON (p.rowid = s.fk_product)';
 $sql .= ' WHERE p.fk_product_type IN (0,1) AND p.entity IN (' . getEntity("product", 1) . ')';
 
-$fk_commande = GETPOST('id','int');
+$fk_commande = GETPOST('id','intcomma');
 
-if($fk_commande > 0) $sql .= ' AND cd.fk_commande = '.$fk_commande;
+if($fk_commande > 0) $sql .= ' AND cd.fk_commande IN ('.$fk_commande.')';
 
 if(! empty($TCategoriesQuery)) $sql .= ' AND cp.fk_categorie IN ( '.implode(',', $TCategoriesQuery) .' ) ' ;
 
