@@ -86,7 +86,11 @@ $fk_commande_list = GETPOST('id', 'intcomma');
 $fk_commande_array = explode(',', $fk_commande_list);
 
 if (!$sortfield) {
-	$sortfield = 'cd.rang';
+	if (count($fk_commande_array) == 1) {
+		$sortfield = 'cd.rang';
+	} else {
+		$sortfield = 'p.ref';
+	}
 }
 
 if (!$sortorder) {
@@ -483,7 +487,8 @@ $title = $langs->trans('ProductsToOrder');
 $db->query("SET SQL_MODE=''");
 $sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty, cd.buy_price_ht';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
-$sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte, p.finished, cd.rang,';
+$sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte, p.finished,';
+if (count($fk_commande_array) == 1) $sql .= ' cd.rang,';
 $sql .= ' GROUP_CONCAT(cd.rowid SEPARATOR "@") as lineid,';
 $sql .= ' ( SELECT SUM(s.reel) FROM ' . MAIN_DB_PREFIX . 'product_stock s WHERE s.fk_product=p.rowid ) as stock_physique';
 $sql .= $dolibarr_version35 ? ', p.desiredstock' : "";
@@ -546,8 +551,8 @@ if ($salert == 'on') {
 
 $sql .= ' GROUP BY p.rowid, p.ref, p.label, p.price';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type, p.tms';
-$sql .= ', p.duration, p.tobuy, p.seuil_stock_alerte';
-$sql .= ', cd.rang';
+$sql .= ', p.duration, p.tobuy, p.seuil_stock_alerte, cd.buy_price_ht';
+if (count($fk_commande_array) == 1) $sql .= ', cd.rang';
 //$sql .= ', p.desiredstock';
 //$sql .= ', s.fk_product';
 
