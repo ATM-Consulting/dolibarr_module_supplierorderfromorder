@@ -204,6 +204,8 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 				$obj = _getSupplierOrderInfos($idsupplier, $projectid);
 			}
 
+			$order->socid = $idsupplier;
+
 			//Si une commande au statut brouillon existe déjà et que l'option SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME
 			if ($obj && !$conf->global->SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME) {
 				$order->fetch($obj->rowid);
@@ -241,8 +243,6 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 					$order->add_object_linked('commande', $fk_commande);
 				}
 			}
-
-			$order->socid = $idsupplier;
 
 			if (!empty($projectid)) {
 				$order->fk_project = GETPOST('projectid');
