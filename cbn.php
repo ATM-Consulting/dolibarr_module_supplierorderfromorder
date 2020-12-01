@@ -161,7 +161,7 @@ if ($snom) {
 
 $sql .= ' AND p.tobuy = 1';
 
-$finished = GETPOST('finished');
+$finished = GETPOST('finished', 'none');
 if($finished != '' && $finished != '-1') $sql .= ' AND p.finished = '.$finished;
 elseif(!isset($_REQUEST['button_search_x']) && isset($conf->global->SOFO_DEFAUT_FILTER) && $conf->global->SOFO_DEFAUT_FILTER >= 0) $sql .= ' AND p.finished = '.$conf->global->SOFO_DEFAUT_FILTER;
 
@@ -282,7 +282,7 @@ if ($resql || $resql2) {
          '<input type="hidden" name="linecount" value="' . ($num+$num2) . '">'.
          '<input type="hidden" name="action" value="order">'.
          '<input type="hidden" name="fk_commande" value="' . GETPOST('fk_commande','int'). '">'.
-         '<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need'). '">'.
+         '<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need', 'none'). '">'.
 
          '<div style="text-align:right"><a href="'.$_SERVER["PHP_SELF"].'?'.$_SERVER["QUERY_STRING"].'&show_stock_no_need=yes">'.$langs->trans('ShowLineEvenIfStockIsSuffisant').'</a></div>'.
          '<table class="liste" width="100%">';
@@ -456,7 +456,7 @@ if ($resql || $resql2) {
     }
 
 	$liste_titre = "";
-	$liste_titre.= '<td class="liste_titre">'.$form->selectarray('finished',$statutarray,(!isset($_REQUEST['button_search_x']) && $conf->global->SOFO_DEFAUT_FILTER != -1) ? $conf->global->SOFO_DEFAUT_FILTER : GETPOST('finished'),1).'</td>';
+	$liste_titre.= '<td class="liste_titre">'.$form->selectarray('finished',$statutarray,(!isset($_REQUEST['button_search_x']) && $conf->global->SOFO_DEFAUT_FILTER != -1) ? $conf->global->SOFO_DEFAUT_FILTER : GETPOST('finished', 'none'),1).'</td>';
     $liste_titre.= $dolibarr_version35 ? '<td class="liste_titre">&nbsp;</td>' : '';
     $liste_titre.= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>';
 
@@ -638,7 +638,6 @@ if ($resql || $resql2) {
                                 $qres = $db->query($q);
 
                                 while($res = $db->fetch_object($qres)) $TDemandes[] = $res->ref;
-                        
                         	}
 
 
@@ -656,7 +655,6 @@ if ($resql || $resql2) {
 				$qres = $db->query($q);
 
 				while($res = $db->fetch_object($qres)) $TDemandes[] = $res->ref;
-			
           		}
 			}
 
@@ -706,7 +704,7 @@ if ($resql || $resql2) {
 
 			if($stocktobuy < 0) $stocktobuy = 0;
 
-			if($stocktobuy == 0 && GETPOST('show_stock_no_need')!='yes') {
+			if($stocktobuy == 0 && GETPOST('show_stock_no_need', 'none')!='yes') {
 				$i++;
 				continue;
 			}
@@ -800,7 +798,6 @@ if ($resql || $resql2) {
 //	if($prod->ref=='A0000753') exit;
 
         flush();
-        
         $i++;
     }
 

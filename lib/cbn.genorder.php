@@ -14,9 +14,9 @@ if ($action == 'order' && isset($_POST['valid'])) {
 
             if(GETPOST('check'.$i, 'alpha') === 'on' && (GETPOST('fourn' . $i, 'int') > 0 || GETPOST('fourn_free' . $i, 'int') > 0)) { //one line
 
-            	//echo GETPOST('tobuy_free'.$i).'<br>';
+            	//echo GETPOST('tobuy_free'.$i, 'none').'<br>';
             	//Lignes de produit
-            	if(!GETPOST('tobuy_free'.$i)){
+            	if(!GETPOST('tobuy_free'.$i, 'none')){
 	                $box = $i;
 	                $supplierpriceid = GETPOST('fourn'.$i, 'int');
 	                //get all the parameters needed to create a line
@@ -70,7 +70,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$qty = GETPOST('tobuy_free'.$i, 'int');
 	                $desc = GETPOST('desc'.$i, 'alpha');
 					$product_type = GETPOST('product_type'.$i, 'int');
-					$price = price2num(GETPOST('price_free'.$i));
+					$price = price2num(GETPOST('price_free'.$i, 'none'));
 					$lineid = GETPOST('lineid_free'.$i, 'int');
 					$fournid = GETPOST('fourn_free'.$i, 'int');
 					$commandeline = new OrderLine($db);
@@ -103,7 +103,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 		$nb_orders_created = 0;
         $orders = array();
         $suppliersid = array_keys($suppliers);
-		$projectid = GETPOST('projectid');
+		$projectid = GETPOST('projectid', 'int');
         foreach ($suppliers as $idsupplier => $supplier) {
 
         	$sql2 = 'SELECT rowid, ref';
@@ -138,7 +138,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				$order->socid = $idsupplier;
 //				var_dump($obj,$order);exit;
 				if(!empty($projectid)){
-					$order->fk_project = GETPOST('projectid');
+					$order->fk_project = GETPOST('projectid', 'int');
 				}
 				// On vérifie qu'il n'existe pas déjà un lien entre la commande client et la commande fournisseur dans la table element_element.
 				// S'il n'y en a pas, on l'ajoute, sinon, on ne l'ajoute pas
@@ -149,16 +149,30 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$order->add_object_linked('commande', $_REQUEST['id']);
 
 				//}
+				if($conf->global->SOFO_GET_INFOS_FROM_ORDER){
+					$order->mode_reglement_code = $commandeClient->mode_reglement_code;
+					$order->mode_reglement_id = $commandeClient->mode_reglement_id;
+					$order->cond_reglement_id = $commandeClient->cond_reglement_id;
+					$order->cond_reglement_code = $commandeClient->cond_reglement_code;
+					$order->date_livraison = $commandeClient->date_livraison;
+				}
 				$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
 				$newCommande = false;
 			} else {
-				/*echo '<pre>';
+								/*echo '<pre>';
 				print_r($commandeClient);exit;*/
 
 				$order = new CommandeFournisseur($db);
 				$order->socid = $idsupplier;
 				if(!empty($projectid)){
 					$order->fk_project = $projectid;
+				}
+				if($conf->global->SOFO_GET_INFOS_FROM_ORDER){
+					$order->mode_reglement_code = $commandeClient->mode_reglement_code;
+					$order->mode_reglement_id = $commandeClient->mode_reglement_id;
+					$order->cond_reglement_id = $commandeClient->cond_reglement_id;
+					$order->cond_reglement_code = $commandeClient->cond_reglement_code;
+					$order->date_livraison = $commandeClient->date_livraison;
 				}
 
 				$id = $order->create($user);
@@ -195,6 +209,13 @@ if ($action == 'order' && isset($_POST['valid'])) {
                             $remise_percent,
                             $lineOrderFetched->tva_tx
                         );
+                          // add link to element_element between order line and supplier order line if not exist
+
+                          $linkendline = getlinkedobject($lineOrderFetched->id,$linkendline->element,'commande_commandedet');
+                          if($linkendline == 0){
+                                 $lineOrderFetched->add_object_linked($line->id,'commande_commandedet');
+                          }
+
 						$done = true;
 						break;
 
@@ -206,7 +227,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 
 				if(!$done) {
 
-					$order->addline(
+					$newlineid = $order->addline(
                         $line->desc,
                         $line->subprice,
                         $line->qty,
@@ -223,6 +244,13 @@ if ($action == 'order' && isset($_POST['valid'])) {
                         ,$line->product_type
                         ,$line->info_bits
                     );
+
+                     // add link to element_element between order line and supplier order line
+                     $newline = new CommandeFournisseurLigne($db);
+                     $result = $newline->fetch($newlineid);
+                     if($result == 1){
+                           $newline->add_object_linked($line->id,'commandedet');
+                     }
 
 				}
 

@@ -15,8 +15,8 @@ global $db;
 // Security check
 if (! $user->admin) accessforbidden();
 
-$action=GETPOST('action');
-$id=GETPOST('id');
+$action=GETPOST('action', 'alpha');
+$id=GETPOST('id', 'int');
 
 /*
  * Action
@@ -25,7 +25,7 @@ if (preg_match('/set_(.*)/',$action,$reg))
 {
 	$code=$reg[1];
 
-	$value = GETPOST($code);
+	$value = GETPOST($code, 'none');
 
 	if($code == 'SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER') {
 
@@ -50,7 +50,7 @@ if (preg_match('/set_(.*)/',$action,$reg))
 	if (dolibarr_set_const($db, $code, $value, 'chaine', 0, '', $conf->entity) > 0)
 	{
 
-		if($code=='SOFO_USE_DELIVERY_TIME' && GETPOST($code) == 1) {
+		if($code=='SOFO_USE_DELIVERY_TIME' && GETPOST($code, 'none') == 1) {
 
 			dolibarr_set_const($db,'FOURN_PRODUCT_AVAILABILITY',1);
 		}
@@ -331,6 +331,21 @@ print $form->selectyesno('SOFO_PRESELECT_SUPPLIER_PRICE_FROM_LINE_BUY_PRICE', $c
 print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
 print '</form>';
 print '</td></tr>';
+
+if ($conf->multicompany->enabled && ! empty($conf->global->MULTICOMPANY_STOCK_SHARING_ENABLED)) {
+	$var = !$var;
+	print '<tr ' . $bc[$var] . '>';
+	print '<td>' . $langs->trans('SOFO_CHECK_STOCK_ON_SHARED_STOCK') . '</td>';
+	print '<td align="center" width="20">&nbsp;</td>';
+	print '<td align="right" width="300">';
+	print '<form method="POST" action="' . $_SERVER['PHP_SELF'] . '">';
+	print '<input type="hidden" name="token" value="' . $_SESSION['newtoken'] . '">';
+	print '<input type="hidden" name="action" value="set_SOFO_CHECK_STOCK_ON_SHARED_STOCK">';
+	print $form->selectyesno('SOFO_CHECK_STOCK_ON_SHARED_STOCK', $conf->global->SOFO_CHECK_STOCK_ON_SHARED_STOCK, 1);
+	print '<input type="submit" class="button" value="' . $langs->trans("Modify") . '">';
+	print '</form>';
+	print '</td></tr>';
+}
 
 if(! empty($conf->categorie->enabled)) {
 	$var=!$var;

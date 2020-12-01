@@ -56,7 +56,7 @@ $langs->load("supplierorderfromorder@supplierorderfromorder");
 
 $dolibarr_version35 = false;
 
-if ((float) DOL_VERSION >= 3.5) {
+if ((float)DOL_VERSION >= 3.5) {
 	$dolibarr_version35 = true;
 }
 /*echo "<form name=\"formCreateSupplierOrder\" method=\"post\" action=\"ordercustomer.php\">";*/
@@ -76,6 +76,7 @@ $sall = GETPOST('sall', 'alpha');
 $type = GETPOST('type', 'int');
 $tobuy = GETPOST('tobuy', 'int');
 $salert = GETPOST('salert', 'alpha');
+$fourn_id = GETPOST('fourn_id', 'intcomma');
 
 $sortfield = GETPOST('sortfield', 'alpha');
 $sortorder = GETPOST('sortorder', 'alpha');
@@ -101,14 +102,14 @@ $limit = $conf->liste_limit;
 $offset = $limit * $page;
 
 
-
 $TCategories = array();
 
 if (!empty($conf->categorie->enabled)) {
+
 	if (!isset($_REQUEST['categorie'])) {
 		$TCategories = unserialize($conf->global->SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER);
 	} else {
-		$categories = GETPOST('categorie');
+		$categories = GETPOST('categorie', 'none');
 
 		if (is_array($categories)) {
 			if (in_array(-1, $categories) && count($categories) > 1) {
@@ -126,7 +127,8 @@ if (!empty($conf->categorie->enabled)) {
 $TCategoriesQuery = $TCategories;
 if (!empty($TCategoriesQuery) && is_array($TCategoriesQuery)) {
 	foreach ($TCategories as $categID) {
-		if ($categID <= 0) continue;
+		if ($categID <= 0)
+			continue;
 
 		$cat = new Categorie($db);
 		$cat->fetch($categID);
@@ -150,7 +152,6 @@ if (is_array($TCategoriesQuery) && count($TCategoriesQuery) == 1 && in_array(-1,
  */
 
 
-
 if (isset($_POST['button_removefilter']) || in_array($action, array('valid-propal', 'valid-order'))) {
 	$sref = '';
 	$snom = '';
@@ -166,10 +167,11 @@ echo "</pre>";
 exit;*/
 
 
-
 //orders creation
 //FIXME: could go in the lib
 if (in_array($action, array('valid-propal', 'valid-order'))) {
+
+
 	$actionTarget = 'order';
 	if ($action == 'valid-propal') {
 		$actionTarget = 'propal';
@@ -188,18 +190,21 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 				_prepareLine($i, $actionTarget);
 			}
 			unset($_POST[$i]);
-		}
 
+		}
 
 
 		//we now know how many orders we need and what lines they have
 		$i = 0;
+		$id = 0;
 		$nb_orders_created = 0;
 		$orders = array();
 		$suppliersid = array_keys($suppliers);
-		$projectid = GETPOST('projectid');
+		$projectid = GETPOST('projectid', 'int');
 
 		foreach ($suppliers as $idsupplier => $supplier) {
+
+
 			if ($actionTarget == 'propal') {
 				$order = new SupplierProposal($db);
 				$obj = _getSupplierProposalInfos($idsupplier, $projectid);
@@ -249,10 +254,10 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 			}
 
 			if (!empty($projectid)) {
-				$order->fk_project = GETPOST('projectid');
+				$order->fk_project = GETPOST('projectid', 'int');
 			}
 			// cond reglement, mode reglement, delivery date
-			_appliCond($order);
+			_appliCond($order, (count($fk_commande_array) == 1 ? $commandeClient : null));
 
 
 			$order_id = $order->id;
@@ -268,10 +273,10 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 
 				foreach ($order->lines as $lineOrderFetched) {
 					if ($line->fk_product == $lineOrderFetched->fk_product) {
-						$remise_percent = $lineOrderFetched->remise_percent;
-						if ($line->remise_percent > $remise_percent) $remise_percent = $line->remise_percent;
-						//var_dump($line);
 
+						$remise_percent = $lineOrderFetched->remise_percent;
+						if ($line->remise_percent > $remise_percent)
+							$remise_percent = $line->remise_percent;
 
 						if ($order->element == 'order_supplier') {
 							$order->updateline(
@@ -283,7 +288,8 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 								$remise_percent,
 								$lineOrderFetched->tva_tx
 							);
-						} elseif ($order->element == 'supplier_proposal') {
+						} else if ($order->element == 'supplier_proposal') {
+
 							$order->updateline(
 								$lineOrderFetched->id,
 								$prodfourn->fourn_unitprice, //$lineOrderFetched->pu_ht is empty,
@@ -310,7 +316,9 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 
 						$done = true;
 						break;
+
 					}
+
 				}
 
 				// On ajoute une ligne seulement si un "updateline()" n'a pas été fait et si la quantité souhaitée est supérieure à zéro
@@ -328,21 +336,21 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 							// We need to pass fk_prod_fourn_price to get the right price.
 							$line->fk_prod_fourn_price,
 							$line->ref_fourn,
-							$line->remise_percent,
-							'HT',
-							0,
-							$line->product_type,
-							$line->info_bits,
-							false, // $notrigger
-							null, // $date_start
-							null, // $date_end
-							$line->array_options,
-							null,
-							0,
-							$line->origin,
-							$line->origin_id
+							$line->remise_percent
+							, 'HT'
+							, 0
+							, $line->product_type
+							, $line->info_bits
+							, FALSE // $notrigger
+							, NULL // $date_start
+							, NULL // $date_end
+							, $line->array_options
+							, null
+							, 0
+							, $line->origin
+							, $line->origin_id
 						);
-					} elseif ($order->element == 'supplier_proposal') {
+					} else if ($order->element == 'supplier_proposal') {
 						$order->addline(
 							$line->desc,
 							$line->subprice,
@@ -357,7 +365,7 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 							$line->info_bits, //$info_bits=0,
 							$line->product_type, //$type=0,
 							-1, //$rang=-1,
-							0, //$special_code=0,
+							0, //$special_code=0, ,
 							0, //$fk_parent_line=0, ,
 							$line->fk_prod_fourn_price, //$fk_fournprice=0, ,
 							0, //$pa_ht=0, ,
@@ -366,15 +374,20 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 							$line->ref_fourn, //$ref_fourn='', ,
 							'', //$fk_unit='', ,
 							$line->origin, //$origin='', ,
-							$line->origin_id //$origin_id=0
+							$line->origin_id//$origin_id=0
 						);
+
+
 					}
+
 				}
 
-				$nb_day = (int) TSOFO::getMinAvailability($line->fk_product, $line->qty, 1, $prodfourn->fourn_id);
+				$nb_day = (int)TSOFO::getMinAvailability($line->fk_product, $line->qty, 1, $prodfourn->fourn_id);
 				if ($MaxAvailability < $nb_day) {
 					$MaxAvailability = $nb_day;
 				}
+
+
 			}
 
 			if (!empty($conf->global->SOFO_USE_MAX_DELIVERY_DATE)) {
@@ -394,7 +407,8 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 				// CODE de redirection s'il y a un seul fournisseur (évite de le laisser sur la page sans comprendre)
 				if ($conf->global->SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER) {
 					if (count($suppliersid) == 1) {
-						if ($action === 'valid-order') $link = dol_buildpath('/fourn/commande/card.php?id=' . $order_id, 1);
+						if ($action === 'valid-order')
+							$link = dol_buildpath('/fourn/commande/card.php?id=' . $order_id, 1);
 						else $link = dol_buildpath('/supplier_proposal/card.php?id=' . $order_id, 1);
 						header('Location:' . $link);
 					}
@@ -402,6 +416,8 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 			}
 			$i++;
 		}
+
+
 	}
 
 	if ($nb_orders_created > 0) {
@@ -479,9 +495,18 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
  * View
  */
 
-$TCachedProductId = &$_SESSION['TCachedProductId'];
-if (empty($TCachedProductId)) $TCachedProductId = array();
-if (GETPOST('purge_cached_product') == 'yes') $TCachedProductId = array();
+$TCachedProductId =& $_SESSION['TCachedProductId'];
+if (empty($TCachedProductId))
+	$TCachedProductId = array();
+if (GETPOST('purge_cached_product', 'none') == 'yes')
+	$TCachedProductId = array();
+
+//Do we want include shared sotck to kwon what order
+if (empty($conf->global->SOFO_CHECK_STOCK_ON_SHARED_STOCK)) {
+	$entityToTest = $conf->entity;
+} else {
+	$entityToTest = getEntity('stock');
+}
 
 $title = $langs->trans('ProductsToOrder');
 $db->query("SET SQL_MODE=''");
@@ -490,7 +515,9 @@ $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
 $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte, p.finished,';
 if (count($fk_commande_array) == 1) $sql .= ' cd.rang,';
 $sql .= ' GROUP_CONCAT(cd.rowid SEPARATOR "@") as lineid,';
-$sql .= ' ( SELECT SUM(s.reel) FROM ' . MAIN_DB_PREFIX . 'product_stock s WHERE s.fk_product=p.rowid ) as stock_physique';
+$sql .= ' ( SELECT SUM(s.reel) FROM ' . MAIN_DB_PREFIX . 'product_stock s
+		INNER JOIN ' . MAIN_DB_PREFIX . 'entrepot as entre ON entre.rowid=s.fk_entrepot WHERE s.fk_product=p.rowid
+		AND entre.entity IN (' . $entityToTest . ')) as stock_physique';
 $sql .= $dolibarr_version35 ? ', p.desiredstock' : "";
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
 $sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd ON (p.rowid = cd.fk_product)';
@@ -502,9 +529,11 @@ if (!empty($TCategoriesQuery)) {
 //$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s ON (p.rowid = s.fk_product)';
 $sql .= ' WHERE p.fk_product_type IN (0,1) AND p.entity IN (' . getEntity("product", 1) . ')';
 
-if (!empty($fk_commande_list)) $sql .= ' AND cd.fk_commande IN (' . $fk_commande_list . ')';
+if (!empty($fk_commande_list)) 
+	$sql .= ' AND cd.fk_commande IN (' . $fk_commande_list . ')';
 
-if (!empty($TCategoriesQuery)) $sql .= ' AND cp.fk_categorie IN ( ' . implode(',', $TCategoriesQuery) . ' ) ';
+if (!empty($TCategoriesQuery))
+	$sql .= ' AND cp.fk_categorie IN ( ' . implode(',', $TCategoriesQuery) . ' ) ';
 
 if ($sall) {
 	$sql .= ' AND (p.ref LIKE "%' . $db->escape($sall) . '%" ';
@@ -537,9 +566,11 @@ if ($snom) {
 
 $sql .= ' AND p.tobuy = 1';
 
-$finished = GETPOST('finished');
-if ($finished != '' && $finished != '-1') $sql .= ' AND p.finished = ' . $finished;
-elseif (!isset($_REQUEST['button_search_x']) && isset($conf->global->SOFO_DEFAUT_FILTER) && $conf->global->SOFO_DEFAUT_FILTER >= 0) $sql .= ' AND p.finished = ' . $conf->global->SOFO_DEFAUT_FILTER;
+$finished = GETPOST('finished', 'none');
+if ($finished != '' && $finished != '-1')
+	$sql .= ' AND p.finished = ' . $finished;
+elseif (!isset($_REQUEST['button_search_x']) && isset($conf->global->SOFO_DEFAUT_FILTER) && $conf->global->SOFO_DEFAUT_FILTER >= 0)
+	$sql .= ' AND p.finished = ' . $conf->global->SOFO_DEFAUT_FILTER;
 
 if (!empty($canvas)) {
 	$sql .= ' AND p.canvas = "' . $db->escape($canvas) . '"';
@@ -582,7 +613,8 @@ $sql .= $db->order($sortfield, $sortorder);
 
 //echo $sql;
 
-if (!$conf->global->SOFO_USE_DELIVERY_TIME) $sql .= $db->plimit($limit + 1, $offset);
+if (!$conf->global->SOFO_USE_DELIVERY_TIME)
+	$sql .= $db->plimit($limit + 1, $offset);
 $resql = $db->query($sql);
 
 if (isset($_REQUEST['DEBUG']) || $resql === false) {
@@ -625,33 +657,34 @@ if ($resql || $resql2) {
 	dol_fiche_head($head, 'supplierorderfromorder', $langs->trans('Replenishment'), 0, 'stock');
 
 
-
 	if ($sref || $snom || $sall || $salert || GETPOST('search', 'alpha')) {
 		$filters = '&sref=' . $sref . '&snom=' . $snom;
 		$filters .= '&sall=' . $sall;
 		$filters .= '&salert=' . $salert;
 
 		if (!$conf->global->SOFO_USE_DELIVERY_TIME) {
+
 			print_barre_liste(
-				$texte,
+				$title,
 				$page,
 				'ordercustomer.php',
 				$filters,
 				$sortfield,
 				$sortorder,
 				'',
-				$num
-			);
+				$num);
 		}
+
 	} else {
 		$filters = '&sref=' . $sref . '&snom=' . $snom;
 		$filters .= '&fourn_id=' . $fourn_id;
 		$filters .= (isset($type) ? '&type=' . $type : '');
-		$filters .=  '&salert=' . $salert;
+		$filters .= '&salert=' . $salert;
 
 		if (!$conf->global->SOFO_USE_DELIVERY_TIME) {
+
 			print_barre_liste(
-				$texte,
+				$title,
 				$page,
 				'ordercustomer.php',
 				$filters,
@@ -671,7 +704,7 @@ if ($resql || $resql2) {
 		'<input type="hidden" name="type" value="' . $type . '">' .
 		'<input type="hidden" name="linecount" value="' . ($num + $num2) . '">' .
 		'<input type="hidden" name="fk_commande" value="' . GETPOST('fk_commande', 'int') . '">' .
-		'<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need') . '">' .
+		'<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need', 'none') . '">' .
 
 		'<div style="text-align:right">
 			<a href="' . $_SERVER["PHP_SELF"] . '?' . $_SERVER["QUERY_STRING"] . '&show_stock_no_need=yes">' . $langs->trans('ShowLineEvenIfStockIsSuffisant') . '</a>';
@@ -685,7 +718,8 @@ if ($resql || $resql2) {
 
 
 	$colspan = 9;
-	if (!empty($conf->global->FOURN_PRODUCT_AVAILABILITY)) $colspan++;
+	if (!empty($conf->global->FOURN_PRODUCT_AVAILABILITY))
+		$colspan++;
 	if (!empty($conf->of->enabled) && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) {
 		$colspan++;
 	}
@@ -703,7 +737,7 @@ if ($resql || $resql2) {
 	}
 
 	if (!empty($conf->global->SOFO_USE_DELIVERY_TIME)) {
-		$week_to_replenish = (int) GETPOST('week_to_replenish', 'int');
+		$week_to_replenish = (int)GETPOST('week_to_replenish', 'int');
 
 
 		print '<tr class="liste_titre">' .
@@ -711,10 +745,12 @@ if ($resql || $resql2) {
 			. '<input type="submit" value="' . $langs->trans('ReCalculate') . '" /></td>';
 
 		print '</tr>';
+
+
 	}
 
 	if (!empty($conf->categorie->enabled)) {
-		print '<tr class="liste_titre">';
+		print '<tr class="liste_titre_filter">';
 		print '<td colspan="2" >';
 		print $langs->trans("Categories");
 		print '</td>';
@@ -723,7 +759,7 @@ if ($resql || $resql2) {
 		print '<a id="clearfilter" href="javascript:;">' . $langs->trans('DeleteFilter') . '</a>';
 		?>
 		<script type="text/javascript">
-			$('a#clearfilter').click(function() {
+			$('a#clearfilter').click(function () {
 				$('option:selected', $('select#categorie')).prop('selected', false);
 				$('option[value=-1]', $('select#categorie')).prop('selected', true);
 				$('form[name=formulaire]').submit();
@@ -736,13 +772,12 @@ if ($resql || $resql2) {
 	}
 
 
-
 	$param = (isset($type) ? '&type=' . $type : '');
 	$param .= '&fourn_id=' . $fourn_id . '&snom=' . $snom . '&salert=' . $salert;
 	$param .= '&sref=' . $sref;
 
 	// Lignes des titres
-	print '<tr class="liste_titre">' .
+	print '<tr class="liste_titre_filter">' .
 		'<th class="liste_titre"><input type="checkbox" onClick="toggle(this)" /></th>';
 	print_liste_field_titre(
 		$langs->trans('Ref'),
@@ -869,7 +904,8 @@ if ($resql || $resql2) {
 
 	//print '<td class="liste_titre" >fghf</td>';
 
-	if (!empty($conf->global->FOURN_PRODUCT_AVAILABILITY)) print_liste_field_titre($langs->trans("Availability"));
+	if (!empty($conf->global->FOURN_PRODUCT_AVAILABILITY))
+		print_liste_field_titre($langs->trans("Availability"));
 
 	print_liste_field_titre(
 		$langs->trans('Supplier'),
@@ -886,7 +922,7 @@ if ($resql || $resql2) {
 
 	print '</tr>' .
 		// Lignes des champs de filtre
-		'<tr class="liste_titre">' .
+		'<tr class="liste_titre_filter">' .
 		'<td class="liste_titre">&nbsp;</td>' .
 		'<td class="liste_titre">' .
 		'<input class="flat" type="text" name="sref" value="' . $sref . '">' .
@@ -902,7 +938,7 @@ if ($resql || $resql2) {
 	}
 
 	$liste_titre = "";
-	$liste_titre .= '<td class="liste_titre">' . $form->selectarray('finished', $statutarray, (!isset($_REQUEST['button_search_x']) && $conf->global->SOFO_DEFAUT_FILTER != -1) ? $conf->global->SOFO_DEFAUT_FILTER : GETPOST('finished'), 1) . '</td>';
+	$liste_titre .= '<td class="liste_titre">' . $form->selectarray('finished', $statutarray, (!isset($_REQUEST['button_search_x']) && $conf->global->SOFO_DEFAUT_FILTER != -1) ? $conf->global->SOFO_DEFAUT_FILTER : GETPOST('finished', 'none'), 1) . '</td>';
 
 	if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN)) {
 		$liste_titre .= '<td class="liste_titre">';
@@ -962,15 +998,12 @@ if ($resql || $resql2) {
 			}
 
 
-
-
-
 			$prod->ref = $objp->ref;
 			$prod->id = $objp->rowid;
 			$prod->type = $objp->fk_product_type;
 			//$ordered = ordered($prod->id);
 
-			$help_stock =  $langs->trans('PhysicalStock') . ' : ' . (float) $objp->stock_physique;
+			$help_stock = $langs->trans('PhysicalStock') . ' : ' . (float)$objp->stock_physique;
 
 			$stock_commande_client = 0;
 			$stock_commande_fournisseur = 0;
@@ -980,20 +1013,19 @@ if ($resql || $resql2) {
 					/* là ça déconne pas, on s'en fout, on dépote ! */
 					if (empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)) {
 						$stock_commande_client = _load_stats_commande_date($prod->id, date('Y-m-d', strtotime('+' . $week_to_replenish . 'week')));
-						$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float) $stock_commande_client;
+						$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float)$stock_commande_client;
 					}
 
 					$stock_commande_fournisseur = _load_stats_commande_fournisseur($prod->id, date('Y-m-d', strtotime('+' . $week_to_replenish . 'week')), $objp->stock_physique - $stock_commande_client);
-					$help_stock .= ', ' . $langs->trans('SupplierOrders') . ' : ' . (float) $stock_commande_fournisseur;
+					$help_stock .= ', ' . $langs->trans('SupplierOrders') . ' : ' . (float)$stock_commande_fournisseur;
 
 
 					$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
-				} elseif ($conf->global->USE_VIRTUAL_STOCK || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
+				} else if ($conf->global->USE_VIRTUAL_STOCK || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
 					//compute virtual stockshow_stock_no_need
 					$prod->fetch($prod->id);
 					if ((!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK)
-						&& empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)
-					) {
+						&& empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)) {
 						$result = $prod->load_stats_commande(0, '1,2');
 						if ($result < 0) {
 							dol_print_error($db, $prod->error);
@@ -1012,34 +1044,54 @@ if ($resql || $resql2) {
 						//Requête qui récupère la somme des qty ventilés pour les cmd reçu partiellement
 						$sqlQ = "SELECT SUM(cfd.qty) as qty";
 						$sqlQ .= " FROM " . MAIN_DB_PREFIX . "commande_fournisseur_dispatch as cfd";
-						$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = cfd.fk_commande)";
-						$sqlQ .= " LEFT JOIN " . MAIN_DB_PREFIX . "entrepot as e ON cfd.fk_entrepot = e.rowid";
+						$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = cfd.fk_commande) AND cf.entity IN (".getEntity('commande_fournisseur').")";
+						$sqlQ .= " LEFT JOIN " . MAIN_DB_PREFIX . 'entrepot as e ON cfd.fk_entrepot = e.rowid AND e.entity IN (' . $entityToTest . ')';
 						$sqlQ .= " WHERE cf.fk_statut = 4";
 						$sqlQ .= " AND cfd.fk_product = " . $prod->id;
 						$sqlQ .= " ORDER BY cfd.rowid ASC";
 						$resqlQ = $db->query($sqlQ);
 
 						$stock_commande_fournisseur = $prod->stats_commande_fournisseur['qty'];
+						if ($row = $db->fetch_object($resqlQ))
+							$stock_commande_fournisseur -= $row->qty;
 
-						if ($row = $db->fetch_object($resqlQ)) $stock_commande_fournisseur -= $row->qty;
 					} else {
 						$stock_commande_fournisseur = 0;
+
 					}
+
+					if (! empty($conf->expedition->enabled)
+						&& (! empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT) || ! empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT_CLOSE)))
+					{
+						require_once DOL_DOCUMENT_ROOT . '/expedition/class/expedition.class.php';
+						$filterShipmentStatus = '';
+						if (!empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT)) {
+							$filterShipmentStatus = Expedition::STATUS_VALIDATED  . ',' . Expedition::STATUS_CLOSED;
+						} elseif (!empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT_CLOSE)) {
+							$filterShipmentStatus = Expedition::STATUS_CLOSED;
+						}
+						$result = $prod->load_stats_sending(0, '1,2', 1, $filterShipmentStatus);
+						if ($result < 0) dol_print_error($this->db, $this->error);
+						$stock_sending_client=$prod->stats_expedition['qty'];
+					} else $stock_sending_client = 0;
 
 					if ($stock_commande_client > 0) {
-						$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float) $stock_commande_client;
+						$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float)$stock_commande_client;
 					}
 
-					$help_stock .= ', ' . $langs->trans('SupplierOrders') . ' : ' . (float) $stock_commande_fournisseur;
+					$help_stock .= ', ' . $langs->trans('SupplierOrders') . ' : ' . (float)$stock_commande_fournisseur;
 
-					$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
+					$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur + $stock_sending_client;
 				} else {
+
 					if (empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)) {
 						$stock_commande_client = $objp->qty;
-						$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float) $stock_commande_client;
+						$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float)$stock_commande_client;
 					}
 
 					$stock = $objp->stock_physique - $stock_commande_client;
+
+
 				}
 			} else {
 				$stock = $objp->stock_physique;
@@ -1049,19 +1101,16 @@ if ($resql || $resql2) {
 			$ordered = $stock_commande_client;
 
 
-
 			//if($objp->rowid == 14978)	{print "$stock >= {$objp->qty} - $stock_expedie_client + {$objp->desiredstock}";exit;}
 			/*if($stock >= (float)$objp->qty - (float)$stock_expedie_client + (float)$objp->desiredstock) {
-    			$i++;
-    			continue; // le stock est suffisant on passe
-    		}*/
+				$i++;
+				continue; // le stock est suffisant on passe
+			}*/
 
 
 			$warning = '';
-			if (
-				$objp->seuil_stock_alerte
-				&& ($stock < $objp->seuil_stock_alerte)
-			) {
+			if ($objp->seuil_stock_alerte
+				&& ($stock < $objp->seuil_stock_alerte)) {
 				$warning = img_warning($langs->trans('StockTooLow')) . ' ';
 			}
 
@@ -1069,7 +1118,9 @@ if ($resql || $resql2) {
 			$TDemandes = array();
 
 			if (DOL_VERSION >= 6) {
+
 				if (!empty($conf->supplier_proposal->enabled)) {
+
 					$q = 'SELECT a.ref
                                                 FROM ' . MAIN_DB_PREFIX . 'supplier_proposal a
                                                 INNER JOIN ' . MAIN_DB_PREFIX . 'supplier_proposaldet d on (d.fk_supplier_proposal=a.rowid)
@@ -1078,10 +1129,16 @@ if ($resql || $resql2) {
 
 					$qres = $db->query($q);
 
-					while ($res = $db->fetch_object($qres)) $TDemandes[] = $res->ref;
+					while ($res = $db->fetch_object($qres))
+						$TDemandes[] = $res->ref;
+
 				}
+
+
 			} else {
+
 				if ($conf->askpricesupplier->enabled) {
+
 					$q = 'SELECT a.ref
 						FROM ' . MAIN_DB_PREFIX . 'askpricesupplier a
 						INNER JOIN ' . MAIN_DB_PREFIX . 'askpricesupplierdet d on (d.fk_askpricesupplier = a.rowid)
@@ -1090,7 +1147,9 @@ if ($resql || $resql2) {
 
 					$qres = $db->query($q);
 
-					while ($res = $db->fetch_object($qres)) $TDemandes[] = $res->ref;
+					while ($res = $db->fetch_object($qres))
+						$TDemandes[] = $res->ref;
+
 				}
 			}
 
@@ -1099,18 +1158,19 @@ if ($resql || $resql2) {
 			if (!$justOFforNeededProduct) {
 				$stock_expedie_client = getExpedie($prod->id);
 				$stocktobuy = $objp->desiredstock - ($stock - $stock_expedie_client);
-				$help_stock .= ', ' . $langs->trans('Expeditions') . ' : ' . (float) $stock_expedie_client;
+				$help_stock .= ', ' . $langs->trans('Expeditions') . ' : ' . (float)$stock_expedie_client;
 			} else {
 				$stocktobuy = $objp->desiredstock - $stock;
 			}
 
 
 			/*			if($stocktobuy<=0 && $prod->ref!='A0000753') {
-    			$i++;
-    			continue; // le stock est suffisant on passe
-	    		}*/
+							$i++;
+							continue; // le stock est suffisant on passe
+							}*/
 
 			if ($conf->of->enabled) {
+
 				/* Si j'ai des OF je veux savoir combien cela me coûte */
 
 				define('INC_FROM_DOLIBARR', true);
@@ -1121,9 +1181,11 @@ if ($resql || $resql2) {
 				if ($week_to_replenish > 0) {
 					$stock_of_needed = TAssetOF::getProductNeededQty($prod->id, false, true, date('Y-m-d', strtotime('+' . $week_to_replenish . 'week')));
 					$stock_of_tomake = TAssetOF::getProductNeededQty($prod->id, false, true, date('Y-m-d', strtotime('+' . $week_to_replenish . 'week')), 'TO_MAKE');
+
 				} else {
 					$stock_of_needed = TAssetOF::getProductNeededQty($prod->id, false, true, '');
 					$stock_of_tomake = TAssetOF::getProductNeededQty($prod->id, false, true, '', 'TO_MAKE');
+
 				}
 
 				$stocktobuy += $stock_of_needed - $stock_of_tomake;
@@ -1132,15 +1194,16 @@ if ($resql || $resql2) {
 					$stock -= $stock_of_needed - $stock_of_tomake;
 				}
 
-				$help_stock .= ', ' . $langs->trans('OF') . ' : ' . (float) ($stock_of_needed - $stock_of_tomake);
+				$help_stock .= ', ' . $langs->trans('OF') . ' : ' . (float)($stock_of_needed - $stock_of_tomake);
 			}
 
-			$help_stock .= ', ' . $langs->trans('DesiredStock') . ' : ' . (float) $objp->desiredstock;
+			$help_stock .= ', ' . $langs->trans('DesiredStock') . ' : ' . (float)$objp->desiredstock;
 
 
-			if ($stocktobuy < 0) $stocktobuy = 0;
+			if ($stocktobuy < 0)
+				$stocktobuy = 0;
 
-			if ((empty($prod->type) && $stocktobuy == 0 && GETPOST('show_stock_no_need') != 'yes') || ($prod->type == 1 && $stocktobuy == 0 && GETPOST('show_stock_no_need') != 'yes' && !empty($conf->global->STOCK_SUPPORTS_SERVICES))) {
+			if ((empty($prod->type) && $stocktobuy == 0 && GETPOST('show_stock_no_need', 'none') != 'yes') || ($prod->type == 1 && $stocktobuy == 0 && GETPOST('show_stock_no_need', 'none') != 'yes' && !empty($conf->global->STOCK_SUPPORTS_SERVICES))) {
 				$i++;
 				continue;
 			}
@@ -1165,7 +1228,8 @@ if ($resql || $resql2) {
 			print '</td>
                  <td style="height:35px;" class="nowrap">' .
 				(!empty($TDemandes) ? $form->textwithpicto($prod->getNomUrl(1), 'Demande(s) de prix en cours :<br />' . implode(', ', $TDemandes), 1, 'help') : $prod->getNomUrl(1)) .
-				'</td><td>' . $objp->label . '</td>';
+				'</td>' .
+				'<td>' . $objp->label . '</td>';
 
 			print '<td>' . (empty($prod->type) ? $statutarray[$objp->finished] : '') . '</td>';
 
@@ -1180,11 +1244,11 @@ if ($resql || $resql2) {
 
 			if (!empty($conf->service->enabled) && $type == 1) {
 				if (preg_match('/([0-9]+)y/i', $objp->duration, $regs)) {
-					$duration =  $regs[1] . ' ' . $langs->trans('DurationYear');
+					$duration = $regs[1] . ' ' . $langs->trans('DurationYear');
 				} elseif (preg_match('/([0-9]+)m/i', $objp->duration, $regs)) {
-					$duration =  $regs[1] . ' ' . $langs->trans('DurationMonth');
+					$duration = $regs[1] . ' ' . $langs->trans('DurationMonth');
 				} elseif (preg_match('/([0-9]+)d/i', $objp->duration, $regs)) {
-					$duration =  $regs[1] . ' ' . $langs->trans('DurationDay');
+					$duration = $regs[1] . ' ' . $langs->trans('DurationDay');
 				} else {
 					$duration = $objp->duration;
 				}
@@ -1193,9 +1257,6 @@ if ($resql || $resql2) {
 					$duration .
 					'</td>';
 			}
-
-
-
 
 
 			//print $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : "".
@@ -1207,9 +1268,9 @@ if ($resql || $resql2) {
 				'</td>';
 			if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) {
 				/*					dol_include_once('/of/lib/of.lib.php');
-					$prod->load_stock();
-					list($qty_to_make, $qty_needed) = _calcQtyOfProductInOf($db, $conf, $prod);
-					$qty = $prod->stock_theorique + $qty_to_make - $qty_needed;
+									$prod->load_stock();
+									list($qty_to_make, $qty_needed) = _calcQtyOfProductInOf($db, $conf, $prod);
+									$qty = $prod->stock_theorique + $qty_to_make - $qty_needed;
 				*/
 				$prod->load_stock();
 				$qty_of = $stock_of_needed - $stock_of_tomake;
@@ -1219,7 +1280,7 @@ if ($resql || $resql2) {
 
 			$champs .= '<td align="right">' .
 
-				$ordered  . $picto .
+				$ordered . $picto .
 				'</td>' .
 				'<td align="right">' .
 				'<input type="text" name="tobuy' . $i .
@@ -1227,9 +1288,11 @@ if ($resql || $resql2) {
                  <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
 
 			if ($conf->global->SOFO_USE_DELIVERY_TIME) {
-				$nb_day = (int) getMinAvailability($objp->rowid, $stocktobuy);
+
+				$nb_day = (int)getMinAvailability($objp->rowid, $stocktobuy);
 
 				$champs .= '<td data-info="availability" >' . ($nb_day == 0 ? $langs->trans('Unknown') : $nb_day . ' ' . $langs->trans('Days')) . '</td>';
+
 			}
 
 
@@ -1240,7 +1303,8 @@ if ($resql || $resql2) {
 				'</td>';
 			print $champs;
 
-			if (empty($TSupplier)) $TSupplier = $prod->list_suppliers();
+			if (empty($TSupplier))
+				$TSupplier = $prod->list_suppliers();
 			else $TSupplier = array_intersect($prod->list_suppliers(), $TSupplier);
 
 			if ($conf->of->enabled && $user->rights->of->of->write && empty($conf->global->SOFO_REMOVE_MAKE_BTN)) {
@@ -1250,7 +1314,9 @@ if ($resql || $resql2) {
 			}
 			print '</tr>';
 
-			if (empty($fk_commande_list)) $TCachedProductId[] = $prod->id; //mise en cache
+			if (empty($fk_commande))
+				$TCachedProductId[] = $prod->id; //mise en cache
+
 		}
 
 		//	if($prod->ref=='A0000753') exit;
@@ -1263,8 +1329,10 @@ if ($resql || $resql2) {
 		while ($j < min($num2, $limit)) {
 			$objp = $db->fetch_object($resql2);
 			//var_dump($sql2,$resql2, $objp);
-			if ($objp->product_type == 0) $picto = img_object($langs->trans("ShowProduct"), 'product');
-			if ($objp->product_type == 1) $picto = img_object($langs->trans("ShowService"), 'service');
+			if ($objp->product_type == 0)
+				$picto = img_object($langs->trans("ShowProduct"), 'product');
+			if ($objp->product_type == 1)
+				$picto = img_object($langs->trans("ShowService"), 'service');
 
 			print '<tr ' . $bc[$var] . '>' .
 				'<td><input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '></td>' .
@@ -1285,15 +1353,16 @@ if ($resql || $resql2) {
 			print '</td>';
 
 			print '<td></td>'; // Nature
-			if (!empty($conf->categorie->enabled)) print '<td></td>'; // Categories
+			if (!empty($conf->categorie->enabled))
+				print '<td></td>'; // Categories
 
 			if (!empty($conf->service->enabled) && $type == 1) {
 				if (preg_match('/([0-9]+)y/i', $objp->duration, $regs)) {
-					$duration =  $regs[1] . ' ' . $langs->trans('DurationYear');
+					$duration = $regs[1] . ' ' . $langs->trans('DurationYear');
 				} elseif (preg_match('/([0-9]+)m/i', $objp->duration, $regs)) {
-					$duration =  $regs[1] . ' ' . $langs->trans('DurationMonth');
+					$duration = $regs[1] . ' ' . $langs->trans('DurationMonth');
 				} elseif (preg_match('/([0-9]+)d/i', $objp->duration, $regs)) {
-					$duration =  $regs[1] . ' ' . $langs->trans('DurationDay');
+					$duration = $regs[1] . ' ' . $langs->trans('DurationDay');
 				} else {
 					$duration = $objp->duration;
 				}
@@ -1302,9 +1371,11 @@ if ($resql || $resql2) {
 					'</td>';
 			}
 
-			if ($dolibarr_version35) print '<td align="right">' . $picto . '</td>'; // Desired stock
+			if ($dolibarr_version35)
+				print '<td align="right">' . $picto . '</td>'; // Desired stock
 			print '<td align="right">' . $picto . '</td>'; // Physical/virtual stock
-			if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) print '<td align="right">' . $picto . '</td>'; // Stock théorique OF
+			if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL))
+				print '<td align="right">' . $picto . '</td>'; // Stock théorique OF
 
 			print '<td align="right">
 						<input type="text" name="tobuy_free' . $i . '" value="' . $objp->qty . '">
@@ -1325,7 +1396,8 @@ if ($resql || $resql2) {
 	// Formatage du tableau
 	$TCommonSupplier = array();
 	foreach ($TSupplier as $fk_fourn) {
-		if (!isset($TCommonSupplier[0])) $TCommonSupplier[0] = '';
+		if (!isset($TCommonSupplier[0]))
+			$TCommonSupplier[0] = '';
 
 		$fourn = new Fournisseur($db);
 		$fourn->fetch($fk_fourn);
@@ -1398,59 +1470,58 @@ if ($resql || $resql2) {
      } </script>';
 
 
-
 	dol_fiche_end();
 } else {
 	dol_print_error($db);
 }
 
 ?>
-<script type="text/javascript">
-	var mouseX;
-	var mouseY;
+	<script type="text/javascript">
 
-	$(document).ready(function() {
+		var mouseX;
+		var mouseY;
 
-		$('body').append('<div id="pop-stock" style="border:2px orange solid; position: absolute;width:300px;display:none;padding:10px;background-color:#fff;"></div>');
+		$(document).ready(function () {
 
-		$(document).mousemove(function(e) {
-			mouseX = e.pageX;
-			mouseY = e.pageY;
-		});
+			$('body').append('<div id="pop-stock" style="border:2px orange solid; position: absolute;width:300px;display:none;padding:10px;background-color:#fff;"></div>');
 
-		$('span.stock_details').each(function(i, item) {
+			$(document).mousemove(function (e) {
+				mouseX = e.pageX;
+				mouseY = e.pageY;
+			});
 
-			var prodid = $(this).attr('prod-id');
-			var nbweek = $(this).attr('week-to-replenish');
+			$('span.stock_details').each(function (i, item) {
 
-			$(this).mouseover(function() {
-				$('#pop-stock').html('Chargement...');
-				$('#pop-stock').css({
-					'top': mouseY + 20,
-					'left': mouseX - 320
-				}).show();
+				var prodid = $(this).attr('prod-id');
+				var nbweek = $(this).attr('week-to-replenish');
 
-				$.ajax({
-					url: "<?php echo dol_buildpath('/supplierorderfromorder/script/interface.php', 1) ?>",
-					data: {
-						get: 'stock-details',
-						idprod: prodid,
-						nbweek: nbweek
-					}
-				}).done(function(data) {
-					$('#pop-stock').html(data);
+				$(this).mouseover(function () {
+					$('#pop-stock').html('Chargement...');
+					$('#pop-stock').css({'top': mouseY + 20, 'left': mouseX - 320}).show();
+
+					$.ajax({
+						url: "<?php echo dol_buildpath('/supplierorderfromorder/script/interface.php', 1) ?>"
+						, data: {
+							get: 'stock-details'
+							, idprod: prodid
+							, nbweek: nbweek
+						}
+					}).done(function (data) {
+						$('#pop-stock').html(data);
+					});
+
+				});
+
+				$(this).mouseout(function () {
+					$('#pop-stock').hide();
 				});
 
 			});
 
-			$(this).mouseout(function() {
-				$('#pop-stock').hide();
-			});
-
 		});
 
-	});
-</script>
+
+	</script>
 <?php
 
 llxFooter();
@@ -1465,10 +1536,8 @@ function _prepareLine($i, $actionTarget = 'order')
 		$line = new CommandeFournisseurLigne($db); //$actionTarget = 'order'
 	}
 
-	$array_options = array();
-
 	//Lignes de produit
-	if (!GETPOST('tobuy_free' . $i)) {
+	if (!GETPOST('tobuy_free' . $i, 'none')) {
 		$box = $i;
 		$supplierpriceid = GETPOST('fourn' . $i, 'int');
 		//get all the parameters needed to create a line
@@ -1476,10 +1545,13 @@ function _prepareLine($i, $actionTarget = 'order')
 		$desc = GETPOST('desc' . $i, 'alpha');
 		$lineid = GETPOST('lineid' . $i, 'int');
 
+		$array_options = array();
+
 		if (!empty($lineid)) {
 			$commandeline = new OrderLine($db);
 			$commandeline->fetch($lineid);
-			if (empty($desc) && empty($conf->global->SOFO_DONT_ADD_LINEDESC_ON_SUPPLIERORDER_LINE)) $desc = $commandeline->desc;
+			if (empty($desc) && empty($conf->global->SOFO_DONT_ADD_LINEDESC_ON_SUPPLIERORDER_LINE))
+				$desc = $commandeline->desc;
 			if (empty($commandeline->id) && !empty($commandeline->rowid)) {
 				$commandeline->id = $commandeline->rowid; // Pas positionné par OrderLine::fetch() donc le fetch_optionals() foire...
 			}
@@ -1530,12 +1602,13 @@ function _prepareLine($i, $actionTarget = 'order')
 		$qty = GETPOST('tobuy_free' . $i, 'int');
 		$desc = GETPOST('desc' . $i, 'alpha');
 		$product_type = GETPOST('product_type' . $i, 'int');
-		$price = price2num(GETPOST('price_free' . $i));
+		$price = price2num(GETPOST('price_free' . $i, 'none'));
 		$lineid = GETPOST('lineid_free' . $i, 'int');
 		$fournid = GETPOST('fourn_free' . $i, 'int');
 		$commandeline = new OrderLine($db);
 		$commandeline->fetch($lineid);
-		if (empty($desc) && empty($conf->global->SOFO_DONT_ADD_LINEDESC_ON_SUPPLIERORDER_LINE)) $desc = $commandeline->desc;
+		if (empty($desc) && empty($conf->global->SOFO_DONT_ADD_LINEDESC_ON_SUPPLIERORDER_LINE))
+			$desc = $commandeline->desc;
 
 		if (empty($commandeline->id) && !empty($commandeline->rowid)) {
 			$commandeline->id = $commandeline->rowid; // Pas positionné par OrderLine::fetch() donc le fetch_optionals() foire...
@@ -1642,7 +1715,7 @@ function _getSupplierProposalInfos($idsupplier, $projectid = '')
 	return false;
 }
 
-function _appliCond($order)
+function _appliCond($order, $commandeClient = null)
 {
 	global $db, $conf;
 
@@ -1655,6 +1728,14 @@ function _appliCond($order)
 			$order->cond_reglement_id = $fourn->cond_reglement_supplier_id;
 			$order->cond_reglement_code = getPaymentTermCode($order->cond_reglement_id);
 		}
+	}
+
+	if ($commandeClient && $conf->global->SOFO_GET_INFOS_FROM_ORDER) {
+		$order->mode_reglement_code = $commandeClient->mode_reglement_code;
+		$order->mode_reglement_id = $commandeClient->mode_reglement_id;
+		$order->cond_reglement_id = $commandeClient->cond_reglement_id;
+		$order->cond_reglement_code = $commandeClient->cond_reglement_code;
+		$order->date_livraison = $commandeClient->date_livraison;
 	}
 }
 

@@ -51,7 +51,7 @@ $action = GETPOST('action', 'alpha');
 if (preg_match('/set_(.*)/',$action,$reg))
 {
     $code=$reg[1];
-    if (dolibarr_set_const($db, $code, GETPOST($code), 'chaine', 0, '', $conf->entity) > 0)
+    if (dolibarr_set_const($db, $code, GETPOST($code, 'none'), 'chaine', 0, '', $conf->entity) > 0)
     {
         header("Location: ".$_SERVER["PHP_SELF"]);
         exit;
@@ -91,67 +91,66 @@ llxHeader('', $langs->trans($page_name));
         0,
         "supplierorderfromorder@supplierorderfromorder"
         );
-    
-    
-    
+
+
+
     $linkback='<a href="'.DOL_URL_ROOT.'/admin/modules.php">'.$langs->trans("BackToModuleList").'</a>';
     print_fiche_titre($langs->trans("SupplierOrderFromOrder"),$linkback,'supplierorderfromorder@supplierorderfromorder');
-    
-    
+
+
     dol_fiche_end();
-    
-    
+
+
     // Setup page goes here
     $form=new Form($db);
     $var=false;
     print '<table class="noborder" width="100%">';
-    
-    
+
+
     if(!function_exists('setup_print_title')){
         print '<div class="error" >'.$langs->trans('AbricotNeedUpdate').' : <a href="http://wiki.atm-consulting.fr/index.php/Accueil#Abricot" target="_blank"><i class="fa fa-info"></i> Wiki</a></div>';
         exit;
     }
-    
     setup_print_title("Parameters");
 
     // USE Nomenclature tab
     setup_print_on_off('SOFO_USE_NOMENCLATURE',false, '', 'SOFO_USE_NOMENCLATURE_HELP');
 
+
     setup_print_title("ParametersNeedSOFO_USE_NOMENCLATURE");
 
-    
     // Fill qty for nomenclature
     setup_print_on_off('SOFO_FILL_QTY_NOMENCLATURE',false);
-    
+
     // Disable product order if nomenclature
     setup_print_on_off('SOFO_DISABLE_ORDER_POSIBILITY_TO_PRODUCT_WITH_NOMENCLATURE');
-    
-    
+
+
     // USE DELIVERY CONTACT
     setup_print_on_off('SOFO_USE_DELIVERY_CONTACT',false, '', 'DeliveryHelp');
-    
-    
+
+
     // USE RESTRICTION CONTACT
     setup_print_on_off('SOFO_USE_RESTRICTION_TO_CUSTOMER_ORDER');
-    
+
     setup_print_on_off('SOFO_ADD_QUANTITY_RATHER_THAN_CREATE_LINES');
-    
-    
+
+
     // Example with imput
     //setup_print_input_form_part('CONSTNAME', 'ParamLabel');
-    
+
     // Example with color
    // setup_print_input_form_part('CONSTNAME', 'ParamLabel', 'ParamDesc', array('type'=>'color'),'input','ParamHelp');
-    
+
     // Example with placeholder
     //setup_print_input_form_part('CONSTNAME','ParamLabel','ParamDesc',array('placeholder'=>'http://'),'input','ParamHelp');
-    
+
     // Example with textarea
     //setup_print_input_form_part('CONSTNAME','ParamLabel','ParamDesc',array(),'textarea');
-    
-    
+
+
     print '</table>';
-    
+
     llxFooter();
-    
+
     $db->close();
