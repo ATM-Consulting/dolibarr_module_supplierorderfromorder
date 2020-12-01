@@ -98,6 +98,7 @@ class modSupplierorderfromorder extends DolibarrModules
             'hooks' => array(
                 'ordercard'
                 ,'ordersuppliercard'
+                ,'orderlist'
             )
             // Set here all workflow context managed by module
             //'workflow' => array('order' => array('WORKFLOW_ORDER_AUTOCREATE_INVOICE'))

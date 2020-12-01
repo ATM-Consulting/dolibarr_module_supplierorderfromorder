@@ -22,10 +22,10 @@ class ActionsSupplierorderfromorder
 		global $user, $langs;
 		
 		if (in_array( 'ordercard', explode( ':', $parameters['context'] ) ) && $object->statut > 0 && !empty($user->rights->supplierorderfromorder->read)) {
-		  $langs->load( 'supplierorderfromorder@supplierorderfromorder' );
-      
+		$langs->load( 'supplierorderfromorder@supplierorderfromorder' );
+	
 
-        	?>
+			?>
 			<a id="listeProd" class="butAction" href="<?php 
 			echo dol_buildpath('/supplierorderfromorder/ordercustomer.php?id=' . $object->id.'&projectid='.$object->fk_project,1);
 			?>"><?php echo $langs->trans( 'OrderToSuppliers' ); ?></a>
@@ -40,8 +40,17 @@ class ActionsSupplierorderfromorder
 
 		return 0;
 	}
-	
-	
+
+	/**
+	 * Add options to the order form
+	 *
+	 * @param array $parameters Hook context
+	 * @param Commande $object The current order
+	 * @param string $action The current action
+	 * @param HookManager $hookmanager The current hookmanager
+	 *
+	 * @return int Status
+	 */
 	function printObjectLine($parameters, &$object, &$action, $hookmanager){
 	    
 	    global $db, $form, $langs, $conf;
@@ -114,7 +123,7 @@ class ActionsSupplierorderfromorder
 	            
 	        }
 	    }
-	    
+
 	    if (in_array('ordercard',explode(':',$parameters['context'])))
 	    {
 	        if( $conf->global->SOFO_DISPLAY_LINKED_ELEMENT_ON_LINES)
@@ -185,8 +194,86 @@ class ActionsSupplierorderfromorder
     	        }
 	        }
 	    }
-	    
-	    
 	}
-	
+
+	/**
+	 * Overloading the doMassActions function : replacing the parent's function with the one below
+	 *
+	 * @param   array           $parameters     Hook metadatas (context, etc...)
+	 * @param   CommonObject    $object         The object to process (an invoice if you are in invoice module, a propale in propale's module, etc...)
+	 * @param   string          $action         Current action (if set). Generally create or edit or null
+	 * @param   HookManager     $hookmanager    Hook manager propagated to allow calling another hook
+	 * @return  int                             < 0 on error, 0 on success, 1 to replace standard code
+	 */
+	public function doMassActions($parameters, &$object, &$action, $hookmanager)
+	{
+		global $conf, $user, $langs;
+
+		$error = 0; // Error counter
+
+		$massAction = $parameters['massaction'];
+
+		/* print_r($parameters); print_r($object); echo "action: " . $action; */
+		if (in_array($parameters['currentcontext'], array('orderlist'))) {
+			if ($parameters['currentcontext'] == 'orderlist') {
+				if ($massAction == 'supplierorderfromorder') {
+					$orders = [];
+					foreach ($parameters['toselect'] as $objectid) {
+						$orders[] = $objectid;
+					}
+					if (!empty($orders)) {
+						$urltogo = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id='.implode(',', $orders), 1);
+						header("Location: ".$urltogo);
+						exit;
+					}
+				}
+			}
+		}
+
+		if (!$error) {
+			//$this->results = array('myreturn' => 999);
+			return 0; // or return 1 to replace standard code
+		} else {
+			return -1;
+		}
+	}
+
+
+	/**
+	 * Overloading the addMoreMassActions function : replacing the parent's function with the one below
+	 *
+	 * @param   array           $parameters     Hook metadatas (context, etc...)
+	 * @param   CommonObject    $object         The object to process (an invoice if you are in invoice module, a propale in propale's module, etc...)
+	 * @param   string          $action         Current action (if set). Generally create or edit or null
+	 * @param   HookManager     $hookmanager    Hook manager propagated to allow calling another hook
+	 * @return  int                             < 0 on error, 0 on success, 1 to replace standard code
+	 */
+	public function addMoreMassActions($parameters, &$object, &$action, $hookmanager)
+	{
+		global $conf, $user, $langs;
+
+		$error = 0; // Error counter
+
+		/* print_r($parameters); print_r($object); echo "action: " . $action; */
+		if (in_array($parameters['currentcontext'], array('orderlist', 'productlist', 'productservicelist')))		// do something only for the context 'somecontext1' or 'somecontext2'
+		{
+			if ($parameters['currentcontext'] == 'orderlist') {
+				$langs->load("supplierorderfromorder@supplierorderfromorder");
+				if ($user->rights->fournisseur->commande->creer) {
+					$disabled = 0;
+				} else {
+					$disabled = 1;
+				}
+				$label = '<span class="fa fa-shopping-cart paddingrightonly"></span>' . $langs->trans("OrderToSuppliers");
+				$this->resprints = '<option value="supplierorderfromorder"' . ($disabled ? ' disabled="disabled"' : '') . ' data-html="' . dol_escape_htmltag($label) . '">' . $label . '</option>';
+			}
+		}
+
+		if (!$error) {
+			return 0; // or return 1 to replace standard code
+		} else {
+			$this->errors[] = 'Error message';
+			return -1;
+		}
+	}
 }
