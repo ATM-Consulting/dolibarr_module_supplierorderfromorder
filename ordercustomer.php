@@ -516,7 +516,9 @@ if (empty($conf->global->SOFO_CHECK_STOCK_ON_SHARED_STOCK)) {
 
 $title = $langs->trans('ProductsToOrder');
 $db->query("SET SQL_MODE=''");
-$sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty, cd.buy_price_ht';
+$sql = 'SELECT p.rowid, p.ref, p.label,';
+if (count($fk_commande_array) == 1) $sql .= ' cd.description,';
+$sql .= ' p.price, SUM(cd.qty) as qty, cd.buy_price_ht';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
 $sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte, p.finished,';
 if (count($fk_commande_array) == 1) $sql .= ' cd.rang,';
@@ -544,7 +546,7 @@ if (!empty($TCategoriesQuery))
 if ($sall) {
 	$sql .= ' AND (p.ref LIKE "%' . $db->escape($sall) . '%" ';
 	$sql .= 'OR p.label LIKE "%' . $db->escape($sall) . '%" ';
-	$sql .= 'OR p.description LIKE "%' . $db->escape($sall) . '%" ';
+	if (count($fk_commande_array) == 1) $sql .= 'OR p.description LIKE "%' . $db->escape($sall) . '%" ';
 	$sql .= 'OR p.note LIKE "%' . $db->escape($sall) . '%")';
 }
 // if the type is not 1, we show all products (type = 0,2,3)
@@ -595,7 +597,7 @@ if (count($fk_commande_array) == 1) $sql .= ', cd.rang';
 //$sql .= ', s.fk_product';
 
 //if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
-$sql .= ', cd.description';
+if (count($fk_commande_array) == 1) $sql .= ', cd.description';
 //}
 //$sql .= ' HAVING p.desiredstock > SUM(COALESCE(s.reel, 0))';
 //$sql .= ' HAVING p.desiredstock > 0';
