@@ -214,18 +214,16 @@ class ActionsSupplierorderfromorder
 		$massAction = $parameters['massaction'];
 
 		/* print_r($parameters); print_r($object); echo "action: " . $action; */
-		if (in_array($parameters['currentcontext'], array('orderlist'))) {
-			if ($parameters['currentcontext'] == 'orderlist') {
-				if ($massAction == 'supplierorderfromorder') {
-					$orders = [];
-					foreach ($parameters['toselect'] as $objectid) {
-						$orders[] = $objectid;
-					}
-					if (!empty($orders)) {
-						$urltogo = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id='.implode(',', $orders), 1);
-						header("Location: ".$urltogo);
-						exit;
-					}
+		if (in_array('orderlist',explode(':',$parameters['context']))) {
+			if ($massAction == 'supplierorderfromorder' && $user->rights->fournisseur->commande->creer) {
+				$orders = [];
+				foreach ($parameters['toselect'] as $objectid) {
+					$orders[] = $objectid;
+				}
+				if (!empty($orders)) {
+					$urltogo = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id='.implode(',', $orders), 1);
+					header("Location: ".$urltogo);
+					exit;
 				}
 			}
 		}
@@ -255,18 +253,15 @@ class ActionsSupplierorderfromorder
 		$error = 0; // Error counter
 
 		/* print_r($parameters); print_r($object); echo "action: " . $action; */
-		if (in_array($parameters['currentcontext'], array('orderlist', 'productlist', 'productservicelist')))		// do something only for the context 'somecontext1' or 'somecontext2'
-		{
-			if ($parameters['currentcontext'] == 'orderlist') {
-				$langs->load("supplierorderfromorder@supplierorderfromorder");
-				if ($user->rights->fournisseur->commande->creer) {
-					$disabled = 0;
-				} else {
-					$disabled = 1;
-				}
-				$label = '<span class="fa fa-shopping-cart paddingrightonly"></span>' . $langs->trans("OrderToSuppliers");
-				$this->resprints = '<option value="supplierorderfromorder"' . ($disabled ? ' disabled="disabled"' : '') . ' data-html="' . dol_escape_htmltag($label) . '">' . $label . '</option>';
+		if (in_array('orderlist',explode(':',$parameters['context']))) {
+			$langs->load("supplierorderfromorder@supplierorderfromorder");
+			if ($user->rights->fournisseur->commande->creer) {
+				$disabled = 0;
+			} else {
+				$disabled = 1;
 			}
+			$label = '<span class="fa fa-shopping-cart paddingrightonly"></span>' . $langs->trans("OrderToSuppliers");
+			$this->resprints = '<option value="supplierorderfromorder"' . ($disabled ? ' disabled="disabled"' : '') . ' data-html="' . dol_escape_htmltag($label) . '">' . $label . '</option>';
 		}
 
 		if (!$error) {
