@@ -591,7 +591,7 @@ if ($salert == 'on') {
 $sql .= ' GROUP BY p.rowid, p.ref, p.label, p.price';
 $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type, p.tms';
 $sql .= ', p.duration, p.tobuy, p.seuil_stock_alerte';
-$sql .= ', cd.rang';
+//$sql .= ', cd.rang';
 //$sql .= ', p.desiredstock';
 //$sql .= ', s.fk_product';
 
@@ -1168,6 +1168,7 @@ if ($resql || $resql2) {
 						$result = $prod->load_stats_sending(0, '1,2', 1, $filterShipmentStatus);
 						if ($result < 0) dol_print_error($this->db, $this->error);
 						$stock_sending_client=$prod->stats_expedition['qty'];
+						$help_stock .= ', '.$langs->trans('Expeditions').' : '.(float) $stock_sending_client;
 					} else $stock_sending_client = 0;
 
 					if ($stock_commande_client > 0) {
@@ -1250,13 +1251,9 @@ if ($resql || $resql2) {
 
 			// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :
 
-			if (!$justOFforNeededProduct) {
-				$stock_expedie_client = getExpedie($prod->id);
-				$stocktobuy = $objp->desiredstock - ($stock - $stock_expedie_client);
-				$help_stock .= ', ' . $langs->trans('Expeditions') . ' : ' . (float)$stock_expedie_client;
-			} else {
-				$stocktobuy = $objp->desiredstock - $stock;
-			}
+
+			$stocktobuy = $objp->desiredstock - $stock;
+
 
 
 			/*			if($stocktobuy<=0 && $prod->ref!='A0000753') {
