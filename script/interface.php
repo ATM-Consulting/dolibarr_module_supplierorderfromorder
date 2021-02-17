@@ -83,7 +83,7 @@ function _stockDetails()
 	}
 
 	if(empty($conf->global->SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT)) {
-		$sql = "SELECT DISTINCT c.rowid, cd.qty";
+		$sql = "SELECT DISTINCT c.rowid, SUM(cd.qty) as qty"; //cas où on a plusieurs fois le même produit dans la même commande
 		$sql.= " FROM ".MAIN_DB_PREFIX."commandedet as cd";
 		$sql.= ", ".MAIN_DB_PREFIX."commande as c";
 		$sql.= ", ".MAIN_DB_PREFIX."societe as s";
@@ -207,15 +207,24 @@ function _stockDetails()
 
           		}
 	}
+    $filterShipmentStatus = Expedition::STATUS_VALIDATED;
+    if(! empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT)) {
+        $filterShipmentStatus = Expedition::STATUS_VALIDATED.','.Expedition::STATUS_CLOSED;
+    }
+    else if(! empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT_CLOSE)) {
+        $filterShipmentStatus = Expedition::STATUS_CLOSED;
+    }
 
 	$sql = "SELECT DISTINCT e.rowid, ed.qty";
 	$sql.= " FROM ".MAIN_DB_PREFIX."expeditiondet as ed";
 	$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."expedition as e ON (e.rowid=ed.fk_expedition)";
 	$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."commandedet as cd ON (ed.fk_origin_line=cd.rowid)";
+	$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."commande as c ON (cd.fk_commande=c.rowid)";
 	$sql.= " WHERE 1";
 	$sql.= " AND e.entity = ".$conf->entity;
 	$sql.= " AND cd.fk_product = ".$prod->id;
-	$sql.= " AND e.fk_statut in (1)";
+	$sql.= " AND c.fk_statut in (".Commande::STATUS_VALIDATED.','.Commande::STATUS_ACCEPTED.")"; //récup du load_stats d'un produit
+	$sql.= " AND e.fk_statut in ($filterShipmentStatus)";
 
 	$r ='';
 	$result =$db->query($sql);
