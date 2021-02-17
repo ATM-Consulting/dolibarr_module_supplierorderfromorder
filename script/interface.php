@@ -207,7 +207,7 @@ function _stockDetails()
 
           		}
 	}
-    $filterShipmentStatus = '1';
+    $filterShipmentStatus = Expedition::STATUS_VALIDATED;
     if(! empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT)) {
         $filterShipmentStatus = Expedition::STATUS_VALIDATED.','.Expedition::STATUS_CLOSED;
     }
