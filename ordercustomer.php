@@ -724,7 +724,7 @@ if ($resql || $resql2) {
 
 	$i = 0;
 	$num = count($TProducts);
-	$num2 = $db->num_rows($resql2);
+	$num2 = $sql2 ? $db->num_rows($resql2) : 0;
 
 	$helpurl = 'EN:Module_Stocks_En|FR:Module_Stock|';
 	$helpurl .= 'ES:M&oacute;dulo_Stocks';
