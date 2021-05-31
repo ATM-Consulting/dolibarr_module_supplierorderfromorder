@@ -65,7 +65,7 @@ if ((float)DOL_VERSION >= 3.5) {
 if ($user->societe_id) {
 	$socid = $user->societe_id;
 }
-$result = restrictedArea($user, 'produit&supplierorderfromorder');
+$result = restrictedArea($user, 'produit|service&supplierorderfromorder');
 
 //checks if a product has been ordered
 
@@ -1131,7 +1131,12 @@ if ($resql || $resql2) {
 					}
 
 					if (!$conf->global->STOCK_CALCULATE_ON_SUPPLIER_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
-						$result = $prod->load_stats_commande_fournisseur(0, '3,4');
+						if ($conf->global->TAKE_CARE_OF_APPROUVED_SUPPLIER_ORDER_FOR_VIRTUAL_STOCK)
+						{
+							$result = $prod->load_stats_commande_fournisseur(0, '1,2,3,4');
+						} else {
+							$result = $prod->load_stats_commande_fournisseur(0, '3,4');
+						}
 						if ($result < 0) {
 							dol_print_error($db, $prod->error);
 						}
