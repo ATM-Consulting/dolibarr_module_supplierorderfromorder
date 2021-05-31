@@ -1049,7 +1049,11 @@ if ($resql || $resql2) {
 					}
 
 					if (!$conf->global->STOCK_CALCULATE_ON_SUPPLIER_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
-						$result = $prod->load_stats_commande_fournisseur(0, '3,4');
+						if (!empty($conf->global->SUPPLIER_ORDER_STATUS_FOR_VIRTUAL_STOCK)){
+							$result=$prod->load_stats_commande_fournisseur(0, $conf->global->SUPPLIER_ORDER_STATUS_FOR_VIRTUAL_STOCK, 1);
+						} else {
+							$result=$prod->load_stats_commande_fournisseur(0, '1,2,3,4', 1);
+						}
 						if ($result < 0) {
 							dol_print_error($db, $prod->error);
 						}
