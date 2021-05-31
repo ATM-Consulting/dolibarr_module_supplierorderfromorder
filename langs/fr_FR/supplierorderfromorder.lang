@@ -73,4 +73,3 @@ ParametersNeedSOFO_USE_NOMENCLATURE=Paramètres : l'onglet "Composants à comman
 SOFO_ADD_QUANTITY_RATHER_THAN_CREATE_LINES=Privilègier l'ajout de quantité à une ligne de commande fournisseur au lieu d'ajouter une ligne pour chaque ligne de commande client
 SOFO_PRESELECT_SUPPLIER_PRICE_FROM_LINE_BUY_PRICE=Présélectionner par défaut les prix fournisseur égaux au prix d'achat renseigné sur la ligne de commande client d'origine (nécessite le module Marges)
 SOFO_CHECK_STOCK_ON_SHARED_STOCK=Avec le module multicompany vous avez partagé la visibilité des entrepots/stocks. Voulez vous que les commande fournisseur depuis les commandes clients prennent en compte les niveaux de stock partagé ou non ?
-TAKE_CARE_OF_APPROUVED_SUPPLIER_ORDER_FOR_VIRTUAL_STOCK=Prendre en compte les commandes fourinsseurs approuvées pour le calcul du stock virtuel
