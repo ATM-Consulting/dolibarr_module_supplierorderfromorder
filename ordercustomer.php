@@ -1071,8 +1071,13 @@ if ($resql || $resql2) {
 	}
 
 	$TSupplier = array();
+	$TProductIDAlreadyChecked = array();
 
 	foreach($TProducts as $objp){
+
+		// Cas où on a plusieurs fois le même produit dans la même commande : dédoublonnage
+		if(in_array($objp->rowid, $TProductIDAlreadyChecked)) continue;
+		else $TProductIDAlreadyChecked[$objp->rowid] = $objp->rowid;
 
 		if ($conf->global->SOFO_DISPLAY_SERVICES || $objp->fk_product_type == 0) {
 
@@ -1261,7 +1266,6 @@ if ($resql || $resql2) {
 
 
 			$stocktobuy = $objp->desiredstock - $stock;
-
 
 
 			/*			if($stocktobuy<=0 && $prod->ref!='A0000753') {
