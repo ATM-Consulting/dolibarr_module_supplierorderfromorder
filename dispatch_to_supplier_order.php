@@ -296,7 +296,7 @@ if (empty($reshook))
                             $TDispatch[$line->id] = array(
                                 'status' => 1,
                                 'id' => $CommandeFournisseur->id,
-                                'msg' => $CommandeFournisseur->getNomUrl(1)
+                                'msg' => $CommandeFournisseur->getNomUrl(2)
                             );
                         }
                         else {
@@ -390,6 +390,7 @@ if (empty($reshook))
 
 
                     $forceSupplierSocId = GETPOST('force_nomenclature_fk_soc_fourn_'.$line->id, 'int');
+                    if($forceSupplierSocId < 0){ $forceSupplierSocId = 0; }
 
                     if(empty($TNomenclature_productfournproductid[$line->id][$nomenclatureI]) && empty($forceSupplierSocId))
                     {
@@ -416,7 +417,6 @@ if (empty($reshook))
 
 
                     $supplierSocId = GETPOST('fk_soc_fourn_'.$line->id.'_n'.$nomenclatureI, 'int');
-
                     if(!empty($forceSupplierSocId)){
                         $supplierSocId = $forceSupplierSocId;
                     }
@@ -439,9 +439,7 @@ if (empty($reshook))
                         {
                             $supplierSocId = $prod_supplier->fourn_id;
                         }
-
                     }
-
 
                     if(empty($supplierSocId) && ( empty($TDispatchNomenclature[$line->id][$nomenclatureI]['status']) || $TDispatchNomenclature[$line->id][$nomenclatureI]['status'] < 0) ){
                         $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
@@ -1183,7 +1181,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
 
     print '<div style="clear:both; text-align: left; display:none;" ><input id="bypassjstests" type="checkbox" name="bypassjstests" value="1"> <label for="bypassjstests" >'.$langs->trans('ForceDispatch').'.</label></div>';
 
-    print '<div style="text-align: right;" ><button  type="submit" name="action" value="dispatch" >'.$langs->trans('Dispatch').' <i class="fa fa-arrow-right"></i></button></div>';
+    print '<div style="text-align: right;" ><button  type="submit" name="action" value="dispatch" >'.$langs->trans('DispatchAndOrders').' <i class="fa fa-arrow-right"></i></button></div>';
 
     print '</form>';
     print '</div>';
