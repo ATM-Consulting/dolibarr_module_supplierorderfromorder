@@ -396,7 +396,7 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 			if (!empty($conf->global->SOFO_USE_MAX_DELIVERY_DATE)) {
 				$order->date_livraison = dol_now() + $MaxAvailability * 86400;
 				if (version_compare(DOL_VERSION, '14', '>=')) {
-					$order->setDateLivraison($user, $order->date_livraison);
+					$order->setDeliveryDate($user, $order->date_livraison);
 				} else {
 					$order->set_date_livraison($user, $order->date_livraison);
 				}
