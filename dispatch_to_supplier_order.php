@@ -128,7 +128,7 @@ if (empty($reshook))
 
 
 
-                if(empty($supplierSocId) && ( empty($TDispatch[$line->id]['status']) || $TDispatch[$line->id]['status'] < 0) ){
+                if($supplierSocId < 0 && ( empty($TDispatch[$line->id]['status']) || $TDispatch[$line->id]['status'] < 0) ){
                     $TDispatch[$line->id] = array(
                         'status' => -1,
                         'msg' => $langs->trans('ErrorFournDoesNotExist').' : '.$supplierSocId
@@ -136,9 +136,6 @@ if (empty($reshook))
 
                     continue;
                 }
-
-
-
 
 
                 // vérification si la ligne fait déjà l'objet d'une commande fournisseur
@@ -391,7 +388,7 @@ if (empty($reshook))
 
                     $forceSupplierSocId = GETPOST('force_nomenclature_fk_soc_fourn_'.$line->id, 'int');
 
-                    if(empty($TNomenclature_productfournproductid[$line->id][$nomenclatureI]) && empty($forceSupplierSocId))
+                    if(empty($TNomenclature_productfournproductid[$line->id][$nomenclatureI]) && $forceSupplierSocId == -1)
                     {
                         $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
                             'status' => -1,
@@ -417,33 +414,43 @@ if (empty($reshook))
 
                     $supplierSocId = GETPOST('fk_soc_fourn_'.$line->id.'_n'.$nomenclatureI, 'int');
 
-                    if(!empty($forceSupplierSocId)){
+                    if($forceSupplierSocId > 0){
                         $supplierSocId = $forceSupplierSocId;
                     }
 
                     // Get fourn from supplier price
-                    if(empty($forceSupplierSocId) && isset($TNomenclature_productfournpriceid[$line->id][$nomenclatureI])){
-                        $prod_supplier = new ProductFournisseur($db);
-                        if($prod_supplier->fetch_product_fournisseur_price($TNomenclature_productfournpriceid[$line->id][$nomenclatureI]) < 1){
-                            // ERROR
-                            // sauvegarde des infos pour l'affichage du resultat
-                            $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
-                                'status' => -1,
-                                'msg' => $langs->trans('ErrorPriceDoesNotExist').' : '.$TNomenclature_productfournpriceid[$line->id][$nomenclatureI]
-                            );
+                    if( $forceSupplierSocId == -1 ){
+                    	if (isset($TNomenclature_productfournpriceid[$line->id][$nomenclatureI]))
+						{
+							$prod_supplier = new ProductFournisseur($db);
+							if($prod_supplier->fetch_product_fournisseur_price($TNomenclature_productfournpriceid[$line->id][$nomenclatureI]) < 1){
+								// ERROR
+								// sauvegarde des infos pour l'affichage du resultat
+								$TDispatchNomenclature[$line->id][$nomenclatureI] = array(
+									'status' => -1,
+									'msg' => $langs->trans('ErrorPriceDoesNotExist').' : '.$TNomenclature_productfournpriceid[$line->id][$nomenclatureI]
+								);
 
-                            continue;
-                        }
+								continue;
+							}
 
-                        if(!empty($prod_supplier->fourn_id))
-                        {
-                            $supplierSocId = $prod_supplier->fourn_id;
-                        }
+							if(!empty($prod_supplier->fourn_id))
+							{
+								$supplierSocId = $prod_supplier->fourn_id;
+							}
+
+						}
+                    	else
+						{
+							///////////////////////////////////
+							// TODO créer le putin de prix fourn ça mère !!!
+							exit('lala');
+						}
 
                     }
 
 
-                    if(empty($supplierSocId) && ( empty($TDispatchNomenclature[$line->id][$nomenclatureI]['status']) || $TDispatchNomenclature[$line->id][$nomenclatureI]['status'] < 0) ){
+                    if($supplierSocId < 0 && ( empty($TDispatchNomenclature[$line->id][$nomenclatureI]['status']) || $TDispatchNomenclature[$line->id][$nomenclatureI]['status'] < 0) ){
                         $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
                             'status' => -1,
                             'msg' => $langs->trans('ErrorFournDoesNotExist').' : '.$supplierSocId
@@ -678,6 +685,7 @@ if (empty($reshook))
 
 
                 }
+//                exit('la');
             }
 
 
@@ -1183,7 +1191,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
 
     print '<div style="clear:both; text-align: left; display:none;" ><input id="bypassjstests" type="checkbox" name="bypassjstests" value="1"> <label for="bypassjstests" >'.$langs->trans('ForceDispatch').'.</label></div>';
 
-    print '<div style="text-align: right;" ><button  type="submit" name="action" value="dispatch" >'.$langs->trans('Dispatch').' <i class="fa fa-arrow-right"></i></button></div>';
+    print '<div style="text-align: right;" ><button  type="submit" name="action" value="dispatch" >'.$langs->trans('FournDispatch').' <i class="fa fa-arrow-right"></i></button></div>';
 
     print '</form>';
     print '</div>';
