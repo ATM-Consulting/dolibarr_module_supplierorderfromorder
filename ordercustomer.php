@@ -1704,6 +1704,7 @@ function _prepareLine($i, $actionTarget = 'order')
 			$line->total_ttc = $line->total_ht + $line->total_tva;
 			$line->ref_fourn = $obj->ref_fourn;
 			$line->remise_percent = $obj->remise_percent;
+			if(empty($line->remise_percent) && !empty($obj->remise_supplier)) $line->remise_percent = $obj->remise_supplier;
 			// FIXME: Ugly hack to get the right purchase price since supplier references can collide
 			// (eg. same supplier ref for multiple suppliers with different prices).
 			$line->fk_prod_fourn_price = $supplierpriceid;
@@ -1770,11 +1771,11 @@ function _prepareLine($i, $actionTarget = 'order')
 function _getSupplierPriceInfos($supplierpriceid)
 {
 	global $db;
-	$sql = 'SELECT fk_product, fk_soc, ref_fourn';
-	$sql .= ', tva_tx, unitprice, remise_percent FROM ';
-	$sql .= MAIN_DB_PREFIX . 'product_fournisseur_price';
-	$sql .= ' WHERE rowid = ' . $supplierpriceid;
-
+    $sql = 'SELECT pfp.fk_product, pfp.fk_soc, pfp.ref_fourn';
+    $sql .= ', pfp.tva_tx, pfp.unitprice, pfp.remise_percent, soc.remise_supplier FROM ';
+    $sql .= MAIN_DB_PREFIX.'product_fournisseur_price pfp';
+    $sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'societe soc ON (soc.rowid = pfp.fk_soc)';
+    $sql .= ' WHERE pfp.rowid = '.$supplierpriceid;
 	$resql = $db->query($sql);
 
 	if ($resql && $db->num_rows($resql) > 0) {
