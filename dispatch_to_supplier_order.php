@@ -87,6 +87,7 @@ if (empty($reshook))
 
 	    $saveconf_SUPPLIER_ORDER_WITH_NOPRICEDEFINED = !empty($conf->global->SUPPLIER_ORDER_WITH_NOPRICEDEFINED)?$conf->global->SUPPLIER_ORDER_WITH_NOPRICEDEFINED:0 ;
 	    $conf->global->SUPPLIER_ORDER_WITH_NOPRICEDEFINED = 1;
+	    $error = 0;
 
 
         foreach ($origin->lines as $i => $line)
@@ -95,13 +96,7 @@ if (empty($reshook))
             if(!empty($TChecked) && in_array($line->id, $TChecked))
             {
 
-
-
-
-                $array_options = array();
                 if(!empty($TShipping[$line->id])) $TShipping = array_map('intval', $TShipping);
-
-
 
                 $supplierSocId = GETPOST('fk_soc_fourn_'.$line->id, 'int');
 
@@ -115,6 +110,7 @@ if (empty($reshook))
                             'status' => -1,
                             'msg' => $langs->trans('ErrorPriceDoesNotExist').' : '.$Tproductfournpriceid[$line->id]
                         );
+                        $error++;
 
                         continue;
                     }
@@ -133,6 +129,7 @@ if (empty($reshook))
                         'status' => -1,
                         'msg' => $langs->trans('ErrorFournDoesNotExist').' : '.$supplierSocId
                     );
+                    $error++;
 
                     continue;
                 }
@@ -143,57 +140,13 @@ if (empty($reshook))
 
                 if(empty($searchSupplierOrderLine))
                 {
-                    $createNewOrder = true;
 
                     $shippingContactId = 0;
                     if(!empty($TShipping[$line->id])){
                         $shippingContactId = $TShipping[$line->id];
                     }
 
-                    $societe = new Societe($db);
-                    $societe->fetch($supplierSocId);
-
-
-                    // search and get draft supplier order linked
-                    $searchSupplierOrder = getLinkedSupplierOrderFromOrder($line->fk_commande,$supplierSocId,$shippingContactId,CommandeFournisseur::STATUS_DRAFT,$array_options);
-                    if(empty($searchSupplierOrder))
-                    {
-                        // search draft supplier order with same critera
-                        $restrictToCustomerOrder=0;
-                        if(!empty($conf->global->SOFO_USE_RESTRICTION_TO_CUSTOMER_ORDER)){
-                            $restrictToCustomerOrder = $origin->id;
-                        }
-
-                        $searchSupplierOrder = getSupplierOrderAvailable($supplierSocId,$shippingContactId,$array_options,$restrictToCustomerOrder);
-                    }
-
-
-                    $CommandeFournisseur = new CommandeFournisseur($db);
-
-                    if(!empty($searchSupplierOrder))
-                    {
-                        $CommandeFournisseur->fetch($searchSupplierOrder[0]);
-                    }
-                    else
-                    {
-                        $CommandeFournisseur->socid = $supplierSocId;
-                        $CommandeFournisseur->mode_reglement_id = $societe->mode_reglement_supplier_id;
-                        $CommandeFournisseur->cond_reglement_id = $societe->cond_reglement_supplier_id;
-                        $id = $CommandeFournisseur->create($user);
-                        if($id>0)
-                        {
-                            // Add shipping contact
-                            if(!empty($TShipping[$line->id])){
-                                $CommandeFournisseur->add_contact($TShipping[$line->id], 'SHIPPING');
-                            }
-
-                            // add order in linked element
-                            $CommandeFournisseur->add_object_linked('commande', $origin->id);
-
-                        }
-                    }
-
-
+                    $CommandeFournisseur = getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, CommandeFournisseur::STATUS_DRAFT);
 
                     // Vérification de la commande
                     if(empty($CommandeFournisseur->id))
@@ -206,6 +159,13 @@ if (empty($reshook))
 
                        continue;
                     }
+                    else
+					{
+						// Add shipping contact
+						if(!empty($TShipping[$line->id])){
+							$CommandeFournisseur->add_contact($TShipping[$line->id], 'SHIPPING');
+						}
+					}
 
 
                     // GET PRICE
@@ -246,10 +206,11 @@ if (empty($reshook))
                         {
                             if(
                                 $fournLine->ref_supplier == $ref_supplier
-                                && $fournLine->fk_product == $product->id
+                                && $fournLine->fk_product == $line->fk_product
                                 )
                             {
                                 $supplierLineRowidExist = $fournLine->id;
+								$fournLine->fetch_product();
                                 break;
                             }
                         }
@@ -270,12 +231,12 @@ if (empty($reshook))
                             $fournLine->localtax2_tx,
                             'HT',
                             0,
-                            $product->type,
+							$fournLine->product->type,
                             0, // $notrigger
                             '',
                             '',
                             $fournLine->array_options,
-                            $product->fk_unit,
+							$fournLine->product->fk_unit,
                             0, // $pu_ht_devise
                             $fournLine->ref_supplier
                             );
@@ -286,7 +247,7 @@ if (empty($reshook))
                         {
                             // add order line in linked element
                             $commandeFournisseurLigne = new CommandeFournisseurLigne($db);
-                            $commandeFournisseurLigne->fetch($addRes);
+                            $commandeFournisseurLigne->fetch($fournLine->id);
                             $commandeFournisseurLigne->add_object_linked('commandedet', $line->id);
 
                             // sauvegarde des infos pour l'affichage du resultat
@@ -394,6 +355,7 @@ if (empty($reshook))
                             'status' => -1,
                             'msg' => $langs->trans('ErrorNoProduct').' : '.$nomenclatureI
                         );
+                        $error++;
 
                         continue;
                     }
@@ -405,11 +367,10 @@ if (empty($reshook))
                             'status' => -1,
                             'msg' => $langs->trans('ErrorNoProductFound').' : '.$TNomenclature_productfournproductid[$line->id][$nomenclatureI]
                         );
+						$error++;
 
                         continue;
                     }
-
-
 
 
                     $supplierSocId = GETPOST('fk_soc_fourn_'.$line->id.'_n'.$nomenclatureI, 'int');
@@ -430,6 +391,7 @@ if (empty($reshook))
 									'status' => -1,
 									'msg' => $langs->trans('ErrorPriceDoesNotExist').' : '.$TNomenclature_productfournpriceid[$line->id][$nomenclatureI]
 								);
+								$error++;
 
 								continue;
 							}
@@ -455,6 +417,7 @@ if (empty($reshook))
                             'status' => -1,
                             'msg' => $langs->trans('ErrorFournDoesNotExist').' : '.$supplierSocId
                         );
+						$error++;
 
                         continue;
                     }
@@ -465,49 +428,10 @@ if (empty($reshook))
 
                     if(empty($searchSupplierOrderLine))
                     {
-                        $createNewOrder = true;
 
                         $shippingContactId = 0; // Les produits issue d'une nomenclature ne doivent pas partir dirrectement chez un client (pour l'instant en tout cas)
 
-                        $societe = new Societe($db);
-                        $societe->fetch($supplierSocId);
-
-
-                        // search and get draft supplier order linked
-                        $searchSupplierOrder = getLinkedSupplierOrderFromOrder($line->fk_commande,$supplierSocId,$shippingContactId,CommandeFournisseur::STATUS_DRAFT,$array_options);
-                        if(empty($searchSupplierOrder))
-                        {
-                            // search draft supplier order with same critera
-                            $restrictToCustomerOrder=0;
-                            if(!empty($conf->global->SOFO_USE_RESTRICTION_TO_CUSTOMER_ORDER)){
-                                $restrictToCustomerOrder = $origin->id;
-                            }
-
-                            // search draft supplier order with same critera
-                            $searchSupplierOrder = getSupplierOrderAvailable($supplierSocId,$shippingContactId,$array_options);
-                        }
-
-
-                        $CommandeFournisseur = new CommandeFournisseur($db);
-
-                        if(!empty($searchSupplierOrder))
-                        {
-                            $CommandeFournisseur->fetch($searchSupplierOrder[0]);
-                        }
-                        else
-                        {
-                            $CommandeFournisseur->socid = $supplierSocId;
-                            $CommandeFournisseur->mode_reglement_id = $societe->mode_reglement_supplier_id;
-                            $CommandeFournisseur->cond_reglement_id = $societe->cond_reglement_supplier_id;
-                            $id = $CommandeFournisseur->create($user);
-                            if($id>0)
-                            {
-                                // add order in linked element
-                                $CommandeFournisseur->add_object_linked('commande', $origin->id);
-                            }
-                        }
-
-
+						$CommandeFournisseur = getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, CommandeFournisseur::STATUS_DRAFT);
 
                         // Vérification de la commande
                         if(empty($CommandeFournisseur->id))
@@ -517,6 +441,7 @@ if (empty($reshook))
                                 'status' => -1,
                                 'msg' => $langs->trans('ErrorOrderDoesNotExist')
                             );
+                            $error++;
 
                             continue;
                         }
@@ -1208,8 +1133,6 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
 
 llxFooter('');
 $db->close();
-
-
 
 function _nomenclatureViewToHtml($line, $TNomenclatureLines, $overrideParam = array())
 {
