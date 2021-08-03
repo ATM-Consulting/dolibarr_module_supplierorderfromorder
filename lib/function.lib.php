@@ -225,6 +225,8 @@ function getSupplierOrderAvailable($supplierSocId,$shippingContactId=0,$array_op
  */
 function getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, $supplierOrderStatus)
 {
+	dol_include_once('fourn/class/fournisseur.commande.class.php');
+
 	global $db, $user, $conf;
 
 	$array_options = array();
@@ -270,17 +272,110 @@ function getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, $su
 
 }
 
-function updateOrAddlineToSupplierOrder()
+function updateOrAddlineToSupplierOrder($CommandeFournisseur, $line, $productid, $price, $qty, $supplierSocId)
 {
+	global $db, $conf;
 
-}
+	$ret = array(
+		'return' => 0,
+		'mode' => 'add'
+	);
 
-function createUpdateSupplierOrder()
-{
-	dol_include_once('fourn/class/fournisseur.commande.class.php');
+	if (empty($productid)) $productid = $line->fk_product;
 
-	$array_options = array();
+	// Get subprice from product
+	if(!empty($productid)){
+		$ProductFournisseur = new ProductFournisseur($db);
+		if($ProductFournisseur->find_min_price_product_fournisseur($line->fk_product, $qty, $supplierSocId)>0){
+			$price = floatval($ProductFournisseur->fourn_price); // floatval is used to remove non used zero
+			$tva_tx = $ProductFournisseur->tva_tx;
+			$fk_prod_fourn_price = $ProductFournisseur->product_fourn_price_id;
+			$remise_percent = $ProductFournisseur->fourn_remise_percent;
+			$ref_supplier= $ProductFournisseur->ref_supplier;
+		}
+	}
 
+	//récupération du prix d'achat de la line si pas de prix fournisseur
+	if(empty($price) && !empty($line->pa_ht) ){
+		$price = $line->pa_ht;
+	}
+
+	// SEARCH in supplier order if same product exist
+	$supplierLineRowidExist = 0 ;
+	if(!empty($CommandeFournisseur->lines) && $conf->global->SOFO_ADD_QUANTITY_RATHER_THAN_CREATE_LINES)
+	{
+		foreach ($CommandeFournisseur->lines as $li => $fournLine)
+		{
+			if(
+				$fournLine->ref_supplier == $ref_supplier
+				&& $fournLine->fk_product == $productid
+			)
+			{
+				$supplierLineRowidExist = $fournLine->id;
+				$fournLine->fetch_product();
+				break;
+			}
+		}
+	}
+
+	// UPDATE SUPPLIER LINE
+	if($supplierLineRowidExist>0)
+	{
+		$ret['mode'] = 'update';
+		$ret['return'] = $CommandeFournisseur->updateline(
+			$fournLine->id,
+			$fournLine->desc,
+			$fournLine->subprice,
+			$fournLine->qty + $qty,
+			$fournLine->remise_percent,
+			$fournLine->tva_tx,
+			$fournLine->localtax1_tx,
+			$fournLine->localtax2_tx,
+			'HT',
+			0,
+			$fournLine->product->type,
+			0, // $notrigger
+			'',
+			'',
+			$fournLine->array_options,
+			$fournLine->product->fk_unit,
+			0, // $pu_ht_devise
+			$fournLine->ref_supplier
+		);
+
+		if ($ret['return'] >= 0) $ret['return'] = $fournLine->id;// yes $CommandeFournisseur->updateline can return 0 on success
+
+	}
+	else
+	{
+		// ADD LINE
+		$ret['return'] = $CommandeFournisseur->addline(
+			$line->desc,
+			$price,
+			$qty,
+			$line->tva_tx,
+			$txlocaltax1=0.0,
+			$txlocaltax2=0.0,
+			$productid,
+			$fk_prod_fourn_price,
+			$ref_supplier,
+			$remise_percent,
+			'HT',
+			0, //$pu_ttc=0.0,
+			$line->product_type,
+			$line->info_bits,
+			false, //$notrigger=false,
+			null, //$date_start=null,
+			null, //$date_end=null,
+			$line->array_options, //$array_options=0,
+			$line->fk_unit,
+			0,//$pu_ht_devise=0,
+			'commandedet', //$origin= // peut être un jour ça sera géré...
+			$line->id //$origin_id=0 // peut être un jour ça sera géré...
+		);
+	}
+
+	return $ret;
 }
 
 function getLinkedSupplierOrderFromOrder($sourceCommandeId,$supplierSocId,$shippingContactId=0,$status=-1,$array_options=array())

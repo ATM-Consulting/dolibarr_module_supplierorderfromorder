@@ -180,7 +180,66 @@ if (empty($reshook))
                         $price = price2num($TfournUnitPrice[$line->id]);
                     }
 
-                    // Get subprice from product
+                    $return = updateOrAddlineToSupplierOrder($CommandeFournisseur, $line, $line->fk_product, $price, $qty, $supplierSocId);
+					$res = $return['return'];
+					$mode = $return['mode'];
+
+                    if ($mode == 'update')
+					{
+						if ($res >= 0)
+						{
+							// add order line in linked element
+							$commandeFournisseurLigne = new CommandeFournisseurLigne($db);
+							$commandeFournisseurLigne->fetch($res);
+							$commandeFournisseurLigne->add_object_linked('commandedet', $line->id);
+
+							// sauvegarde des infos pour l'affichage du resultat
+							$TDispatch[$line->id] = array(
+								'status' => 1,
+								'id' => $CommandeFournisseur->id,
+								'msg' => $CommandeFournisseur->getNomUrl(1)
+							);
+						}
+						else
+						{
+							// sauvegarde des infos pour l'affichage du resultat
+							$TDispatch[$line->id] = array(
+								'status' => -1,
+								'id' => $CommandeFournisseur->id,
+								'msg' => $CommandeFournisseur->getNomUrl(1).' '.$langs->trans('ErrorUpdateSupplierLine').' #'.$res.' : '.$commandeFournisseurLigne->error
+							);
+							$error++;
+						}
+					}
+                    else
+					{
+						if($res>0)
+						{
+
+							// add order line in linked element
+							$commandeFournisseurLigne = new CommandeFournisseurLigne($db);
+							$commandeFournisseurLigne->fetch($res);
+							$commandeFournisseurLigne->add_object_linked('commandedet', $line->id);
+
+							// sauvegarde des infos pour l'affichage du resultat
+							$TDispatch[$line->id] = array(
+								'status' => 1,
+								'id' => $CommandeFournisseur->id,
+								'msg' => $CommandeFournisseur->getNomUrl(1)
+							);
+						}
+						else {
+							// sauvegarde des infos pour l'affichage du resultat
+							$TDispatch[$line->id] = array(
+								'status' => -1,
+								'id' => $CommandeFournisseur->id,
+								'msg' => $CommandeFournisseur->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$commandeFournisseurLigne->error
+							);
+							$error++;
+						}
+					}
+
+                    /*// Get subprice from product
                     if(!empty($line->fk_product)){
                         $ProductFournisseur = new ProductFournisseur($db);
                         if($ProductFournisseur->find_min_price_product_fournisseur($line->fk_product, $qty, $supplierSocId)>0){
@@ -318,7 +377,7 @@ if (empty($reshook))
                                 'msg' => $CommandeFournisseur->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$commandeFournisseurLigne->error
                             );
                         }
-                    }
+                    }*/
 
 
 
@@ -406,7 +465,7 @@ if (empty($reshook))
 						{
 							///////////////////////////////////
 							// TODO créer le putin de prix fourn ça mère !!!
-							exit('lala');
+//							exit('lala');
 						}
 
                     }
@@ -459,17 +518,78 @@ if (empty($reshook))
                             $price = price2num($TNomenclature_fournUnitPrice[$line->id][$nomenclatureI]);
                         }
 
+						$return = updateOrAddlineToSupplierOrder($CommandeFournisseur, $line, (int)$TNomenclature_productfournproductid[$line->id][$nomenclatureI], $price, $qty, $supplierSocId);
+                        $res = $return['return'];
+                        $mode = $return['mode'];
+
+						if ($mode == 'update')
+						{
+							if ($res >= 0)
+							{
+								// add order line in linked element
+								$commandeFournisseurLigne = new CommandeFournisseurLigne($db);
+								$commandeFournisseurLigne->fetch($res);
+								$commandeFournisseurLigne->add_object_linked('commandedet', $line->id);
+
+								// sauvegarde des infos pour l'affichage du resultat
+								$TDispatch[$line->id] = array(
+									'status' => 1,
+									'id' => $CommandeFournisseur->id,
+									'msg' => $CommandeFournisseur->getNomUrl(1)
+								);
+							}
+							else
+							{
+								// sauvegarde des infos pour l'affichage du resultat
+								$TDispatch[$line->id] = array(
+									'status' => -1,
+									'id' => $CommandeFournisseur->id,
+									'msg' => $CommandeFournisseur->getNomUrl(1).' '.$langs->trans('ErrorUpdateSupplierLine').' #'.$res.' : '.$commandeFournisseurLigne->error
+								);
+								$error++;
+							}
+						}
+						else
+						{
+
+							if($res>0)
+							{
+
+								// add order line in linked element
+								$commandeFournisseurLigne = new CommandeFournisseurLigne($db);
+								$commandeFournisseurLigne->fetch($res);
+								$commandeFournisseurLigne->add_object_linked('commandedet', $line->id);
+
+								// sauvegarde des infos pour l'affichage du resultat
+								$TDispatch[$line->id] = array(
+									'status' => 1,
+									'id' => $CommandeFournisseur->id,
+									'msg' => $CommandeFournisseur->getNomUrl(1)
+								);
+							}
+							else {
+								// sauvegarde des infos pour l'affichage du resultat
+								$TDispatch[$line->id] = array(
+									'status' => -1,
+									'id' => $CommandeFournisseur->id,
+									'msg' => $CommandeFournisseur->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$commandeFournisseurLigne->error
+								);
+								$error++;
+							}
+						}
+
                         // Get subprice from product
-                        if(!empty($line->fk_product)){
-                            $ProductFournisseur = new ProductFournisseur($db);
-                            if($ProductFournisseur->find_min_price_product_fournisseur($product->id, $qty, $supplierSocId)>0){
-                                $price = floatval($ProductFournisseur->fourn_price); // floatval is used to remove non used zero
-                                $tva_tx = $ProductFournisseur->tva_tx;
-                                $fk_prod_fourn_price = $ProductFournisseur->product_fourn_price_id;
-                                $remise_percent = $ProductFournisseur->fourn_remise_percent;
-                                $ref_supplier= $ProductFournisseur->ref_supplier;
-                            }
-                        }
+//                        if(!empty($line->fk_product))
+//                        {
+//                            $ProductFournisseur = new ProductFournisseur($db);
+//                            if($ProductFournisseur->find_min_price_product_fournisseur($product->id, $qty, $supplierSocId)>0){
+//                                $price = floatval($ProductFournisseur->fourn_price); // floatval is used to remove non used zero
+//                                $tva_tx = $ProductFournisseur->tva_tx;
+//                                $fk_prod_fourn_price = $ProductFournisseur->product_fourn_price_id;
+//                                $remise_percent = $ProductFournisseur->fourn_remise_percent;
+//                                $ref_supplier= $ProductFournisseur->ref_supplier;
+//                            }
+//                        }
 
                         //récupération du prix d'achat de la produit si pas de prix fournisseur
                         /*if(empty($price) && !empty($line->pa_ht) ){
@@ -477,24 +597,24 @@ if (empty($reshook))
                         }*/
 
                         // SEARCH in supplier order if same product exist
-                        $supplierLineRowidExist = 0 ;
-                        if(!empty($CommandeFournisseur->lines) && $conf->global->SOFO_ADD_QUANTITY_RATHER_THAN_CREATE_LINES)
-                        {
-                            foreach ($CommandeFournisseur->lines as $li => $fournLine)
-                            {
-                                if(
-                                       $fournLine->ref_supplier == $ref_supplier
-                                    && $fournLine->fk_product == $product->id
-                                )
-                                {
-                                    $supplierLineRowidExist = $fournLine->id;
-                                    break;
-                                }
-                            }
-                        }
+//                        $supplierLineRowidExist = 0 ;
+//                        if(!empty($CommandeFournisseur->lines) && $conf->global->SOFO_ADD_QUANTITY_RATHER_THAN_CREATE_LINES)
+//                        {
+//                            foreach ($CommandeFournisseur->lines as $li => $fournLine)
+//                            {
+//                                if(
+//                                       $fournLine->ref_supplier == $ref_supplier
+//                                    && $fournLine->fk_product == $product->id
+//                                )
+//                                {
+//                                    $supplierLineRowidExist = $fournLine->id;
+//                                    break;
+//                                }
+//                            }
+//                        }
 
                         // UPDATE SUPPLIER LINE
-                        if($supplierLineRowidExist>0)
+                        /*if($supplierLineRowidExist>0)
                         {
 
                             $updateRes = $CommandeFournisseur->updateline(
@@ -601,7 +721,7 @@ if (empty($reshook))
                                 );
                             }
 
-                        }
+                        }*/
 
 
 
@@ -666,14 +786,20 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
     $TFournLines = array();
 
     $countErrors = 0;
+    $errors = array();
     foreach ( $TDispatch as $lineId => $infos)
     {
-        if($infos['status'] < 0) $countErrors ++;
+        if($infos['status'] < 0)
+		{
+			$countErrors ++;
+			$errors[] = $infos['msg'];
+		}
+
     }
 
     if($countErrors>0)
     {
-        setEventMessage('Il y a des erreurs...', 'errors');
+        setEventMessages('Il y a des erreurs...', $errors, 'errors');
     }
 
 
