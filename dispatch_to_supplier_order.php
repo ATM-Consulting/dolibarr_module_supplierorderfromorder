@@ -325,7 +325,7 @@ if (empty($reshook))
                             $price = price2num($TNomenclature_fournUnitPrice[$line->id][$nomenclatureI]);
                         }
 
-						$TNomenclatureLinesToCreate[$line->id] = array(
+						$TNomenclatureLinesToCreate[$line->id][$nomenclatureI] = array(
 							"comfourn" 	=> $CommandeFournisseur,
 							"line" 		=> $line,
 							"productId" =>(int)$TNomenclature_productfournproductid[$line->id][$nomenclatureI],
@@ -349,14 +349,6 @@ if (empty($reshook))
 
         if (!$error) // si y a pas de soucis, on crée toutes les lignes
 		{
-			$TLinesToCreate[$line->id] = array(
-				"comfourn" 	=> $CommandeFournisseur,
-				"line" 		=> $line,
-				"productId" => $line->fk_product,
-				"price" 	=> $price,
-				"qty" 		=> $qty,
-				"socid" 	=> $supplierSocId,
-			);
 
 			if (!empty($TLinesToCreate))
 			{
@@ -421,69 +413,77 @@ if (empty($reshook))
 						}
 					}
 				}
+			}
 
-				foreach ($TNomenclatureLinesToCreate as $lineId => $infos)
+			if (!empty($TNomenclatureLinesToCreate)) {
+				foreach ($TNomenclatureLinesToCreate as $lineId => $nom)
 				{
-					$return = updateOrAddlineToSupplierOrder($infos['comfourn'], $infos['line'], $infos['productId'], $infos['price'], $infos['qty'], $infos['socid']);
-					$res = $return['return'];
-					$mode = $return['mode'];
-
-					if ($mode == 'update')
+					foreach ($nom as $nomI => $infos)
 					{
-						if ($res >= 0)
-						{
-							// add order line in linked element
-							$commandeFournisseurLigne = new CommandeFournisseurLigne($db);
-							$commandeFournisseurLigne->fetch($res);
-							$commandeFournisseurLigne->add_object_linked('commandedet', $lineId);
+						$return = updateOrAddlineToSupplierOrder($infos['comfourn'], $infos['line'], $infos['productId'], $infos['price'], $infos['qty'], $infos['socid']);
+						$res = $return['return'];
+						$mode = $return['mode'];
 
-							// sauvegarde des infos pour l'affichage du resultat
-							$TDispatch[$lineId] = array(
-								'status' => 1,
-								'id' => $infos['comfourn']->id,
-								'msg' => $infos['comfourn']->getNomUrl(1)
-							);
+						if ($mode == 'update')
+						{
+							if ($res >= 0)
+							{
+								// add order line in linked element
+								$commandeFournisseurLigne = new CommandeFournisseurLigne($db);
+								$commandeFournisseurLigne->fetch($res);
+								$commandeFournisseurLigne->add_object_linked('commandedet', $lineId);
+
+								// sauvegarde des infos pour l'affichage du resultat
+								$TDispatch[$lineId] = array(
+									'status' => 1,
+									'id' => $infos['comfourn']->id,
+									'msg' => $infos['comfourn']->getNomUrl(1)
+								);
+							}
+							else
+							{
+								// sauvegarde des infos pour l'affichage du resultat
+								$TDispatch[$lineId] = array(
+									'status' => -1,
+									'id' => $infos['comfourn']->id,
+									'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorUpdateSupplierLine').' #'.$res.' : '.$infos['comfourn']->error
+								);
+								$error++;
+							}
 						}
 						else
 						{
-							// sauvegarde des infos pour l'affichage du resultat
-							$TDispatch[$lineId] = array(
-								'status' => -1,
-								'id' => $infos['comfourn']->id,
-								'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorUpdateSupplierLine').' #'.$res.' : '.$infos['comfourn']->error
-							);
-							$error++;
-						}
-					}
-					else
-					{
-						if($res>0)
-						{
+							if($res>0)
+							{
 
-							// add order line in linked element
-							$commandeFournisseurLigne = new CommandeFournisseurLigne($db);
-							$commandeFournisseurLigne->fetch($res);
-							$commandeFournisseurLigne->add_object_linked('commandedet', $lineId);
+								// add order line in linked element
+								$commandeFournisseurLigne = new CommandeFournisseurLigne($db);
+								$commandeFournisseurLigne->fetch($res);
+								$commandeFournisseurLigne->add_object_linked('commandedet', $lineId);
 
-							// sauvegarde des infos pour l'affichage du resultat
-							$TDispatch[$line->id] = array(
-								'status' => 1,
-								'id' => $infos['comfourn']->id,
-								'msg' => $infos['comfourn']->getNomUrl(1)
-							);
-						}
-						else {
-							// sauvegarde des infos pour l'affichage du resultat
-							$TDispatch[$line->id] = array(
-								'status' => -1,
-								'id' => $infos['comfourn']->id,
-								'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$infos['comfourn']->error
-							);
-							$error++;
+								// sauvegarde des infos pour l'affichage du resultat
+								$TDispatch[$line->id] = array(
+									'status' => 1,
+									'id' => $infos['comfourn']->id,
+									'msg' => $infos['comfourn']->getNomUrl(1)
+								);
+							}
+							else {
+								// sauvegarde des infos pour l'affichage du resultat
+								$TDispatch[$line->id] = array(
+									'status' => -1,
+									'id' => $infos['comfourn']->id,
+									'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$infos['comfourn']->error
+								);
+								$error++;
+							}
 						}
 					}
 				}
 			}
+
+
+
 		}
 //        var_dump($TLinesToCreate, $TNomenclatureLinesToCreate, $TDispatch);
 	    $action = 'showdispatchresult';
@@ -915,6 +915,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                 print '<td colspan="7" >';
                 if(!empty($searchSupplierOrderLine))
                 {
+//                	var_dump($searchSupplierOrderLine);
                     $TAllreadyDispatchedSuppOrderLines = array();// key = line id  and value = order id
                     foreach($searchSupplierOrderLine as $searchSupplierOrderLineId)
                     {
@@ -930,14 +931,14 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                                 $existingFournOrder = New CommandeFournisseur($db);
                                 $existingFournOrder->fetch($commandeFournisseurLigne->fk_commande);
 
-                                print !empty($TAllreadyDispatchedSuppOrderLines)?', ':'';
+//                                print !empty($TAllreadyDispatchedSuppOrderLines)?', ':'';
 
                                 print $existingFournOrder->getNomUrl(1);
 
                                 $existingFournOrder->fetch_thirdparty();
                                 if(!empty($existingFournOrder->thirdparty))
                                 {
-                                    print ' '.$existingFournOrder->thirdparty->getNomUrl(1,'supplier');
+                                    print ' '.$existingFournOrder->thirdparty->getNomUrl(1,'supplier')."<br>";
                                 }
 
                                 /*if(GETPOST('forcedeletelinked','int')){
