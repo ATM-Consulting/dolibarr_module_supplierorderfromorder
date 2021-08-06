@@ -4,6 +4,8 @@
 
 ## 2.0
 
+- FIX: v14 compatibility - setDateLivraison -> setDeliveryDate - 2.0.6 - *27/07/2021*
+- FIX: Dispatch to supplier soc detection - 2.0.5 - *12/07/2021*
 - FIX: DA020591 : Erreur de calcul sur la qté à commander sur écran de réappro lorsque plusieurs fois le même produit dans la même commande + FIX informations infobulle - 2.0.4 - *02/07/2021*
 - FIX: v14 compatibility - NOCSRFCHECK + setDateLivraison - 2.0.3 - *29/06/2021*
 - FIX: Add conf to take card of aproved supplier orders for virtual stocks - 2.0.2 - *28/04/2021*
