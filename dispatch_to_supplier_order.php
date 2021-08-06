@@ -334,66 +334,6 @@ if (empty($reshook))
 							"socid" 	=> $supplierSocId,
 						);
 
-						/*$return = updateOrAddlineToSupplierOrder($CommandeFournisseur, $line, (int)$TNomenclature_productfournproductid[$line->id][$nomenclatureI], $price, $qty, $supplierSocId);
-                        $res = $return['return'];
-                        $mode = $return['mode'];
-
-						if ($mode == 'update')
-						{
-							if ($res >= 0)
-							{
-								// add order line in linked element
-								$commandeFournisseurLigne = new CommandeFournisseurLigne($db);
-								$commandeFournisseurLigne->fetch($res);
-								$commandeFournisseurLigne->add_object_linked('commandedet', $line->id);
-
-								// sauvegarde des infos pour l'affichage du resultat
-								$TDispatch[$line->id] = array(
-									'status' => 1,
-									'id' => $CommandeFournisseur->id,
-									'msg' => $CommandeFournisseur->getNomUrl(1)
-								);
-							}
-							else
-							{
-								// sauvegarde des infos pour l'affichage du resultat
-								$TDispatch[$line->id] = array(
-									'status' => -1,
-									'id' => $CommandeFournisseur->id,
-									'msg' => $CommandeFournisseur->getNomUrl(1).' '.$langs->trans('ErrorUpdateSupplierLine').' #'.$res.' : '.$commandeFournisseurLigne->error
-								);
-								$error++;
-							}
-						}
-						else
-						{
-
-							if($res>0)
-							{
-
-								// add order line in linked element
-								$commandeFournisseurLigne = new CommandeFournisseurLigne($db);
-								$commandeFournisseurLigne->fetch($res);
-								$commandeFournisseurLigne->add_object_linked('commandedet', $line->id);
-
-								// sauvegarde des infos pour l'affichage du resultat
-								$TDispatch[$line->id] = array(
-									'status' => 1,
-									'id' => $CommandeFournisseur->id,
-									'msg' => $CommandeFournisseur->getNomUrl(1)
-								);
-							}
-							else {
-								// sauvegarde des infos pour l'affichage du resultat
-								$TDispatch[$line->id] = array(
-									'status' => -1,
-									'id' => $CommandeFournisseur->id,
-									'msg' => $CommandeFournisseur->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$commandeFournisseurLigne->error
-								);
-								$error++;
-							}
-						}*/
-
 
                     }
 
@@ -758,7 +698,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
 					,'searchSupplierOrderLine' => $searchSupplierOrderLine // Si la ligne parente à fait l'objet d'un traitement (ou un produit issue de la nomenclature)
 				);
 
-				$nomenclatureViewToHtml = _nomenclatureViewToHtml($line, $Tnomenclature, $param);
+				$nomenclatureViewToHtml = _nomenclatureViewToHtml($line, $Tnomenclature, 0, $param);
 			}
 
 
@@ -1070,17 +1010,19 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
 llxFooter('');
 $db->close();
 
-function _nomenclatureViewToHtml($line, $TNomenclatureLines, $overrideParam = array())
+function _nomenclatureViewToHtml($line, $TNomenclatureLines, $nomI = 0, $overrideParam = array(), $decallage = 1)
 {
-    global $db,$langs, $TChecked, $nomenclatureI,$form, $TDispatchNomenclature, $conf;
+    global $db,$langs, $TChecked, /*$nomenclatureI,*/$form, $TDispatchNomenclature, $conf;
     global $TNomenclature_productfournpriceid, $TNomenclature_qty, $TNomenclature_fournUnitPrice;
-
 
     if(empty($TNomenclatureLines)){
         return '';
     }
 
+    if (empty($nomI)) $nomI = $line->id;
     $print='';
+	$addNBSP = '';
+	$dec = $decallage;
 
     $param = array(
         'colspan' => 7
@@ -1105,7 +1047,7 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $overrideParam = ar
     foreach ($TNomenclatureLines as $i => $productPart)
     {
         // FIXME : $productPart->id is empty so I use $i instead of $productPart->id
-        $nomenclatureI = $line->id.'_'.$i;
+        $nomenclatureI = $nomI.'_'.$i;
 
 
 
@@ -1131,7 +1073,13 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $overrideParam = ar
             $print.= '<tr class="nomenclature-row" data-parentlineid="'.$line->id.'"  style="'.$displayLine.$style.'">';
 
             // DESC
-            $print.= '<td class="col-desc" ><i class="fa fa-caret-right" ></i> ';
+
+			while ($dec != 0) {
+				$addNBSP.='&nbsp;&nbsp;&nbsp;&nbsp;';
+				$dec--;
+			}
+
+            $print.= '<td class="col-desc" >'.$addNBSP.'<i class="fa fa-caret-right" ></i> ';
             $colspan--;
             $productRefView = $product->getNomUrl(1);
             $productRefView = '<strong>'.$productRefView.'</strong> ';
@@ -1266,6 +1214,21 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $overrideParam = ar
 
             $print.= '</tr>';
 
+            if (!empty($productPart['children']))
+			{
+//				var_dump($productPart['fk_product'], $productPart['children']);
+				$TChildrenNomenclature = sofo_nomenclatureProductDeepCrawl($productPart['fk_product'], 'product', $productPart['fk_product'],$productPart['infos']['qty'], 0, 1);
+				if(!empty($TChildrenNomenclature)){
+					global $totalNbCols, $searchSupplierOrderLine;
+					$param = array(
+						'colspan' => $totalNbCols
+					,'searchSupplierOrderLine' => $searchSupplierOrderLine // Si la ligne parente à fait l'objet d'un traitement (ou un produit issue de la nomenclature)
+					);
+
+					$nomenclatureViewToHtml = _nomenclatureViewToHtml($line, $TChildrenNomenclature, $nomenclatureI, $param, $decallage + 1 );
+					$print.=  $nomenclatureViewToHtml;
+				}
+			}
             // TODO HOW TO USE AND DISPLAY CHILDREN ?
             /*if(!empty($productPart['children'])){
              bcb_nomenclatureViewToHtml($productPart['children']);
@@ -1273,6 +1236,7 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $overrideParam = ar
         }
 
     }
+	$decallage = $dec;
 
     //$print.= '<tr class="nomenclature-row" data-parentlineid="'.$line->id.'" style="'.$displayLine.'" ><td colspan="'.$param['colspan'].'" ></td></tr>';
 
