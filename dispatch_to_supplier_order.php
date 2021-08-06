@@ -1214,7 +1214,9 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $nomI = 0, $overrid
 
             $print.= '</tr>';
 
-            if (!empty($productPart['children']))
+            // TODO faire le mode vue afin d'afficher le détail par ligne de nomenclature
+			// Ceci permet de saisir par sous niveau de nomenclature
+            /*if (!empty($productPart['children']))
 			{
 //				var_dump($productPart['fk_product'], $productPart['children']);
 				$TChildrenNomenclature = sofo_nomenclatureProductDeepCrawl($productPart['fk_product'], 'product', $productPart['fk_product'],$productPart['infos']['qty'], 0, 1);
@@ -1228,7 +1230,7 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $nomI = 0, $overrid
 					$nomenclatureViewToHtml = _nomenclatureViewToHtml($line, $TChildrenNomenclature, $nomenclatureI, $param, $decallage + 1 );
 					$print.=  $nomenclatureViewToHtml;
 				}
-			}
+			}*/
             // TODO HOW TO USE AND DISPLAY CHILDREN ?
             /*if(!empty($productPart['children'])){
              bcb_nomenclatureViewToHtml($productPart['children']);
