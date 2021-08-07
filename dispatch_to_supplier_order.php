@@ -204,6 +204,7 @@ if (empty($reshook))
 
             if(!empty($TCheckedNomenclature[$line->id]) && is_array($TCheckedNomenclature[$line->id]))
             {
+
                 // Nomenclature
                 foreach($TCheckedNomenclature[$line->id] as $nomenclatureI)
                 {
@@ -238,7 +239,6 @@ if (empty($reshook))
                         continue;
                     }
 
-
                     $supplierSocId = GETPOST('fk_soc_fourn_'.$line->id.'_n'.$nomenclatureI, 'int');
 
                     if($forceSupplierSocId > 0){
@@ -246,10 +246,13 @@ if (empty($reshook))
                     }
 
                     // Get fourn from supplier price
-                    if( $forceSupplierSocId == -1 ){
+                    if( $forceSupplierSocId == -1 || empty($forceSupplierSocId)){
+
                     	if (isset($TNomenclature_productfournpriceid[$line->id][$nomenclatureI]))
 						{
 							$prod_supplier = new ProductFournisseur($db);
+							$fetch= $prod_supplier->fetch_product_fournisseur_price($TNomenclature_productfournpriceid[$line->id][$nomenclatureI]);
+
 							if($prod_supplier->fetch_product_fournisseur_price($TNomenclature_productfournpriceid[$line->id][$nomenclatureI]) < 1){
 								// ERROR
 								// sauvegarde des infos pour l'affichage du resultat
@@ -266,6 +269,8 @@ if (empty($reshook))
 							{
 								$supplierSocId = $prod_supplier->fourn_id;
 							}
+
+
 
 						}
                     	else
@@ -289,19 +294,20 @@ if (empty($reshook))
                     }
 
 
-                    // vérification si la ligne fait déjà l'objet d'une commande fournisseur
-                    $searchSupplierOrderLine = false; // TODO : find a way to detect this for nomenclature
+                    // vérification si la ligne fait déjà l'objet d'une commande fournisseur+
+					$searchSupplierOrderLine = false; // TODO : find a way to detect this for nomenclature
 
                     if(empty($searchSupplierOrderLine))
                     {
 
-                        $shippingContactId = 0; // Les produits issue d'une nomenclature ne doivent pas partir dirrectement chez un client (pour l'instant en tout cas)
 
+                        $shippingContactId = 0; // Les produits issue d'une nomenclature ne doivent pas partir dirrectement chez un client (pour l'instant en tout cas)
 						$CommandeFournisseur = getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, CommandeFournisseur::STATUS_DRAFT);
 
-                        // Vérification de la commande
+						// Vérification de la commande
                         if(empty($CommandeFournisseur->id))
                         {
+
                             // sauvegarde des infos pour l'affichage du resultat
                             $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
                                 'status' => -1,
@@ -325,10 +331,15 @@ if (empty($reshook))
                             $price = price2num($TNomenclature_fournUnitPrice[$line->id][$nomenclatureI]);
                         }
 
+                        $TIds = explode('_', $nomenclatureI);
+
+						$nomenclaturedetId = $TIds[count($TIds) - 1];
+
 						$TNomenclatureLinesToCreate[$line->id][$nomenclatureI] = array(
 							"comfourn" 	=> $CommandeFournisseur,
 							"line" 		=> $line,
 							"productId" =>(int)$TNomenclature_productfournproductid[$line->id][$nomenclatureI],
+							"nomenclaturedetId" => $nomenclaturedetId,
 							"price" 	=> $price,
 							"qty" 		=> $qty,
 							"socid" 	=> $supplierSocId,
@@ -340,6 +351,7 @@ if (empty($reshook))
 
 
                 }
+
 //                exit('la');
             }
 
@@ -354,6 +366,7 @@ if (empty($reshook))
 			{
 				foreach ($TLinesToCreate as $lineId => $infos)
 				{
+
 					$return = updateOrAddlineToSupplierOrder($infos['comfourn'], $infos['line'], $infos['productId'], $infos['price'], $infos['qty'], $infos['socid']);
 					$res = $return['return'];
 					$mode = $return['mode'];
@@ -373,11 +386,21 @@ if (empty($reshook))
 								'id' => $infos['comfourn']->id,
 								'msg' => $infos['comfourn']->getNomUrl(1)
 							);
+							$TDispatchNomenclature[$lineId] = array(
+								'status' => 1,
+								'id' => $infos['comfourn']->id,
+								'msg' => $infos['comfourn']->getNomUrl(1)
+							);
 						}
 						else
 						{
 							// sauvegarde des infos pour l'affichage du resultat
 							$TDispatch[$lineId] = array(
+								'status' => -1,
+								'id' => $infos['comfourn']->id,
+								'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorUpdateSupplierLine').' #'.$res.' : '.$infos['comfourn']->error
+							);
+							$TDispatchNomenclature[$lineId] = array(
 								'status' => -1,
 								'id' => $infos['comfourn']->id,
 								'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorUpdateSupplierLine').' #'.$res.' : '.$infos['comfourn']->error
@@ -401,10 +424,20 @@ if (empty($reshook))
 								'id' => $infos['comfourn']->id,
 								'msg' => $infos['comfourn']->getNomUrl(1)
 							);
+							$TDispatchNomenclature[$line->id] = array(
+								'status' => 1,
+								'id' => $infos['comfourn']->id,
+								'msg' => $infos['comfourn']->getNomUrl(1)
+							);
 						}
 						else {
 							// sauvegarde des infos pour l'affichage du resultat
 							$TDispatch[$line->id] = array(
+								'status' => -1,
+								'id' => $infos['comfourn']->id,
+								'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$infos['comfourn']->error
+							);
+							$TDispatchNomenclature[$line->id] = array(
 								'status' => -1,
 								'id' => $infos['comfourn']->id,
 								'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$infos['comfourn']->error
@@ -416,6 +449,7 @@ if (empty($reshook))
 			}
 
 			if (!empty($TNomenclatureLinesToCreate)) {
+
 				foreach ($TNomenclatureLinesToCreate as $lineId => $nom)
 				{
 					foreach ($nom as $nomI => $infos)
@@ -433,8 +467,15 @@ if (empty($reshook))
 								$commandeFournisseurLigne->fetch($res);
 								$commandeFournisseurLigne->add_object_linked('commandedet', $lineId);
 
+								$commandeFournisseurLigne->add_object_linked('nomenclaturedet', $infos['nomenclaturedetId']);
+
 								// sauvegarde des infos pour l'affichage du resultat
 								$TDispatch[$lineId] = array(
+									'status' => 1,
+									'id' => $infos['comfourn']->id,
+									'msg' => $infos['comfourn']->getNomUrl(1)
+								);
+								$TDispatchNomenclature[$lineId] = array(
 									'status' => 1,
 									'id' => $infos['comfourn']->id,
 									'msg' => $infos['comfourn']->getNomUrl(1)
@@ -444,6 +485,11 @@ if (empty($reshook))
 							{
 								// sauvegarde des infos pour l'affichage du resultat
 								$TDispatch[$lineId] = array(
+									'status' => -1,
+									'id' => $infos['comfourn']->id,
+									'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorUpdateSupplierLine').' #'.$res.' : '.$infos['comfourn']->error
+								);
+								$TDispatchNomenclature[$lineId] = array(
 									'status' => -1,
 									'id' => $infos['comfourn']->id,
 									'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorUpdateSupplierLine').' #'.$res.' : '.$infos['comfourn']->error
@@ -459,10 +505,17 @@ if (empty($reshook))
 								// add order line in linked element
 								$commandeFournisseurLigne = new CommandeFournisseurLigne($db);
 								$commandeFournisseurLigne->fetch($res);
-								$commandeFournisseurLigne->add_object_linked('commandedet', $lineId);
+								$res1 = $commandeFournisseurLigne->add_object_linked('commandedet', $lineId);
+
+								$res2 = $commandeFournisseurLigne->add_object_linked('nomenclaturedet', $infos['nomenclaturedetId']);
 
 								// sauvegarde des infos pour l'affichage du resultat
 								$TDispatch[$line->id] = array(
+									'status' => 1,
+									'id' => $infos['comfourn']->id,
+									'msg' => $infos['comfourn']->getNomUrl(1)
+								);
+								$TDispatchNomenclature[$line->id] = array(
 									'status' => 1,
 									'id' => $infos['comfourn']->id,
 									'msg' => $infos['comfourn']->getNomUrl(1)
@@ -471,6 +524,11 @@ if (empty($reshook))
 							else {
 								// sauvegarde des infos pour l'affichage du resultat
 								$TDispatch[$line->id] = array(
+									'status' => -1,
+									'id' => $infos['comfourn']->id,
+									'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$infos['comfourn']->error
+								);
+								$TDispatchNomenclature[$line->id] = array(
 									'status' => -1,
 									'id' => $infos['comfourn']->id,
 									'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$infos['comfourn']->error
@@ -687,12 +745,13 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
             $searchSupplierOrderLine = getLinkedSupplierOrdersLinesFromElementLine($line->id);
 
 
-
             // GET NOMENCLATURE (show display nomenclature lines for print part)
             $nomenclatureViewToHtml = '';
 			$deep = 0; $maxDeep = 1; $qty = 1 ; //$line->qty
 			$Tnomenclature = sofo_nomenclatureProductDeepCrawl($line->id, $origin->element, $line->fk_product,$line->qty, $deep, $maxDeep);
+
 			if(!empty($Tnomenclature)){
+
 				$param = array(
 					'colspan' => $totalNbCols
 					,'searchSupplierOrderLine' => $searchSupplierOrderLine // Si la ligne parente à fait l'objet d'un traitement (ou un produit issue de la nomenclature)
@@ -1047,10 +1106,9 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $nomI = 0, $overrid
 
     foreach ($TNomenclatureLines as $i => $productPart)
     {
-        // FIXME : $productPart->id is empty so I use $i instead of $productPart->id
-        $nomenclatureI = $nomI.'_'.$i;
+        $nomenclatureI = $nomI.'_'.$productPart['id'];
 
-
+		$searchSupplierOrderLine = getLinkedSupplierOrdersLinesFromElementLine($productPart['id'], 'nomenclaturedet');
 
         $qty2Order=0;
         $disable = 0;
@@ -1067,153 +1125,212 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $nomI = 0, $overrid
             }
         }
 
-        if($productPart['element'] != 'workstation' && $product )
-        {
+        if($productPart['element'] != 'workstation' && $product ) {
 
-            $style = 'font-size:0.9em;color:#666;';
-            $print.= '<tr class="nomenclature-row" data-parentlineid="'.$line->id.'"  style="'.$displayLine.$style.'">';
+			$style = 'font-size:0.9em;color:#666;';
+			$print .= '<tr class="nomenclature-row" data-parentlineid="' . $line->id . '"  style="' ./*$displayLine.*/
+				$style . '">';
 
-            // DESC
+			// DESC
 
 			while ($dec != 0) {
-				$addNBSP.='&nbsp;&nbsp;&nbsp;&nbsp;';
+				$addNBSP .= '&nbsp;&nbsp;&nbsp;&nbsp;';
 				$dec--;
 			}
 
-            $print.= '<td class="col-desc" >'.$addNBSP.'<i class="fa fa-caret-right" ></i> ';
-            $colspan--;
-            $productRefView = $product->getNomUrl(1);
-            $productRefView = '<strong>'.$productRefView.'</strong> ';
-            $productPart['infos']['label'] = $productRefView.$product->label.' '.$productPart['infos']['label'];
-            $print.= $productPart['infos']['label'];
-            if(!empty($productPart['infos']['desc'])){ $print.= ' '.$productPart['infos']['desc']; }
-            $print.= '<input type="hidden" name="nomenclature_productfournproductid['.$line->id.']['.$nomenclatureI.']" value="'.$product->id.'" />';
-
-            if(!empty($TDispatchNomenclature[$line->id][$nomenclatureI]))
-            {
-                $msgClass = 'dispatch-msg';
-                if($TDispatchNomenclature[$line->id][$nomenclatureI]['status'] < 0)
-                {
-                    $msgClass = 'dispatch-err';
-                }
-
-                $print.=  '<div class="'.$msgClass.'" >'.$TDispatchNomenclature[$line->id][$nomenclatureI]['msg'].'</div>';
-            }
-            $print.= '</td>';
-
-            // QTY
-            $colspan--;
-            $print.=  '<td class="center col-qtyordered" >';
-            $print.=  '<strong title="'.$langs->trans('clicToReplaceQty').'" class="addvalue2target classfortooltip" style="cursor:pointer" data-value="'.$productPart['infos']['qty'].'" data-target="#qty-'.$line->id.'-n'.$nomenclatureI.'"  >'.$productPart['infos']['qty'].'</strong>';
-            $print.=  '</td>';
-
-
-            if (!empty($conf->global->SOFO_FILL_QTY_NOMENCLATURE)){
-                $qty2Order = $productPart['infos']['qty'];
-            }
-
-
-            if (!empty($conf->stock->enabled)){
-
-                // STOCK REEL
-                $colspan--;
-                $print.=  '<td  class="center col-realstock">';
-                $print.=  $product->stock_reel;
-                $print.=  '</td>';
-
-                // STOCK THEORIQUE
-                $colspan--;
-                $print.=  '<td  class="center col-theoreticalstock">';
-                $print.=  $product->stock_theorique;
-                $print.=  '</td>';
-
-            }
-
-            // QTY TO ORDER
-            $colspan--;
-
-
-
-            if(!empty($TNomenclature_qty[$line->id][$nomenclatureI])){
-                $qty2Order = $TNomenclature_qty[$line->id][$nomenclatureI];
-            }
-            $print.= '<td class="center col-qtytoorder" >';
-            $print.= '<input id="qty-'.$line->id.'-n'.$nomenclatureI.'" class="qtyform-nomenclature col-qtytoorder" data-lineid="'.$line->id.'" data-nomenclature="'.$nomenclatureI.'" type="number" name="nomenclature_qty['.$line->id.']['.$nomenclatureI.']" value="'.$qty2Order.'" min="0"  >';
-            $print.= '</td>';
-
-
-            // SELECTION FOURNISSEUR
-            $colspan--;
-            $print.=  '<td class="col-fourn" >';
-
-			// get min fourn price id
-			$minFournPriceId = sofo_getFournMinPrice($product->id);
-
-			if(!empty($TNomenclature_productfournpriceid[$line->id][$nomenclatureI])){
-				$minFournPriceId = $TNomenclature_productfournpriceid[$line->id][$nomenclatureI];
+			$print .= '<td class="col-desc" >' . $addNBSP . '<i class="fa fa-caret-right" ></i> ';
+			$colspan--;
+			$productRefView = $product->getNomUrl(1);
+			$productRefView = '<strong>' . $productRefView . '</strong> ';
+			$productPart['infos']['label'] = $productRefView . $product->label . ' ' . $productPart['infos']['label'];
+			$print .= $productPart['infos']['label'];
+			if (!empty($productPart['infos']['desc'])) {
+				$print .= ' ' . $productPart['infos']['desc'];
 			}
+			$print .= '<input type="hidden" name="nomenclature_productfournproductid[' . $line->id . '][' . $nomenclatureI . ']" value="' . $product->id . '" />';
 
-			if($minFournPriceId>0)
+			if (!empty($TDispatchNomenclature[$line->id][$nomenclatureI])) {
+				$msgClass = 'dispatch-msg';
+				if ($TDispatchNomenclature[$line->id][$nomenclatureI]['status'] < 0) {
+					$msgClass = 'dispatch-err';
+				}
+
+				$print .= '<div class="' . $msgClass . '" >' . $TDispatchNomenclature[$line->id][$nomenclatureI]['msg'] . '</div>';
+			}
+			$print .= '</td>';
+
+			if (!empty($searchSupplierOrderLine)) {
+				$print .=  '<td colspan="7" >';
+
+				$TAllreadyDispatchedSuppOrderLines = array();// key = line id  and value = order id
+				foreach($searchSupplierOrderLine as $searchSupplierOrderLineId)
+				{
+
+					// récupération de la commande correspondante
+					$commandeFournisseurLigne = new CommandeFournisseurLigne($db);
+					$resFetchCommandeFournisseurLigne = (int) $commandeFournisseurLigne->fetch($searchSupplierOrderLineId);
+
+					if($resFetchCommandeFournisseurLigne > 0){
+
+						// petite opti
+						if(!in_array($commandeFournisseurLigne->fk_commande, $TAllreadyDispatchedSuppOrderLines))
+						{
+
+							$existingFournOrder = New CommandeFournisseur($db);
+							$existingFournOrder->fetch($commandeFournisseurLigne->fk_commande);
+
+//                                print !empty($TAllreadyDispatchedSuppOrderLines)?', ':'';
+
+							$print .= $existingFournOrder->getNomUrl(1);
+
+							$existingFournOrder->fetch_thirdparty();
+							if(!empty($existingFournOrder->thirdparty))
+							{
+								$print .= ' '.$existingFournOrder->thirdparty->getNomUrl(1,'supplier')."<br>";
+							}
+
+							/*if(GETPOST('forcedeletelinked','int')){
+							 $line->deleteObjectLinked();
+							 }*/
+						}
+
+						$TAllreadyDispatchedSuppOrderLines[$commandeFournisseurLigne->id] = $commandeFournisseurLigne->fk_commande;
+
+
+					}
+
+				}
+
+				if(!empty($TAllreadyDispatchedSuppOrderLines))
+				{
+					$print .= '<br/> '.$langs->trans('AllreadyDispatched'.(count($TAllreadyDispatchedSuppOrderLines)>1?'s':''));
+
+					// Display a link to show nomenclature part
+					if(!empty($nomenclatureViewToHtml))
+					{
+						print ' <small style="cursor:pointer" class="toggle-display-nomenclature-detail" data-target="'.$line->id.'" >'.$langs->trans('DisplayNomenclature').'</small>';
+					}
+				}
+
+				$print .=  '</td>';
+			}
+			else if ($productPart['children'])
 			{
-				$print.=  $form->select_product_fourn_price($product->id, 'nomenclature_productfournpriceid['.$line->id.']['.$nomenclatureI.']', $minFournPriceId);
+				$print .= '<td class="center col-qtyordered" >';
+				$print .= '<strong title="' . $langs->trans('clicToReplaceQty') . '" class="addvalue2target classfortooltip" style="cursor:pointer" data-value="' . $productPart['infos']['qty'] . '" data-target="#qty-' . $line->id . '-n' . $nomenclatureI . '"  >' . $productPart['infos']['qty'] . '</strong>';
+				$print .= '</td>';
+				$print .=  '<td colspan="6" >';
+				$print .=  '</td>';
+
 			}
 			else
 			{
-				$print.= $langs->trans("NoSupplierPriceDefinedForThisProduct").'<br/>';
-				$name = 'fk_soc_fourn_'.$line->id.'_n'.$nomenclatureI;
-				$selected=GETPOST($name,'int');
-				$print.= $form->select_company($selected, $name, '', 1, 'supplier', $forcecombo=0, array(), 0, 'minwidth100', '', '', 2);
+
+				// QTY
+				$colspan--;
+				$print .= '<td class="center col-qtyordered" >';
+				$print .= '<strong title="' . $langs->trans('clicToReplaceQty') . '" class="addvalue2target classfortooltip" style="cursor:pointer" data-value="' . $productPart['infos']['qty'] . '" data-target="#qty-' . $line->id . '-n' . $nomenclatureI . '"  >' . $productPart['infos']['qty'] . '</strong>';
+				$print .= '</td>';
 
 
-				$fournPrice = '';
-				if(!empty($TNomenclature_fournUnitPrice[$line->id][$nomenclatureI])){
-					$fournPrice =  $TNomenclature_fournUnitPrice[$line->id][$nomenclatureI];
+				if (!empty($conf->global->SOFO_FILL_QTY_NOMENCLATURE)) {
+					$qty2Order = $productPart['infos']['qty'];
 				}
 
 
-				$print.= ' &nbsp;&nbsp;&nbsp; <input class="unitPriceField" type="number" name="nomenclature_fournUnitPrice['.$line->id.']['.$nomenclatureI.']" value="'.price2num($fournPrice).'" min="0" step="any" placeholder="'.$langs->trans('UnitPrice').'" >';
-				$print.= $product->getLabelOfUnit();
+				if (!empty($conf->stock->enabled)) {
+
+					// STOCK REEL
+					$colspan--;
+					$print .= '<td  class="center col-realstock">';
+					$print .= $product->stock_reel;
+					$print .= '</td>';
+
+					// STOCK THEORIQUE
+					$colspan--;
+					$print .= '<td  class="center col-theoreticalstock">';
+					$print .= $product->stock_theorique;
+					$print .= '</td>';
+
+				}
+
+				// QTY TO ORDER
+				$colspan--;
+
+
+				if (!empty($TNomenclature_qty[$line->id][$nomenclatureI])) {
+					$qty2Order = $TNomenclature_qty[$line->id][$nomenclatureI];
+				}
+				$print .= '<td class="center col-qtytoorder" >';
+				$print .= '<input id="qty-' . $line->id . '-n' . $nomenclatureI . '" class="qtyform-nomenclature col-qtytoorder" data-lineid="' . $line->id . '" data-nomenclature="' . $nomenclatureI . '" type="number" name="nomenclature_qty[' . $line->id . '][' . $nomenclatureI . ']" value="' . $qty2Order . '" min="0"  >';
+				$print .= '</td>';
+
+
+				// SELECTION FOURNISSEUR
+				$colspan--;
+				$print .= '<td class="col-fourn" >';
+
+				// get min fourn price id
+				$minFournPriceId = sofo_getFournMinPrice($product->id);
+
+				if (!empty($TNomenclature_productfournpriceid[$line->id][$nomenclatureI])) {
+					$minFournPriceId = $TNomenclature_productfournpriceid[$line->id][$nomenclatureI];
+				}
+
+				if ($minFournPriceId > 0) {
+					$print .= $form->select_product_fourn_price($product->id, 'nomenclature_productfournpriceid[' . $line->id . '][' . $nomenclatureI . ']', $minFournPriceId);
+				} else {
+					$print .= $langs->trans("NoSupplierPriceDefinedForThisProduct") . '<br/>';
+					$name = 'fk_soc_fourn_' . $line->id . '_n' . $nomenclatureI;
+					$selected = GETPOST($name, 'int');
+					$print .= $form->select_company($selected, $name, '', 1, 'supplier', $forcecombo = 0, array(), 0, 'minwidth100', '', '', 2);
+
+
+					$fournPrice = '';
+					if (!empty($TNomenclature_fournUnitPrice[$line->id][$nomenclatureI])) {
+						$fournPrice = $TNomenclature_fournUnitPrice[$line->id][$nomenclatureI];
+					}
+
+
+					$print .= ' &nbsp;&nbsp;&nbsp; <input class="unitPriceField" type="number" name="nomenclature_fournUnitPrice[' . $line->id . '][' . $nomenclatureI . ']" value="' . price2num($fournPrice) . '" min="0" step="any" placeholder="' . $langs->trans('UnitPrice') . '" >';
+					$print .= $product->getLabelOfUnit();
+				}
+
+
+				$print .= '</td>';
+
+				// COLSPAN
+				$colspan--; // FOR checkbox col
+				if ($colspan > 0) {
+					$print .= '<td colspan="' . $colspan . '" ></td>';
+				}
+
+				// CHECKBOX
+				$print .= '<td  style="text-align:center;"  >';
+				if (!$disable) {
+					$check = true;
+					if (!empty($TChecked[$line->id])) {
+						// If line is checked remove this nomenclature checkbox
+						$check = false;
+					} elseif (!empty($param['searchSupplierOrderLine'])) {
+						// Don't check in this case because lines are hidden
+						$check = false;
+					} elseif (empty($qty2Order)) {
+						$check = false;
+					}
+
+					$print .= '<input id="linecheckbox' . $nomenclatureI . '-nomenclature' . '' . '" class="checkboxToggle checkboxToggle-nomenclature" type="checkbox" ' . ($check ? 'checked' : '') . ' name="checkedNomenclature[' . $line->id . '][' . $nomenclatureI . ']" value="' . $nomenclatureI . '">';
+				} else {
+					$print .= $langs->trans('CheckErrorsBeforeInport');
+				}
+				$print .= '</td>';
 			}
-
-
-
-
-            $print.=  '</td>';
-
-            // COLSPAN
-            $colspan--; // FOR checkbox col
-            if($colspan>0)
-            {
-                $print.= '<td colspan="'.$colspan.'" ></td>';
-            }
-
-            // CHECKBOX
-            $print.= '<td  style="text-align:center;"  >';
-            if(!$disable)
-            {
-                $check = true;
-                if(!empty($TChecked[$line->id])){
-                    // If line is checked remove this nomenclature checkbox
-                    $check = false;
-                }
-                elseif(!empty($param['searchSupplierOrderLine']))
-                {
-                    // Don't check in this case because lines are hidden
-                    $check = false;
-                }
-                elseif(empty($qty2Order)){
-                    $check = false;
-                }
-
-                $print.=  '<input id="linecheckbox'.$nomenclatureI.'-nomenclature'.''.'" class="checkboxToggle checkboxToggle-nomenclature" type="checkbox" '.($check?'checked':'').' name="checkedNomenclature['.$line->id.']['.$nomenclatureI.']" value="'.$nomenclatureI.'">';
-            }
-            else
-            {
-                $print.=  $langs->trans('CheckErrorsBeforeInport');
-            }
-
-
             $print.= '</tr>';
+
+			if ($productPart['children'])
+			{
+				$print .= _nomenclatureViewToHtml($line, $productPart['children'], $nomenclatureI, $param, $decallage +1);
+			}
 
             // TODO faire le mode vue afin d'afficher le détail par ligne de nomenclature
 			// Ceci permet de saisir par sous niveau de nomenclature
