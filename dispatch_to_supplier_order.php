@@ -1214,7 +1214,7 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $nomI = 0, $overrid
 
 				$print .=  '</td>';
 			}
-			else if ($productPart['children'])
+			else if ($productPart['children'] && !empty($conf->global->SOFO_VIEW_SUBNOMENCLATURE8LINES))
 			{
 				$print .= '<td class="center col-qtyordered" >';
 				$print .= '<strong title="' . $langs->trans('clicToReplaceQty') . '" class="addvalue2target classfortooltip" style="cursor:pointer" data-value="' . $productPart['infos']['qty'] . '" data-target="#qty-' . $line->id . '-n' . $nomenclatureI . '"  >' . $productPart['infos']['qty'] . '</strong>';
@@ -1277,7 +1277,7 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $nomI = 0, $overrid
 					$minFournPriceId = $TNomenclature_productfournpriceid[$line->id][$nomenclatureI];
 				}
 
-				if ($minFournPriceId > 0) {
+				if ($minFournPriceId > 0 ) {
 					$print .= $form->select_product_fourn_price($product->id, 'nomenclature_productfournpriceid[' . $line->id . '][' . $nomenclatureI . ']', $minFournPriceId);
 				} else {
 					$print .= $langs->trans("NoSupplierPriceDefinedForThisProduct") . '<br/>';
@@ -1327,7 +1327,7 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $nomI = 0, $overrid
 			}
             $print.= '</tr>';
 
-			if ($productPart['children'])
+			if ($productPart['children'] && !empty($conf->global->SOFO_VIEW_SUBNOMENCLATURE8LINES))
 			{
 				$print .= _nomenclatureViewToHtml($line, $productPart['children'], $nomenclatureI, $param, $decallage +1);
 			}

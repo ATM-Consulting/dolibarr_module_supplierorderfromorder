@@ -136,6 +136,8 @@ llxHeader('', $langs->trans($page_name));
 
     setup_print_on_off('SOFO_ADD_QUANTITY_RATHER_THAN_CREATE_LINES');
 
+    setup_print_on_off('SOFO_VIEW_SUBNOMENCLATURE8LINES');
+
 
     // Example with imput
     //setup_print_input_form_part('CONSTNAME', 'ParamLabel');
