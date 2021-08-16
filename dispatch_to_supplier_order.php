@@ -93,7 +93,7 @@ if (empty($reshook))
 
         foreach ($origin->lines as $i => $line)
         {
-			// TODO : déplacer tout le traitement final après les traitement des erreurs
+
             if(!empty($TChecked) && in_array($line->id, $TChecked))
             {
 
@@ -1332,27 +1332,6 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $nomI = 0, $overrid
 				$print .= _nomenclatureViewToHtml($line, $productPart['children'], $nomenclatureI, $param, $decallage +1);
 			}
 
-            // TODO faire le mode vue afin d'afficher le détail par ligne de nomenclature
-			// Ceci permet de saisir par sous niveau de nomenclature
-            /*if (!empty($productPart['children']))
-			{
-//				var_dump($productPart['fk_product'], $productPart['children']);
-				$TChildrenNomenclature = sofo_nomenclatureProductDeepCrawl($productPart['fk_product'], 'product', $productPart['fk_product'],$productPart['infos']['qty'], 0, 1);
-				if(!empty($TChildrenNomenclature)){
-					global $totalNbCols, $searchSupplierOrderLine;
-					$param = array(
-						'colspan' => $totalNbCols
-					,'searchSupplierOrderLine' => $searchSupplierOrderLine // Si la ligne parente à fait l'objet d'un traitement (ou un produit issue de la nomenclature)
-					);
-
-					$nomenclatureViewToHtml = _nomenclatureViewToHtml($line, $TChildrenNomenclature, $nomenclatureI, $param, $decallage + 1 );
-					$print.=  $nomenclatureViewToHtml;
-				}
-			}*/
-            // TODO HOW TO USE AND DISPLAY CHILDREN ?
-            /*if(!empty($productPart['children'])){
-             bcb_nomenclatureViewToHtml($productPart['children']);
-             }*/
         }
 
     }
