@@ -87,7 +87,9 @@ if (empty($reshook))
 
 	    $saveconf_SUPPLIER_ORDER_WITH_NOPRICEDEFINED = !empty($conf->global->SUPPLIER_ORDER_WITH_NOPRICEDEFINED)?$conf->global->SUPPLIER_ORDER_WITH_NOPRICEDEFINED:0 ;
 	    $conf->global->SUPPLIER_ORDER_WITH_NOPRICEDEFINED = 1;
+	    $error = 0;
 
+	    $TLinesToCreate = $TNomenclatureLinesToCreate = array();
 
         foreach ($origin->lines as $i => $line)
         {
@@ -95,13 +97,7 @@ if (empty($reshook))
             if(!empty($TChecked) && in_array($line->id, $TChecked))
             {
 
-
-
-
-                $array_options = array();
                 if(!empty($TShipping[$line->id])) $TShipping = array_map('intval', $TShipping);
-
-
 
                 $supplierSocId = GETPOST('fk_soc_fourn_'.$line->id, 'int');
 
@@ -115,6 +111,7 @@ if (empty($reshook))
                             'status' => -1,
                             'msg' => $langs->trans('ErrorPriceDoesNotExist').' : '.$Tproductfournpriceid[$line->id]
                         );
+                        $error++;
 
                         continue;
                     }
@@ -128,17 +125,15 @@ if (empty($reshook))
 
 
 
-                if(empty($supplierSocId) && ( empty($TDispatch[$line->id]['status']) || $TDispatch[$line->id]['status'] < 0) ){
+                if($supplierSocId < 0 && ( empty($TDispatch[$line->id]['status']) || $TDispatch[$line->id]['status'] < 0) ){
                     $TDispatch[$line->id] = array(
                         'status' => -1,
                         'msg' => $langs->trans('ErrorFournDoesNotExist').' : '.$supplierSocId
                     );
+                    $error++;
 
                     continue;
                 }
-
-
-
 
 
                 // vérification si la ligne fait déjà l'objet d'une commande fournisseur
@@ -146,57 +141,13 @@ if (empty($reshook))
 
                 if(empty($searchSupplierOrderLine))
                 {
-                    $createNewOrder = true;
 
                     $shippingContactId = 0;
                     if(!empty($TShipping[$line->id])){
                         $shippingContactId = $TShipping[$line->id];
                     }
 
-                    $societe = new Societe($db);
-                    $societe->fetch($supplierSocId);
-
-
-                    // search and get draft supplier order linked
-                    $searchSupplierOrder = getLinkedSupplierOrderFromOrder($line->fk_commande,$supplierSocId,$shippingContactId,CommandeFournisseur::STATUS_DRAFT,$array_options);
-                    if(empty($searchSupplierOrder))
-                    {
-                        // search draft supplier order with same critera
-                        $restrictToCustomerOrder=0;
-                        if(!empty($conf->global->SOFO_USE_RESTRICTION_TO_CUSTOMER_ORDER)){
-                            $restrictToCustomerOrder = $origin->id;
-                        }
-
-                        $searchSupplierOrder = getSupplierOrderAvailable($supplierSocId,$shippingContactId,$array_options,$restrictToCustomerOrder);
-                    }
-
-
-                    $CommandeFournisseur = new CommandeFournisseur($db);
-
-                    if(!empty($searchSupplierOrder))
-                    {
-                        $CommandeFournisseur->fetch($searchSupplierOrder[0]);
-                    }
-                    else
-                    {
-                        $CommandeFournisseur->socid = $supplierSocId;
-                        $CommandeFournisseur->mode_reglement_id = $societe->mode_reglement_supplier_id;
-                        $CommandeFournisseur->cond_reglement_id = $societe->cond_reglement_supplier_id;
-                        $id = $CommandeFournisseur->create($user);
-                        if($id>0)
-                        {
-                            // Add shipping contact
-                            if(!empty($TShipping[$line->id])){
-                                $CommandeFournisseur->add_contact($TShipping[$line->id], 'SHIPPING');
-                            }
-
-                            // add order in linked element
-                            $CommandeFournisseur->add_object_linked('commande', $origin->id);
-
-                        }
-                    }
-
-
+                    $CommandeFournisseur = getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, CommandeFournisseur::STATUS_DRAFT);
 
                     // Vérification de la commande
                     if(empty($CommandeFournisseur->id))
@@ -209,6 +160,13 @@ if (empty($reshook))
 
                        continue;
                     }
+                    else
+					{
+						// Add shipping contact
+						if(!empty($TShipping[$line->id])){
+							$CommandeFournisseur->add_contact($TShipping[$line->id], 'SHIPPING');
+						}
+					}
 
 
                     // GET PRICE
@@ -223,148 +181,14 @@ if (empty($reshook))
                         $price = price2num($TfournUnitPrice[$line->id]);
                     }
 
-                    // Get subprice from product
-                    if(!empty($line->fk_product)){
-                        $ProductFournisseur = new ProductFournisseur($db);
-                        if($ProductFournisseur->find_min_price_product_fournisseur($line->fk_product, $qty, $supplierSocId)>0){
-                            $price = floatval($ProductFournisseur->fourn_price); // floatval is used to remove non used zero
-                            $tva_tx = $ProductFournisseur->tva_tx;
-                            $fk_prod_fourn_price = $ProductFournisseur->product_fourn_price_id;
-                            $remise_percent = $ProductFournisseur->fourn_remise_percent;
-                            $ref_supplier= $ProductFournisseur->ref_supplier;
-                        }
-                    }
-
-                    //récupération du prix d'achat de la line si pas de prix fournisseur
-                    if(empty($price) && !empty($line->pa_ht) ){
-                        $price = $line->pa_ht;
-                    }
-
-
-                    // SEARCH in supplier order if same product exist
-                    $supplierLineRowidExist = 0 ;
-                    if(!empty($CommandeFournisseur->lines) && $conf->global->SOFO_ADD_QUANTITY_RATHER_THAN_CREATE_LINES)
-                    {
-                        foreach ($CommandeFournisseur->lines as $li => $fournLine)
-                        {
-                            if(
-                                $fournLine->ref_supplier == $ref_supplier
-                                && $fournLine->fk_product == $product->id
-                                )
-                            {
-                                $supplierLineRowidExist = $fournLine->id;
-                                break;
-                            }
-                        }
-                    }
-
-                    // UPDATE SUPPLIER LINE
-                    if($supplierLineRowidExist>0)
-                    {
-
-                        $updateRes = $CommandeFournisseur->updateline(
-                            $fournLine->id,
-                            $fournLine->desc,
-                            $fournLine->subprice,
-                            $fournLine->qty + $qty,
-                            $fournLine->remise_percent,
-                            $fournLine->tva_tx,
-                            $fournLine->localtax1_tx,
-                            $fournLine->localtax2_tx,
-                            'HT',
-                            0,
-                            $product->type,
-                            0, // $notrigger
-                            '',
-                            '',
-                            $fournLine->array_options,
-                            $product->fk_unit,
-                            0, // $pu_ht_devise
-                            $fournLine->ref_supplier
-                            );
-
-
-
-                        if($updateRes>=0) // yes $CommandeFournisseur->updateline can return 0 on success
-                        {
-                            // add order line in linked element
-                            $commandeFournisseurLigne = new CommandeFournisseurLigne($db);
-                            $commandeFournisseurLigne->fetch($addRes);
-                            $commandeFournisseurLigne->add_object_linked('commandedet', $line->id);
-
-                            // sauvegarde des infos pour l'affichage du resultat
-                            $TDispatch[$line->id] = array(
-                                'status' => 1,
-                                'id' => $CommandeFournisseur->id,
-                                'msg' => $CommandeFournisseur->getNomUrl(2)
-                            );
-                        }
-                        else {
-                            // sauvegarde des infos pour l'affichage du resultat
-                            $TDispatch[$line->id] = array(
-                                'status' => -1,
-                                'id' => $CommandeFournisseur->id,
-                                'msg' => $CommandeFournisseur->getNomUrl(1).' '.$langs->trans('ErrorUpdateSupplierLine').' #'.$updateRes.' : '.$commandeFournisseurLigne->error
-                            );
-                        }
-                    }
-                    else
-                    {
-                        // ADD LINE
-                        $addRes = $CommandeFournisseur->addline(
-                            $line->desc,
-                            $price,
-                            $qty,
-                            $tva_tx,
-                            $txlocaltax1=0.0,
-                            $txlocaltax2=0.0,
-                            $line->fk_product,
-                            $fk_prod_fourn_price,
-                            $ref_supplier,
-                            $remise_percent,
-                            'HT',
-                            0, //$pu_ttc=0.0,
-                            $line->product_type,
-                            $line->info_bits,
-                            false, //$notrigger=false,
-                            null, //$date_start=null,
-                            null, //$date_end=null,
-                            $line->array_options, //$array_options=0,
-                            $line->fk_unit,
-                            0,//$pu_ht_devise=0,
-                            'commandedet', //$origin= // peut être un jour ça sera géré...
-                            $line->id //$origin_id=0 // peut être un jour ça sera géré...
-                            );
-
-
-                        if($addRes>0)
-                        {
-
-                            // add order line in linked element
-                            $commandeFournisseurLigne = new CommandeFournisseurLigne($db);
-                            $commandeFournisseurLigne->fetch($addRes);
-                            $commandeFournisseurLigne->add_object_linked('commandedet', $line->id);
-
-                            // sauvegarde des infos pour l'affichage du resultat
-                            $TDispatch[$line->id] = array(
-                                'status' => 1,
-                                'id' => $CommandeFournisseur->id,
-                                'msg' => $CommandeFournisseur->getNomUrl(1)
-                            );
-                        }
-                        else {
-                            // sauvegarde des infos pour l'affichage du resultat
-                            $TDispatch[$line->id] = array(
-                                'status' => -1,
-                                'id' => $CommandeFournisseur->id,
-                                'msg' => $CommandeFournisseur->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$commandeFournisseurLigne->error
-                            );
-                        }
-                    }
-
-
-
-
+					$TLinesToCreate[$line->id] = array(
+						"comfourn" 	=> $CommandeFournisseur,
+						"line" 		=> $line,
+						"productId" => $line->fk_product,
+						"price" 	=> $price,
+						"qty" 		=> $qty,
+						"socid" 	=> $supplierSocId,
+					);
 
 
                 }
@@ -380,6 +204,7 @@ if (empty($reshook))
 
             if(!empty($TCheckedNomenclature[$line->id]) && is_array($TCheckedNomenclature[$line->id]))
             {
+
                 // Nomenclature
                 foreach($TCheckedNomenclature[$line->id] as $nomenclatureI)
                 {
@@ -390,14 +215,14 @@ if (empty($reshook))
 
 
                     $forceSupplierSocId = GETPOST('force_nomenclature_fk_soc_fourn_'.$line->id, 'int');
-                    if($forceSupplierSocId < 0){ $forceSupplierSocId = 0; }
 
-                    if(empty($TNomenclature_productfournproductid[$line->id][$nomenclatureI]) && empty($forceSupplierSocId))
+                    if(empty($TNomenclature_productfournproductid[$line->id][$nomenclatureI]) && $forceSupplierSocId == -1)
                     {
                         $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
                             'status' => -1,
                             'msg' => $langs->trans('ErrorNoProduct').' : '.$nomenclatureI
                         );
+                        $error++;
 
                         continue;
                     }
@@ -409,105 +234,86 @@ if (empty($reshook))
                             'status' => -1,
                             'msg' => $langs->trans('ErrorNoProductFound').' : '.$TNomenclature_productfournproductid[$line->id][$nomenclatureI]
                         );
+						$error++;
 
                         continue;
                     }
 
-
-
-
                     $supplierSocId = GETPOST('fk_soc_fourn_'.$line->id.'_n'.$nomenclatureI, 'int');
-                    if(!empty($forceSupplierSocId)){
+
+                    if($forceSupplierSocId > 0){
                         $supplierSocId = $forceSupplierSocId;
                     }
 
                     // Get fourn from supplier price
-                    if(empty($forceSupplierSocId) && isset($TNomenclature_productfournpriceid[$line->id][$nomenclatureI])){
-                        $prod_supplier = new ProductFournisseur($db);
-                        if($prod_supplier->fetch_product_fournisseur_price($TNomenclature_productfournpriceid[$line->id][$nomenclatureI]) < 1){
-                            // ERROR
-                            // sauvegarde des infos pour l'affichage du resultat
-                            $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
-                                'status' => -1,
-                                'msg' => $langs->trans('ErrorPriceDoesNotExist').' : '.$TNomenclature_productfournpriceid[$line->id][$nomenclatureI]
-                            );
+                    if( $forceSupplierSocId == -1 || empty($forceSupplierSocId)){
 
-                            continue;
-                        }
+                    	if (isset($TNomenclature_productfournpriceid[$line->id][$nomenclatureI]))
+						{
+							$prod_supplier = new ProductFournisseur($db);
+							$fetch= $prod_supplier->fetch_product_fournisseur_price($TNomenclature_productfournpriceid[$line->id][$nomenclatureI]);
 
-                        if(!empty($prod_supplier->fourn_id))
-                        {
-                            $supplierSocId = $prod_supplier->fourn_id;
-                        }
+							if($prod_supplier->fetch_product_fournisseur_price($TNomenclature_productfournpriceid[$line->id][$nomenclatureI]) < 1){
+								// ERROR
+								// sauvegarde des infos pour l'affichage du resultat
+								$TDispatchNomenclature[$line->id][$nomenclatureI] = array(
+									'status' => -1,
+									'msg' => $langs->trans('ErrorPriceDoesNotExist').' : '.$TNomenclature_productfournpriceid[$line->id][$nomenclatureI]
+								);
+								$error++;
+
+								continue;
+							}
+
+							if(!empty($prod_supplier->fourn_id))
+							{
+								$supplierSocId = $prod_supplier->fourn_id;
+							}
+
+
+
+						}
+                    	else
+						{
+							///////////////////////////////////
+							// TODO créer le putin de prix fourn ça mère !!!
+//							exit('lala');
+						}
+
                     }
 
-                    if(empty($supplierSocId) && ( empty($TDispatchNomenclature[$line->id][$nomenclatureI]['status']) || $TDispatchNomenclature[$line->id][$nomenclatureI]['status'] < 0) ){
+
+                    if($supplierSocId < 0 && ( empty($TDispatchNomenclature[$line->id][$nomenclatureI]['status']) || $TDispatchNomenclature[$line->id][$nomenclatureI]['status'] < 0) ){
                         $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
                             'status' => -1,
                             'msg' => $langs->trans('ErrorFournDoesNotExist').' : '.$supplierSocId
                         );
+						$error++;
 
                         continue;
                     }
 
 
-                    // vérification si la ligne fait déjà l'objet d'une commande fournisseur
-                    $searchSupplierOrderLine = false; // TODO : find a way to detect this for nomenclature
+                    // vérification si la ligne fait déjà l'objet d'une commande fournisseur+
+					$searchSupplierOrderLine = false; // TODO : find a way to detect this for nomenclature
 
                     if(empty($searchSupplierOrderLine))
                     {
-                        $createNewOrder = true;
+
 
                         $shippingContactId = 0; // Les produits issue d'une nomenclature ne doivent pas partir dirrectement chez un client (pour l'instant en tout cas)
+						$CommandeFournisseur = getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, CommandeFournisseur::STATUS_DRAFT);
 
-                        $societe = new Societe($db);
-                        $societe->fetch($supplierSocId);
-
-
-                        // search and get draft supplier order linked
-                        $searchSupplierOrder = getLinkedSupplierOrderFromOrder($line->fk_commande,$supplierSocId,$shippingContactId,CommandeFournisseur::STATUS_DRAFT,$array_options);
-                        if(empty($searchSupplierOrder))
-                        {
-                            // search draft supplier order with same critera
-                            $restrictToCustomerOrder=0;
-                            if(!empty($conf->global->SOFO_USE_RESTRICTION_TO_CUSTOMER_ORDER)){
-                                $restrictToCustomerOrder = $origin->id;
-                            }
-
-                            // search draft supplier order with same critera
-                            $searchSupplierOrder = getSupplierOrderAvailable($supplierSocId,$shippingContactId,$array_options);
-                        }
-
-
-                        $CommandeFournisseur = new CommandeFournisseur($db);
-
-                        if(!empty($searchSupplierOrder))
-                        {
-                            $CommandeFournisseur->fetch($searchSupplierOrder[0]);
-                        }
-                        else
-                        {
-                            $CommandeFournisseur->socid = $supplierSocId;
-                            $CommandeFournisseur->mode_reglement_id = $societe->mode_reglement_supplier_id;
-                            $CommandeFournisseur->cond_reglement_id = $societe->cond_reglement_supplier_id;
-                            $id = $CommandeFournisseur->create($user);
-                            if($id>0)
-                            {
-                                // add order in linked element
-                                $CommandeFournisseur->add_object_linked('commande', $origin->id);
-                            }
-                        }
-
-
-
-                        // Vérification de la commande
+						// Vérification de la commande
                         if(empty($CommandeFournisseur->id))
                         {
+
                             // sauvegarde des infos pour l'affichage du resultat
                             $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
                                 'status' => -1,
                                 'msg' => $langs->trans('ErrorOrderDoesNotExist')
                             );
+                            $error++;
 
                             continue;
                         }
@@ -525,150 +331,19 @@ if (empty($reshook))
                             $price = price2num($TNomenclature_fournUnitPrice[$line->id][$nomenclatureI]);
                         }
 
-                        // Get subprice from product
-                        if(!empty($line->fk_product)){
-                            $ProductFournisseur = new ProductFournisseur($db);
-                            if($ProductFournisseur->find_min_price_product_fournisseur($product->id, $qty, $supplierSocId)>0){
-                                $price = floatval($ProductFournisseur->fourn_price); // floatval is used to remove non used zero
-                                $tva_tx = $ProductFournisseur->tva_tx;
-                                $fk_prod_fourn_price = $ProductFournisseur->product_fourn_price_id;
-                                $remise_percent = $ProductFournisseur->fourn_remise_percent;
-                                $ref_supplier= $ProductFournisseur->ref_supplier;
-                            }
-                        }
+                        $TIds = explode('_', $nomenclatureI);
 
-                        //récupération du prix d'achat de la produit si pas de prix fournisseur
-                        /*if(empty($price) && !empty($line->pa_ht) ){
-                            $price = $line->pa_ht;
-                        }*/
+						$nomenclaturedetId = $TIds[count($TIds) - 1];
 
-                        // SEARCH in supplier order if same product exist
-                        $supplierLineRowidExist = 0 ;
-                        if(!empty($CommandeFournisseur->lines) && $conf->global->SOFO_ADD_QUANTITY_RATHER_THAN_CREATE_LINES)
-                        {
-                            foreach ($CommandeFournisseur->lines as $li => $fournLine)
-                            {
-                                if(
-                                       $fournLine->ref_supplier == $ref_supplier
-                                    && $fournLine->fk_product == $product->id
-                                )
-                                {
-                                    $supplierLineRowidExist = $fournLine->id;
-                                    break;
-                                }
-                            }
-                        }
-
-                        // UPDATE SUPPLIER LINE
-                        if($supplierLineRowidExist>0)
-                        {
-
-                            $updateRes = $CommandeFournisseur->updateline(
-                                $fournLine->id,
-                                $fournLine->desc,
-                                $fournLine->subprice,
-                                $fournLine->qty + $qty,
-                                $fournLine->remise_percent,
-                                $fournLine->tva_tx,
-                                $fournLine->localtax1_tx,
-                                $fournLine->localtax2_tx,
-                                'HT',
-                                0,
-                                $product->type,
-                                0, // $notrigger
-                                '',
-                                '',
-                                $fournLine->array_options,
-                                $product->fk_unit,
-                                0, // $pu_ht_devise
-                                $fournLine->ref_supplier
-                             );
-
-                            if($updateRes>=0) // yes $CommandeFournisseur->updateline can return 0 on success
-                            {
-                                // add order line in linked element
-                                $commandeFournisseurLigne = new CommandeFournisseurLigne($db);
-                                $commandeFournisseurLigne->fetch($addRes);
-                                $commandeFournisseurLigne->add_object_linked('commandedet', $line->id);
-
-                                // sauvegarde des infos pour l'affichage du resultat
-                                $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
-                                    'status' => 1,
-                                    'id' => $CommandeFournisseur->id,
-                                    'msg' => $CommandeFournisseur->getNomUrl(1)
-                                );
-                            }
-                            else {
-                                // sauvegarde des infos pour l'affichage du resultat
-                                $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
-                                    'status' => -1,
-                                    'id' => $CommandeFournisseur->id,
-                                    'msg' => $CommandeFournisseur->getNomUrl(1).' '.$langs->trans('ErrorUpdateSupplierLine').' #'.$updateRes.' : '.$commandeFournisseurLigne->error
-                                );
-                            }
-                        }
-                        // ADD NEW SUPPLIER LINE
-                        else
-                        {
-
-
-
-                            // ADD LINE
-                            $addRes = $CommandeFournisseur->addline(
-                                '',
-                                $price,
-                                $qty,
-                                $tva_tx,
-                                $txlocaltax1=0.0,
-                                $txlocaltax2=0.0,
-                                $product->id,
-                                $fk_prod_fourn_price,
-                                $ref_supplier,
-                                $remise_percent,
-                                'HT',
-                                0, //$pu_ttc=0.0,
-                                $product->type,
-                                0,
-                                false, //$notrigger=false,
-                                null, //$date_start=null,
-                                null, //$date_end=null,
-                                0, //$array_options_line=0,
-                                $product->fk_unit,
-                                0,//$pu_ht_devise=0,
-                                'commandedet', //$origin= // peut être un jour ça sera géré...
-                                $line->id //$origin_id=0 // peut être un jour ça sera géré...
-                            );
-
-
-
-
-
-                            if($addRes>0)
-                            {
-
-                                // add order line in linked element
-                                $commandeFournisseurLigne = new CommandeFournisseurLigne($db);
-                                $commandeFournisseurLigne->fetch($addRes);
-                                $commandeFournisseurLigne->add_object_linked('commandedet', $line->id);
-
-                                // sauvegarde des infos pour l'affichage du resultat
-                                $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
-                                    'status' => 1,
-                                    'id' => $CommandeFournisseur->id,
-                                    'msg' => $CommandeFournisseur->getNomUrl(1)
-                                );
-                            }
-                            else {
-                                // sauvegarde des infos pour l'affichage du resultat
-                                $TDispatchNomenclature[$line->id][$nomenclatureI] = array(
-                                    'status' => -1,
-                                    'id' => $CommandeFournisseur->id,
-                                    'msg' => $CommandeFournisseur->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$commandeFournisseurLigne->error
-                                );
-                            }
-
-                        }
-
+						$TNomenclatureLinesToCreate[$line->id][$nomenclatureI] = array(
+							"comfourn" 	=> $CommandeFournisseur,
+							"line" 		=> $line,
+							"productId" =>(int)$TNomenclature_productfournproductid[$line->id][$nomenclatureI],
+							"nomenclaturedetId" => $nomenclaturedetId,
+							"price" 	=> $price,
+							"qty" 		=> $qty,
+							"socid" 	=> $supplierSocId,
+						);
 
 
                     }
@@ -676,11 +351,199 @@ if (empty($reshook))
 
 
                 }
+
+//                exit('la');
             }
 
 
 	        $conf->global->SUPPLIER_ORDER_WITH_NOPRICEDEFINED = $saveconf_SUPPLIER_ORDER_WITH_NOPRICEDEFINED;
 	    }
+
+        if (!$error) // si y a pas de soucis, on crée toutes les lignes
+		{
+
+			if (!empty($TLinesToCreate))
+			{
+				foreach ($TLinesToCreate as $lineId => $infos)
+				{
+
+					$return = updateOrAddlineToSupplierOrder($infos['comfourn'], $infos['line'], $infos['productId'], $infos['price'], $infos['qty'], $infos['socid']);
+					$res = $return['return'];
+					$mode = $return['mode'];
+
+					if ($mode == 'update')
+					{
+						if ($res >= 0)
+						{
+							// add order line in linked element
+							$commandeFournisseurLigne = new CommandeFournisseurLigne($db);
+							$commandeFournisseurLigne->fetch($res);
+							$commandeFournisseurLigne->add_object_linked('commandedet', $lineId);
+
+							// sauvegarde des infos pour l'affichage du resultat
+							$TDispatch[$lineId] = array(
+								'status' => 1,
+								'id' => $infos['comfourn']->id,
+								'msg' => $infos['comfourn']->getNomUrl(1)
+							);
+							$TDispatchNomenclature[$lineId] = array(
+								'status' => 1,
+								'id' => $infos['comfourn']->id,
+								'msg' => $infos['comfourn']->getNomUrl(1)
+							);
+						}
+						else
+						{
+							// sauvegarde des infos pour l'affichage du resultat
+							$TDispatch[$lineId] = array(
+								'status' => -1,
+								'id' => $infos['comfourn']->id,
+								'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorUpdateSupplierLine').' #'.$res.' : '.$infos['comfourn']->error
+							);
+							$TDispatchNomenclature[$lineId] = array(
+								'status' => -1,
+								'id' => $infos['comfourn']->id,
+								'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorUpdateSupplierLine').' #'.$res.' : '.$infos['comfourn']->error
+							);
+							$error++;
+						}
+					}
+					else
+					{
+						if($res>0)
+						{
+
+							// add order line in linked element
+							$commandeFournisseurLigne = new CommandeFournisseurLigne($db);
+							$commandeFournisseurLigne->fetch($res);
+							$commandeFournisseurLigne->add_object_linked('commandedet', $lineId);
+
+							// sauvegarde des infos pour l'affichage du resultat
+							$TDispatch[$line->id] = array(
+								'status' => 1,
+								'id' => $infos['comfourn']->id,
+								'msg' => $infos['comfourn']->getNomUrl(1)
+							);
+							$TDispatchNomenclature[$line->id] = array(
+								'status' => 1,
+								'id' => $infos['comfourn']->id,
+								'msg' => $infos['comfourn']->getNomUrl(1)
+							);
+						}
+						else {
+							// sauvegarde des infos pour l'affichage du resultat
+							$TDispatch[$line->id] = array(
+								'status' => -1,
+								'id' => $infos['comfourn']->id,
+								'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$infos['comfourn']->error
+							);
+							$TDispatchNomenclature[$line->id] = array(
+								'status' => -1,
+								'id' => $infos['comfourn']->id,
+								'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$infos['comfourn']->error
+							);
+							$error++;
+						}
+					}
+				}
+			}
+
+			if (!empty($TNomenclatureLinesToCreate)) {
+
+				foreach ($TNomenclatureLinesToCreate as $lineId => $nom)
+				{
+					foreach ($nom as $nomI => $infos)
+					{
+						$return = updateOrAddlineToSupplierOrder($infos['comfourn'], $infos['line'], $infos['productId'], $infos['price'], $infos['qty'], $infos['socid']);
+						$res = $return['return'];
+						$mode = $return['mode'];
+
+						if ($mode == 'update')
+						{
+							if ($res >= 0)
+							{
+								// add order line in linked element
+								$commandeFournisseurLigne = new CommandeFournisseurLigne($db);
+								$commandeFournisseurLigne->fetch($res);
+								$commandeFournisseurLigne->add_object_linked('commandedet', $lineId);
+
+								$commandeFournisseurLigne->add_object_linked('nomenclaturedet', $infos['nomenclaturedetId']);
+
+								// sauvegarde des infos pour l'affichage du resultat
+								$TDispatch[$lineId] = array(
+									'status' => 1,
+									'id' => $infos['comfourn']->id,
+									'msg' => $infos['comfourn']->getNomUrl(1)
+								);
+								$TDispatchNomenclature[$lineId] = array(
+									'status' => 1,
+									'id' => $infos['comfourn']->id,
+									'msg' => $infos['comfourn']->getNomUrl(1)
+								);
+							}
+							else
+							{
+								// sauvegarde des infos pour l'affichage du resultat
+								$TDispatch[$lineId] = array(
+									'status' => -1,
+									'id' => $infos['comfourn']->id,
+									'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorUpdateSupplierLine').' #'.$res.' : '.$infos['comfourn']->error
+								);
+								$TDispatchNomenclature[$lineId] = array(
+									'status' => -1,
+									'id' => $infos['comfourn']->id,
+									'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorUpdateSupplierLine').' #'.$res.' : '.$infos['comfourn']->error
+								);
+								$error++;
+							}
+						}
+						else
+						{
+							if($res>0)
+							{
+
+								// add order line in linked element
+								$commandeFournisseurLigne = new CommandeFournisseurLigne($db);
+								$commandeFournisseurLigne->fetch($res);
+								$res1 = $commandeFournisseurLigne->add_object_linked('commandedet', $lineId);
+
+								$res2 = $commandeFournisseurLigne->add_object_linked('nomenclaturedet', $infos['nomenclaturedetId']);
+
+								// sauvegarde des infos pour l'affichage du resultat
+								$TDispatch[$line->id] = array(
+									'status' => 1,
+									'id' => $infos['comfourn']->id,
+									'msg' => $infos['comfourn']->getNomUrl(1)
+								);
+								$TDispatchNomenclature[$line->id] = array(
+									'status' => 1,
+									'id' => $infos['comfourn']->id,
+									'msg' => $infos['comfourn']->getNomUrl(1)
+								);
+							}
+							else {
+								// sauvegarde des infos pour l'affichage du resultat
+								$TDispatch[$line->id] = array(
+									'status' => -1,
+									'id' => $infos['comfourn']->id,
+									'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$infos['comfourn']->error
+								);
+								$TDispatchNomenclature[$line->id] = array(
+									'status' => -1,
+									'id' => $infos['comfourn']->id,
+									'msg' => $infos['comfourn']->getNomUrl(1).' '.$langs->trans('ErrorAddSupplierLine').' : '.$infos['comfourn']->error
+								);
+								$error++;
+							}
+						}
+					}
+				}
+			}
+
+
+
+		}
+//        var_dump($TLinesToCreate, $TNomenclatureLinesToCreate, $TDispatch);
 	    $action = 'showdispatchresult';
 	}
 
@@ -731,14 +594,20 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
     $TFournLines = array();
 
     $countErrors = 0;
+    $errors = array();
     foreach ( $TDispatch as $lineId => $infos)
     {
-        if($infos['status'] < 0) $countErrors ++;
+        if($infos['status'] < 0)
+		{
+			$countErrors ++;
+			$errors[] = $infos['msg'];
+		}
+
     }
 
     if($countErrors>0)
     {
-        setEventMessage('Il y a des erreurs...', 'errors');
+        setEventMessages('Il y a des erreurs...', $errors, 'errors');
     }
 
 
@@ -876,18 +745,19 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
             $searchSupplierOrderLine = getLinkedSupplierOrdersLinesFromElementLine($line->id);
 
 
-
             // GET NOMENCLATURE (show display nomenclature lines for print part)
             $nomenclatureViewToHtml = '';
 			$deep = 0; $maxDeep = 1; $qty = 1 ; //$line->qty
 			$Tnomenclature = sofo_nomenclatureProductDeepCrawl($line->id, $origin->element, $line->fk_product,$line->qty, $deep, $maxDeep);
+
 			if(!empty($Tnomenclature)){
+
 				$param = array(
 					'colspan' => $totalNbCols
 					,'searchSupplierOrderLine' => $searchSupplierOrderLine // Si la ligne parente à fait l'objet d'un traitement (ou un produit issue de la nomenclature)
 				);
 
-				$nomenclatureViewToHtml = _nomenclatureViewToHtml($line, $Tnomenclature, $param);
+				$nomenclatureViewToHtml = _nomenclatureViewToHtml($line, $Tnomenclature, 0, $param);
 			}
 
 
@@ -1104,6 +974,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                 print '<td colspan="7" >';
                 if(!empty($searchSupplierOrderLine))
                 {
+//                	var_dump($searchSupplierOrderLine);
                     $TAllreadyDispatchedSuppOrderLines = array();// key = line id  and value = order id
                     foreach($searchSupplierOrderLine as $searchSupplierOrderLineId)
                     {
@@ -1119,14 +990,14 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                                 $existingFournOrder = New CommandeFournisseur($db);
                                 $existingFournOrder->fetch($commandeFournisseurLigne->fk_commande);
 
-                                print !empty($TAllreadyDispatchedSuppOrderLines)?', ':'';
+//                                print !empty($TAllreadyDispatchedSuppOrderLines)?', ':'';
 
                                 print $existingFournOrder->getNomUrl(1);
 
                                 $existingFournOrder->fetch_thirdparty();
                                 if(!empty($existingFournOrder->thirdparty))
                                 {
-                                    print ' '.$existingFournOrder->thirdparty->getNomUrl(1,'supplier');
+                                    print ' '.$existingFournOrder->thirdparty->getNomUrl(1,'supplier')."<br>";
                                 }
 
                                 /*if(GETPOST('forcedeletelinked','int')){
@@ -1181,7 +1052,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
 
     print '<div style="clear:both; text-align: left; display:none;" ><input id="bypassjstests" type="checkbox" name="bypassjstests" value="1"> <label for="bypassjstests" >'.$langs->trans('ForceDispatch').'.</label></div>';
 
-    print '<div style="text-align: right;" ><button  type="submit" name="action" value="dispatch" >'.$langs->trans('DispatchAndOrders').' <i class="fa fa-arrow-right"></i></button></div>';
+    print '<div style="text-align: right;" ><button  type="submit" name="action" value="dispatch" >'.$langs->trans('FournDispatch').' <i class="fa fa-arrow-right"></i></button></div>';
 
     print '</form>';
     print '</div>';
@@ -1199,19 +1070,19 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
 llxFooter('');
 $db->close();
 
-
-
-function _nomenclatureViewToHtml($line, $TNomenclatureLines, $overrideParam = array())
+function _nomenclatureViewToHtml($line, $TNomenclatureLines, $nomI = 0, $overrideParam = array(), $decallage = 1)
 {
-    global $db,$langs, $TChecked, $nomenclatureI,$form, $TDispatchNomenclature, $conf;
+    global $db,$langs, $TChecked, /*$nomenclatureI,*/$form, $TDispatchNomenclature, $conf;
     global $TNomenclature_productfournpriceid, $TNomenclature_qty, $TNomenclature_fournUnitPrice;
-
 
     if(empty($TNomenclatureLines)){
         return '';
     }
 
+    if (empty($nomI)) $nomI = $line->id;
     $print='';
+	$addNBSP = '';
+	$dec = $decallage;
 
     $param = array(
         'colspan' => 7
@@ -1235,10 +1106,9 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $overrideParam = ar
 
     foreach ($TNomenclatureLines as $i => $productPart)
     {
-        // FIXME : $productPart->id is empty so I use $i instead of $productPart->id
-        $nomenclatureI = $line->id.'_'.$i;
+        $nomenclatureI = $nomI.'_'.$productPart['id'];
 
-
+		$searchSupplierOrderLine = getLinkedSupplierOrdersLinesFromElementLine($productPart['id'], 'nomenclaturedet');
 
         $qty2Order=0;
         $disable = 0;
@@ -1255,155 +1125,217 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $overrideParam = ar
             }
         }
 
-        if($productPart['element'] != 'workstation' && $product )
-        {
+        if($productPart['element'] != 'workstation' && $product ) {
 
-            $style = 'font-size:0.9em;color:#666;';
-            $print.= '<tr class="nomenclature-row" data-parentlineid="'.$line->id.'"  style="'.$displayLine.$style.'">';
+			$style = 'font-size:0.9em;color:#666;';
+			$print .= '<tr class="nomenclature-row" data-parentlineid="' . $line->id . '"  style="' ./*$displayLine.*/
+				$style . '">';
 
-            // DESC
-            $print.= '<td class="col-desc" ><i class="fa fa-caret-right" ></i> ';
-            $colspan--;
-            $productRefView = $product->getNomUrl(1);
-            $productRefView = '<strong>'.$productRefView.'</strong> ';
-            $productPart['infos']['label'] = $productRefView.$product->label.' '.$productPart['infos']['label'];
-            $print.= $productPart['infos']['label'];
-            if(!empty($productPart['infos']['desc'])){ $print.= ' '.$productPart['infos']['desc']; }
-            $print.= '<input type="hidden" name="nomenclature_productfournproductid['.$line->id.']['.$nomenclatureI.']" value="'.$product->id.'" />';
+			// DESC
 
-            if(!empty($TDispatchNomenclature[$line->id][$nomenclatureI]))
-            {
-                $msgClass = 'dispatch-msg';
-                if($TDispatchNomenclature[$line->id][$nomenclatureI]['status'] < 0)
-                {
-                    $msgClass = 'dispatch-err';
-                }
-
-                $print.=  '<div class="'.$msgClass.'" >'.$TDispatchNomenclature[$line->id][$nomenclatureI]['msg'].'</div>';
-            }
-            $print.= '</td>';
-
-            // QTY
-            $colspan--;
-            $print.=  '<td class="center col-qtyordered" >';
-            $print.=  '<strong title="'.$langs->trans('clicToReplaceQty').'" class="addvalue2target classfortooltip" style="cursor:pointer" data-value="'.$productPart['infos']['qty'].'" data-target="#qty-'.$line->id.'-n'.$nomenclatureI.'"  >'.$productPart['infos']['qty'].'</strong>';
-            $print.=  '</td>';
-
-
-            if (!empty($conf->global->SOFO_FILL_QTY_NOMENCLATURE)){
-                $qty2Order = $productPart['infos']['qty'];
-            }
-
-
-            if (!empty($conf->stock->enabled)){
-
-                // STOCK REEL
-                $colspan--;
-                $print.=  '<td  class="center col-realstock">';
-                $print.=  $product->stock_reel;
-                $print.=  '</td>';
-
-                // STOCK THEORIQUE
-                $colspan--;
-                $print.=  '<td  class="center col-theoreticalstock">';
-                $print.=  $product->stock_theorique;
-                $print.=  '</td>';
-
-            }
-
-            // QTY TO ORDER
-            $colspan--;
-
-
-
-            if(!empty($TNomenclature_qty[$line->id][$nomenclatureI])){
-                $qty2Order = $TNomenclature_qty[$line->id][$nomenclatureI];
-            }
-            $print.= '<td class="center col-qtytoorder" >';
-            $print.= '<input id="qty-'.$line->id.'-n'.$nomenclatureI.'" class="qtyform-nomenclature col-qtytoorder" data-lineid="'.$line->id.'" data-nomenclature="'.$nomenclatureI.'" type="number" name="nomenclature_qty['.$line->id.']['.$nomenclatureI.']" value="'.$qty2Order.'" min="0"  >';
-            $print.= '</td>';
-
-
-            // SELECTION FOURNISSEUR
-            $colspan--;
-            $print.=  '<td class="col-fourn" >';
-
-			// get min fourn price id
-			$minFournPriceId = sofo_getFournMinPrice($product->id);
-
-			if(!empty($TNomenclature_productfournpriceid[$line->id][$nomenclatureI])){
-				$minFournPriceId = $TNomenclature_productfournpriceid[$line->id][$nomenclatureI];
+			while ($dec != 0) {
+				$addNBSP .= '&nbsp;&nbsp;&nbsp;&nbsp;';
+				$dec--;
 			}
 
-			if($minFournPriceId>0)
+			$print .= '<td class="col-desc" >' . $addNBSP . '<i class="fa fa-caret-right" ></i> ';
+			$colspan--;
+			$productRefView = $product->getNomUrl(1);
+			$productRefView = '<strong>' . $productRefView . '</strong> ';
+			$productPart['infos']['label'] = $productRefView . $product->label . ' ' . $productPart['infos']['label'];
+			$print .= $productPart['infos']['label'];
+			if (!empty($productPart['infos']['desc'])) {
+				$print .= ' ' . $productPart['infos']['desc'];
+			}
+			$print .= '<input type="hidden" name="nomenclature_productfournproductid[' . $line->id . '][' . $nomenclatureI . ']" value="' . $product->id . '" />';
+
+			if (!empty($TDispatchNomenclature[$line->id][$nomenclatureI])) {
+				$msgClass = 'dispatch-msg';
+				if ($TDispatchNomenclature[$line->id][$nomenclatureI]['status'] < 0) {
+					$msgClass = 'dispatch-err';
+				}
+
+				$print .= '<div class="' . $msgClass . '" >' . $TDispatchNomenclature[$line->id][$nomenclatureI]['msg'] . '</div>';
+			}
+			$print .= '</td>';
+
+			if (!empty($searchSupplierOrderLine)) {
+				$print .=  '<td colspan="7" >';
+
+				$TAllreadyDispatchedSuppOrderLines = array();// key = line id  and value = order id
+				foreach($searchSupplierOrderLine as $searchSupplierOrderLineId)
+				{
+
+					// récupération de la commande correspondante
+					$commandeFournisseurLigne = new CommandeFournisseurLigne($db);
+					$resFetchCommandeFournisseurLigne = (int) $commandeFournisseurLigne->fetch($searchSupplierOrderLineId);
+
+					if($resFetchCommandeFournisseurLigne > 0){
+
+						// petite opti
+						if(!in_array($commandeFournisseurLigne->fk_commande, $TAllreadyDispatchedSuppOrderLines))
+						{
+
+							$existingFournOrder = New CommandeFournisseur($db);
+							$existingFournOrder->fetch($commandeFournisseurLigne->fk_commande);
+
+//                                print !empty($TAllreadyDispatchedSuppOrderLines)?', ':'';
+
+							$print .= $existingFournOrder->getNomUrl(1);
+
+							$existingFournOrder->fetch_thirdparty();
+							if(!empty($existingFournOrder->thirdparty))
+							{
+								$print .= ' '.$existingFournOrder->thirdparty->getNomUrl(1,'supplier')."<br>";
+							}
+
+							/*if(GETPOST('forcedeletelinked','int')){
+							 $line->deleteObjectLinked();
+							 }*/
+						}
+
+						$TAllreadyDispatchedSuppOrderLines[$commandeFournisseurLigne->id] = $commandeFournisseurLigne->fk_commande;
+
+
+					}
+
+				}
+
+				if(!empty($TAllreadyDispatchedSuppOrderLines))
+				{
+					$print .= '<br/> '.$langs->trans('AllreadyDispatched'.(count($TAllreadyDispatchedSuppOrderLines)>1?'s':''));
+
+					// Display a link to show nomenclature part
+					if(!empty($nomenclatureViewToHtml))
+					{
+						print ' <small style="cursor:pointer" class="toggle-display-nomenclature-detail" data-target="'.$line->id.'" >'.$langs->trans('DisplayNomenclature').'</small>';
+					}
+				}
+
+				$print .=  '</td>';
+			}
+			else if ($productPart['children'] && !empty($conf->global->SOFO_VIEW_SUBNOMENCLATURE8LINES))
 			{
-				$print.=  $form->select_product_fourn_price($product->id, 'nomenclature_productfournpriceid['.$line->id.']['.$nomenclatureI.']', $minFournPriceId);
+				$print .= '<td class="center col-qtyordered" >';
+				$print .= '<strong title="' . $langs->trans('clicToReplaceQty') . '" class="addvalue2target classfortooltip" style="cursor:pointer" data-value="' . $productPart['infos']['qty'] . '" data-target="#qty-' . $line->id . '-n' . $nomenclatureI . '"  >' . $productPart['infos']['qty'] . '</strong>';
+				$print .= '</td>';
+				$print .=  '<td colspan="6" >';
+				$print .=  '</td>';
+
 			}
 			else
 			{
-				$print.= $langs->trans("NoSupplierPriceDefinedForThisProduct").'<br/>';
-				$name = 'fk_soc_fourn_'.$line->id.'_n'.$nomenclatureI;
-				$selected=GETPOST($name,'int');
-				$print.= $form->select_company($selected, $name, '', 1, 'supplier', $forcecombo=0, array(), 0, 'minwidth100', '', '', 2);
+
+				// QTY
+				$colspan--;
+				$print .= '<td class="center col-qtyordered" >';
+				$print .= '<strong title="' . $langs->trans('clicToReplaceQty') . '" class="addvalue2target classfortooltip" style="cursor:pointer" data-value="' . $productPart['infos']['qty'] . '" data-target="#qty-' . $line->id . '-n' . $nomenclatureI . '"  >' . $productPart['infos']['qty'] . '</strong>';
+				$print .= '</td>';
 
 
-				$fournPrice = '';
-				if(!empty($TNomenclature_fournUnitPrice[$line->id][$nomenclatureI])){
-					$fournPrice =  $TNomenclature_fournUnitPrice[$line->id][$nomenclatureI];
+				if (!empty($conf->global->SOFO_FILL_QTY_NOMENCLATURE)) {
+					$qty2Order = $productPart['infos']['qty'];
 				}
 
 
-				$print.= ' &nbsp;&nbsp;&nbsp; <input class="unitPriceField" type="number" name="nomenclature_fournUnitPrice['.$line->id.']['.$nomenclatureI.']" value="'.price2num($fournPrice).'" min="0" step="any" placeholder="'.$langs->trans('UnitPrice').'" >';
-				$print.= $product->getLabelOfUnit();
+				if (!empty($conf->stock->enabled)) {
+
+					// STOCK REEL
+					$colspan--;
+					$print .= '<td  class="center col-realstock">';
+					$print .= $product->stock_reel;
+					$print .= '</td>';
+
+					// STOCK THEORIQUE
+					$colspan--;
+					$print .= '<td  class="center col-theoreticalstock">';
+					$print .= $product->stock_theorique;
+					$print .= '</td>';
+
+				}
+
+				// QTY TO ORDER
+				$colspan--;
+
+
+				if (!empty($TNomenclature_qty[$line->id][$nomenclatureI])) {
+					$qty2Order = $TNomenclature_qty[$line->id][$nomenclatureI];
+				}
+				$print .= '<td class="center col-qtytoorder" >';
+				$print .= '<input id="qty-' . $line->id . '-n' . $nomenclatureI . '" class="qtyform-nomenclature col-qtytoorder" data-lineid="' . $line->id . '" data-nomenclature="' . $nomenclatureI . '" type="number" name="nomenclature_qty[' . $line->id . '][' . $nomenclatureI . ']" value="' . $qty2Order . '" min="0"  >';
+				$print .= '</td>';
+
+
+				// SELECTION FOURNISSEUR
+				$colspan--;
+				$print .= '<td class="col-fourn" >';
+
+				// get min fourn price id
+				$minFournPriceId = sofo_getFournMinPrice($product->id);
+
+				if (!empty($TNomenclature_productfournpriceid[$line->id][$nomenclatureI])) {
+					$minFournPriceId = $TNomenclature_productfournpriceid[$line->id][$nomenclatureI];
+				}
+
+				if ($minFournPriceId > 0 ) {
+					$print .= $form->select_product_fourn_price($product->id, 'nomenclature_productfournpriceid[' . $line->id . '][' . $nomenclatureI . ']', $minFournPriceId);
+				} else {
+					$print .= $langs->trans("NoSupplierPriceDefinedForThisProduct") . '<br/>';
+					$name = 'fk_soc_fourn_' . $line->id . '_n' . $nomenclatureI;
+					$selected = GETPOST($name, 'int');
+					$print .= $form->select_company($selected, $name, '', 1, 'supplier', $forcecombo = 0, array(), 0, 'minwidth100', '', '', 2);
+
+
+					$fournPrice = '';
+					if (!empty($TNomenclature_fournUnitPrice[$line->id][$nomenclatureI])) {
+						$fournPrice = $TNomenclature_fournUnitPrice[$line->id][$nomenclatureI];
+					}
+
+
+					$print .= ' &nbsp;&nbsp;&nbsp; <input class="unitPriceField" type="number" name="nomenclature_fournUnitPrice[' . $line->id . '][' . $nomenclatureI . ']" value="' . price2num($fournPrice) . '" min="0" step="any" placeholder="' . $langs->trans('UnitPrice') . '" >';
+					$print .= $product->getLabelOfUnit();
+				}
+
+
+				$print .= '</td>';
+
+				// COLSPAN
+				$colspan--; // FOR checkbox col
+				if ($colspan > 0) {
+					$print .= '<td colspan="' . $colspan . '" ></td>';
+				}
+
+				// CHECKBOX
+				$print .= '<td  style="text-align:center;"  >';
+				if (!$disable) {
+					$check = true;
+					if (!empty($TChecked[$line->id])) {
+						// If line is checked remove this nomenclature checkbox
+						$check = false;
+					} elseif (!empty($param['searchSupplierOrderLine'])) {
+						// Don't check in this case because lines are hidden
+						$check = false;
+					} elseif (empty($qty2Order)) {
+						$check = false;
+					}
+
+					$print .= '<input id="linecheckbox' . $nomenclatureI . '-nomenclature' . '' . '" class="checkboxToggle checkboxToggle-nomenclature" type="checkbox" ' . ($check ? 'checked' : '') . ' name="checkedNomenclature[' . $line->id . '][' . $nomenclatureI . ']" value="' . $nomenclatureI . '">';
+				} else {
+					$print .= $langs->trans('CheckErrorsBeforeInport');
+				}
+				$print .= '</td>';
 			}
-
-
-
-
-            $print.=  '</td>';
-
-            // COLSPAN
-            $colspan--; // FOR checkbox col
-            if($colspan>0)
-            {
-                $print.= '<td colspan="'.$colspan.'" ></td>';
-            }
-
-            // CHECKBOX
-            $print.= '<td  style="text-align:center;"  >';
-            if(!$disable)
-            {
-                $check = true;
-                if(!empty($TChecked[$line->id])){
-                    // If line is checked remove this nomenclature checkbox
-                    $check = false;
-                }
-                elseif(!empty($param['searchSupplierOrderLine']))
-                {
-                    // Don't check in this case because lines are hidden
-                    $check = false;
-                }
-                elseif(empty($qty2Order)){
-                    $check = false;
-                }
-
-                $print.=  '<input id="linecheckbox'.$nomenclatureI.'-nomenclature'.''.'" class="checkboxToggle checkboxToggle-nomenclature" type="checkbox" '.($check?'checked':'').' name="checkedNomenclature['.$line->id.']['.$nomenclatureI.']" value="'.$nomenclatureI.'">';
-            }
-            else
-            {
-                $print.=  $langs->trans('CheckErrorsBeforeInport');
-            }
-
-
             $print.= '</tr>';
 
-            // TODO HOW TO USE AND DISPLAY CHILDREN ?
-            /*if(!empty($productPart['children'])){
-             bcb_nomenclatureViewToHtml($productPart['children']);
-             }*/
+			if ($productPart['children'] && !empty($conf->global->SOFO_VIEW_SUBNOMENCLATURE8LINES))
+			{
+				$print .= _nomenclatureViewToHtml($line, $productPart['children'], $nomenclatureI, $param, $decallage +1);
+			}
+
         }
 
     }
+	$decallage = $dec;
 
     //$print.= '<tr class="nomenclature-row" data-parentlineid="'.$line->id.'" style="'.$displayLine.'" ><td colspan="'.$param['colspan'].'" ></td></tr>';
 
