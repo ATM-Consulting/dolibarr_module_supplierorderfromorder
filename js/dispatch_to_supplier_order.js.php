@@ -68,14 +68,14 @@ $( document ).ready(function() {
     	});
     }
     runFormValidation();
-	
-    
+
+
     $( "#crea_commande input:not(.checkboxToggle),#crea_commande select" ).change(function() {
     	$(this).get(0).setCustomValidity('');
         runFormValidation();
     });
-    
-	
+
+
     $("#checkToggle").click(function() {
          var checkBoxes = $(".checkboxToggle:not(.checkboxToggle-nomenclature)");
          checkBoxes.prop("checked", this.checked);
@@ -87,9 +87,9 @@ $( document ).ready(function() {
         checkBoxes.prop("checked", this.checked);
         checkBoxes.trigger("change");
    });
-    
-    
-    
+
+
+
     $("#crea_commande").submit(function(){
 
         var checked = $('#crea_commande .checkboxToggle:checked').length > 0;
@@ -104,25 +104,45 @@ $( document ).ready(function() {
 				return true;
         	}
         }
-        
+
     });
 
     $(".checkboxToggle").change(function() {
     	var lineId = $(this).val();
+    	var isNomenclatureline = lineId.match(/[0-9]+\_[0-9]+/g) == null ? false : true;
+		var nomLineId = 0;
 
-    	var productfournpriceid = $("[name='productfournpriceid[" + lineId + "]']");
-		var search_fk_soc_fourn = $("#search_fk_soc_fourn_" + lineId);
-		var fournUnitPrice  = $("[name='fournUnitPrice[" + lineId + "]']");
-		var inputqty = $("#qty-" + lineId);
-		
+    	if (isNomenclatureline)
+		{
+			nomLineId = lineId;
+			lineId = lineId.split('_')[0];
+		}
+    	//console.log(lineId.match(/[0-9]+\_[0-9]+/g), nomLineId, lineId);
+
+    	if (!isNomenclatureline)
+		{
+			var productfournpriceid = $("[name='productfournpriceid[" + lineId + "]']");
+			var search_fk_soc_fourn = $("#search_fk_soc_fourn_" + lineId);
+			var fournUnitPrice  = $("[name='fournUnitPrice[" + lineId + "]']");
+			var inputqty = $("#qty-" + lineId);
+		}
+    	else
+		{
+			var productfournpriceid = $("[name='nomenclature_productfournpriceid[" + lineId + "][" + nomLineId + "]']");
+			var search_fk_soc_fourn = $("#fk_soc_fourn_" + lineId + "_n" + nomLineId);
+			var fournUnitPrice  = $("[name='nomenclature_fournUnitPrice[" + lineId + "][" + nomLineId + "]']");
+			var inputqty = $("#qty-" + lineId + "-n" + nomLineId);
+		}
+
         if(this.checked && !$('#bypassjstests').prop('checked')) {
 
-    		if( productfournpriceid.length ){
+			console.log(search_fk_soc_fourn);
+			if( productfournpriceid.length ){
 				if(isBlank(productfournpriceid.val()) || productfournpriceid.val() == 0 ){
 					productfournpriceid.get(0).setCustomValidity("<?php print $langs->transnoentitiesnoconv('YouNeedToSelectAtLeastOneSupplierPrice'); ?>");
 				}
     		}
-    		
+
     		if( search_fk_soc_fourn.length ){
 				if(isBlank(search_fk_soc_fourn.val())){
 					search_fk_soc_fourn.get(0).setCustomValidity("<?php print $langs->transnoentitiesnoconv('YouNeedToSelectAtLeastOneSupplierPrice'); ?>");
@@ -148,7 +168,7 @@ $( document ).ready(function() {
     		if( productfournpriceid.length ){
 				productfournpriceid.get(0).setCustomValidity('');
     		}
-    		
+
     		if( search_fk_soc_fourn.length ){
 				search_fk_soc_fourn.get(0).setCustomValidity('');
     		}
@@ -163,38 +183,38 @@ $( document ).ready(function() {
         }
     });
 
-    
+
     $( ".toggle-display-nomenclature-detail" ).click(function() {
         console.log($(this).data('target'));
   		$('.nomenclature-row[data-parentlineid="' + $(this).data('target') + '"]').slideToggle();
 	});
-	
+
     $( "#emptydelivery" ).click(function() {
   		$('[name^="shipping"]' ).val(0);
 	});
-	
+
 	$( ".addvalue2target" ).click(function() {
   		$( $( this ).data("target") ).val( $( this ).data("value") ).change();
 	});
-	
+
 	$( ".qtyform" ).change(function() {
 
     	if($( this ).val() > 0)
     	{
     		$( "#linecheckbox" + $( this ).data("lineid") ).prop("checked", 1);
     		$( "#linecheckbox" + $( this ).data("lineid") ).trigger("change");
-    		
+
     	}
     	else
     	{
     		$( "#linecheckbox" + $( this ).data("lineid") ).prop("checked", 0);
     		$( "#linecheckbox" + $( this ).data("lineid") ).trigger("change");
     	}
-  		
+
 	});
 
 
-	
+
 	$( ".qtyform-nomenclature" ).change(function() {
 
     	if($( this ).val() > 0)
@@ -207,7 +227,7 @@ $( document ).ready(function() {
     		$( "#linecheckbox" + $( this ).data("nomenclature") + "-nomenclature" ).prop("checked", 0);
     		$( "#linecheckbox" + $( this ).data("nomenclature") + "-nomenclature" ).trigger("change");
     	}
-  		
+
 	});
 
 
@@ -217,5 +237,5 @@ $( document ).ready(function() {
         $($(this).data('target')).slideToggle();
     });
 
-	
+
 });
