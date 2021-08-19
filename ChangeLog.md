@@ -1,6 +1,11 @@
 # ChangeLog
 
 ## [Unreleased]
+- Fix : bad if conditions - 2.1.0 - *16/08/2021*
+- Fix : refacto de batard - 2.1.0 - *16/08/2021*
+- Fix : treatment after error validation - 2.1.0 - *16/08/2021*
+- New : Add sub-nomenclature view (+ conf) - 2.1.0 - *16/08/2021*
+- Fix : link nomenclature lines to supplier order line - 2.1.0 - *16/08/2021*
 
 ## 2.0
 
