@@ -2160,39 +2160,39 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db)
 			print '<div class="divsearchfieldfilter">' . $langs->trans("FilterOnInto", $sall) . join(', ', $fieldstosearchall) . '</div>';
 		}
 
-		$moreforfilter = '';
+//		$moreforfilter = '';
 
 		// If the user can view prospects other than his'
-		if ($user->rights->societe->client->voir || $socid) {
-			$langs->load("commercial");
-			$moreforfilter .= '<div class="divsearchfield">';
-			$moreforfilter .= $langs->trans('ThirdPartiesOfSaleRepresentative') . ': ';
-			$moreforfilter .= $formother->select_salesrepresentatives($search_sale, 'search_sale', $user, 0, 1, 'maxwidth200');
-			$moreforfilter .= '</div>';
-		}
+//		if ($user->rights->societe->client->voir || $socid) {
+//			$langs->load("commercial");
+//			$moreforfilter .= '<div class="divsearchfield">';
+//			$moreforfilter .= $langs->trans('ThirdPartiesOfSaleRepresentative') . ': ';
+//			$moreforfilter .= $formother->select_salesrepresentatives($search_sale, 'search_sale', $user, 0, 1, 'maxwidth200');
+//			$moreforfilter .= '</div>';
+//		}
 		// If the user can view other users
-		if ($user->rights->user->user->lire) {
-			$moreforfilter .= '<div class="divsearchfield">';
-			$moreforfilter .= $langs->trans('LinkedToSpecificUsers') . ': ';
-			$moreforfilter .= $form->select_dolusers($search_user, 'search_user', 1, '', 0, '', '', 0, 0, 0, '', 0, '', 'maxwidth200');
-			$moreforfilter .= '</div>';
-		}
+//		if ($user->rights->user->user->lire) {
+//			$moreforfilter .= '<div class="divsearchfield">';
+//			$moreforfilter .= $langs->trans('LinkedToSpecificUsers') . ': ';
+//			$moreforfilter .= $form->select_dolusers($search_user, 'search_user', 1, '', 0, '', '', 0, 0, 0, '', 0, '', 'maxwidth200');
+//			$moreforfilter .= '</div>';
+//		}
 		// If the user can view prospects other than his'
-		if ($conf->categorie->enabled && ($user->rights->produit->lire || $user->rights->service->lire)) {
-			include_once DOL_DOCUMENT_ROOT . '/categories/class/categorie.class.php';
-			$moreforfilter .= '<div class="divsearchfield">';
-			$moreforfilter .= $langs->trans('IncludingProductWithTag') . ': ';
-			$cate_arbo = $form->select_all_categories(Categorie::TYPE_PRODUCT, null, 'parent', null, null, 1);
-			$moreforfilter .= $form->selectarray('search_product_category', $cate_arbo, $search_product_category, 1, 0, 0, '', 0, 0, 0, 0, 'maxwidth300', 1);
-			$moreforfilter .= '</div>';
-		}
-		$parameters = array();
-
-		if (!empty($moreforfilter)) {
-			print '<div class="liste_titre liste_titre_bydiv centpercent">';
-			print $moreforfilter;
-			print '</div>';
-		}
+//		if ($conf->categorie->enabled && ($user->rights->produit->lire || $user->rights->service->lire)) {
+//			include_once DOL_DOCUMENT_ROOT . '/categories/class/categorie.class.php';
+//			$moreforfilter .= '<div class="divsearchfield">';
+//			$moreforfilter .= $langs->trans('IncludingProductWithTag') . ': ';
+//			$cate_arbo = $form->select_all_categories(Categorie::TYPE_PRODUCT, null, 'parent', null, null, 1);
+//			$moreforfilter .= $form->selectarray('search_product_category', $cate_arbo, $search_product_category, 1, 0, 0, '', 0, 0, 0, 0, 'maxwidth300', 1);
+//			$moreforfilter .= '</div>';
+//		}
+//		$parameters = array();
+//
+//		if (!empty($moreforfilter)) {
+//			print '<div class="liste_titre liste_titre_bydiv centpercent">';
+//			print $moreforfilter;
+//			print '</div>';
+//		}
 
 		$varpage = empty($contextpage) ? $_SERVER["PHP_SELF"] : $contextpage;
 		$selectedfields = $form->multiSelectArrayWithCheckbox('selectedfields', $arrayfields, $varpage); // This also change content of $arrayfields
@@ -2202,114 +2202,114 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db)
 		print '<table class="tagtable liste' . ($moreforfilter ? " listwithfilterbefore" : "") . '">' . "\n";
 
 		print '<tr class="liste_titre_filter">';
-		// Ref
-		if (!empty($arrayfields['cf.ref']['checked'])) {
-			print '<td class="liste_titre"><input size="8" type="text" class="flat" name="search_ref" value="' . $search_ref . '"></td>';
-		}
-		// Ref customer
-		if (!empty($arrayfields['cf.ref_supplier']['checked'])) {
-			print '<td class="liste_titre"><input type="text" class="flat" size="8" name="search_refsupp" value="' . $search_refsupp . '"></td>';
-		}
-		// Project ref
-		if (!empty($arrayfields['p.project_ref']['checked'])) {
-			print '<td class="liste_titre"><input type="text" class="flat" size="6" name="search_project_ref" value="' . $search_project_ref . '"></td>';
-		}
-		// Request author
-		if (!empty($arrayfields['u.login']['checked'])) {
-			print '<td class="liste_titre">';
-			print '<input type="text" class="flat" size="6" name="search_request_author" value="' . $search_request_author . '">';
-			print '</td>';
-		}
-		// Thirpdarty
-		if (!empty($arrayfields['s.nom']['checked'])) {
-			print '<td class="liste_titre"><input type="text" size="6" class="flat" name="search_company" value="' . $search_company . '"></td>';
-		}
-		// Town
-		if (!empty($arrayfields['s.town']['checked'])) print '<td class="liste_titre"><input class="flat maxwidth50" type="text" name="search_town" value="' . $search_town . '"></td>';
-		// Zip
-		if (!empty($arrayfields['s.zip']['checked'])) print '<td class="liste_titre"><input class="flat maxwidth50" type="text" name="search_zip" value="' . $search_zip . '"></td>';
-		// State
-		if (!empty($arrayfields['state.nom']['checked'])) {
-			print '<td class="liste_titre">';
-			print '<input class="flat maxwidth50" type="text" name="search_state" value="' . dol_escape_htmltag($search_state) . '">';
-			print '</td>';
-		}
-		// Country
-		if (!empty($arrayfields['country.code_iso']['checked'])) {
-			print '<td class="liste_titre center">';
-			print $form->select_country($search_country, 'search_country', '', 0, 'minwidth100imp maxwidth100');
-			print '</td>';
-		}
-		// Company type
-		if (!empty($arrayfields['typent.code']['checked'])) {
-			print '<td class="liste_titre maxwidthonsmartphone center">';
-			print $form->selectarray("search_type_thirdparty", $formcompany->typent_array(0), $search_type_thirdparty, 0, 0, 0, '', 0, 0, 0, (empty($conf->global->SOCIETE_SORT_ON_TYPEENT) ? 'ASC' : $conf->global->SOCIETE_SORT_ON_TYPEENT));
-			print '</td>';
-		}
-		// Date order
-		if (!empty($arrayfields['cf.date_commande']['checked'])) {
-			print '<td class="liste_titre nowraponall center">';
-			if (!empty($conf->global->MAIN_LIST_FILTER_ON_DAY)) print '<input class="flat width25 valignmiddle" type="text" maxlength="2" name="search_orderday" value="' . $search_orderday . '">';
-			print '<input class="flat width25 valignmiddle" type="text" maxlength="2" name="search_ordermonth" value="' . $search_ordermonth . '">';
-			$formother->select_year($search_orderyear ? $search_orderyear : -1, 'search_orderyear', 1, 20, 5);
-			print '</td>';
-		}
-		// Date delivery
-		if (!empty($arrayfields['cf.date_delivery']['checked'])) {
-			print '<td class="liste_titre nowraponall center">';
-			if (!empty($conf->global->MAIN_LIST_FILTER_ON_DAY)) print '<input class="flat width25 valignmiddle" type="text" maxlength="2" name="search_deliveryday" value="' . $search_deliveryday . '">';
-			print '<input class="flat width25 valignmiddle" type="text" maxlength="2" name="search_deliverymonth" value="' . $search_deliverymonth . '">';
-			$formother->select_year($search_deliveryyear ? $search_deliveryyear : -1, 'search_deliveryyear', 1, 20, 5);
-			print '</td>';
-		}
-		if (!empty($arrayfields['cf.total_ht']['checked'])) {
-			// Amount
-			print '<td class="liste_titre right">';
-			print '<input class="flat" type="text" size="5" name="search_total_ht" value="' . $search_total_ht . '">';
-			print '</td>';
-		}
-		if (!empty($arrayfields['cf.total_vat']['checked'])) {
-			// Amount
-			print '<td class="liste_titre right">';
-			print '<input class="flat" type="text" size="5" name="search_total_vat" value="' . $search_total_vat . '">';
-			print '</td>';
-		}
-		if (!empty($arrayfields['cf.total_ttc']['checked'])) {
-			// Amount
-			print '<td class="liste_titre right">';
-			print '<input class="flat" type="text" size="5" name="search_total_ttc" value="' . $search_total_ttc . '">';
-			print '</td>';
-		}
+//		// Ref
+//		if (!empty($arrayfields['cf.ref']['checked'])) {
+//			print '<td class="liste_titre"><input size="8" type="text" class="flat" name="search_ref" value="' . $search_ref . '"></td>';
+//		}
+//		// Ref customer
+//		if (!empty($arrayfields['cf.ref_supplier']['checked'])) {
+//			print '<td class="liste_titre"><input type="text" class="flat" size="8" name="search_refsupp" value="' . $search_refsupp . '"></td>';
+//		}
+//		// Project ref
+//		if (!empty($arrayfields['p.project_ref']['checked'])) {
+//			print '<td class="liste_titre"><input type="text" class="flat" size="6" name="search_project_ref" value="' . $search_project_ref . '"></td>';
+//		}
+//		// Request author
+//		if (!empty($arrayfields['u.login']['checked'])) {
+//			print '<td class="liste_titre">';
+//			print '<input type="text" class="flat" size="6" name="search_request_author" value="' . $search_request_author . '">';
+//			print '</td>';
+//		}
+//		// Thirpdarty
+//		if (!empty($arrayfields['s.nom']['checked'])) {
+//			print '<td class="liste_titre"><input type="text" size="6" class="flat" name="search_company" value="' . $search_company . '"></td>';
+//		}
+//		// Town
+//		if (!empty($arrayfields['s.town']['checked'])) print '<td class="liste_titre"><input class="flat maxwidth50" type="text" name="search_town" value="' . $search_town . '"></td>';
+//		// Zip
+//		if (!empty($arrayfields['s.zip']['checked'])) print '<td class="liste_titre"><input class="flat maxwidth50" type="text" name="search_zip" value="' . $search_zip . '"></td>';
+//		// State
+//		if (!empty($arrayfields['state.nom']['checked'])) {
+//			print '<td class="liste_titre">';
+//			print '<input class="flat maxwidth50" type="text" name="search_state" value="' . dol_escape_htmltag($search_state) . '">';
+//			print '</td>';
+//		}
+//		// Country
+//		if (!empty($arrayfields['country.code_iso']['checked'])) {
+//			print '<td class="liste_titre center">';
+//			print $form->select_country($search_country, 'search_country', '', 0, 'minwidth100imp maxwidth100');
+//			print '</td>';
+//		}
+//		// Company type
+//		if (!empty($arrayfields['typent.code']['checked'])) {
+//			print '<td class="liste_titre maxwidthonsmartphone center">';
+//			print $form->selectarray("search_type_thirdparty", $formcompany->typent_array(0), $search_type_thirdparty, 0, 0, 0, '', 0, 0, 0, (empty($conf->global->SOCIETE_SORT_ON_TYPEENT) ? 'ASC' : $conf->global->SOCIETE_SORT_ON_TYPEENT));
+//			print '</td>';
+//		}
+//		// Date order
+//		if (!empty($arrayfields['cf.date_commande']['checked'])) {
+//			print '<td class="liste_titre nowraponall center">';
+//			if (!empty($conf->global->MAIN_LIST_FILTER_ON_DAY)) print '<input class="flat width25 valignmiddle" type="text" maxlength="2" name="search_orderday" value="' . $search_orderday . '">';
+//			print '<input class="flat width25 valignmiddle" type="text" maxlength="2" name="search_ordermonth" value="' . $search_ordermonth . '">';
+//			$formother->select_year($search_orderyear ? $search_orderyear : -1, 'search_orderyear', 1, 20, 5);
+//			print '</td>';
+//		}
+//		// Date delivery
+//		if (!empty($arrayfields['cf.date_delivery']['checked'])) {
+//			print '<td class="liste_titre nowraponall center">';
+//			if (!empty($conf->global->MAIN_LIST_FILTER_ON_DAY)) print '<input class="flat width25 valignmiddle" type="text" maxlength="2" name="search_deliveryday" value="' . $search_deliveryday . '">';
+//			print '<input class="flat width25 valignmiddle" type="text" maxlength="2" name="search_deliverymonth" value="' . $search_deliverymonth . '">';
+//			$formother->select_year($search_deliveryyear ? $search_deliveryyear : -1, 'search_deliveryyear', 1, 20, 5);
+//			print '</td>';
+//		}
+//		if (!empty($arrayfields['cf.total_ht']['checked'])) {
+//			// Amount
+//			print '<td class="liste_titre right">';
+//			print '<input class="flat" type="text" size="5" name="search_total_ht" value="' . $search_total_ht . '">';
+//			print '</td>';
+//		}
+//		if (!empty($arrayfields['cf.total_vat']['checked'])) {
+//			// Amount
+//			print '<td class="liste_titre right">';
+//			print '<input class="flat" type="text" size="5" name="search_total_vat" value="' . $search_total_vat . '">';
+//			print '</td>';
+//		}
+//		if (!empty($arrayfields['cf.total_ttc']['checked'])) {
+//			// Amount
+//			print '<td class="liste_titre right">';
+//			print '<input class="flat" type="text" size="5" name="search_total_ttc" value="' . $search_total_ttc . '">';
+//			print '</td>';
+//		}
 		// Extra fields
 		include DOL_DOCUMENT_ROOT . '/core/tpl/extrafields_list_search_input.tpl.php';
 
-		$parameters = array('arrayfields' => $arrayfields);
-		// Date creation
-		if (!empty($arrayfields['cf.datec']['checked'])) {
-			print '<td class="liste_titre">';
-			print '</td>';
-		}
-		// Date modification
-		if (!empty($arrayfields['cf.tms']['checked'])) {
-			print '<td class="liste_titre">';
-			print '</td>';
-		}
-		// Status
-		if (!empty($arrayfields['cf.fk_statut']['checked'])) {
-			print '<td class="liste_titre right">';
-			$formorder->selectSupplierOrderStatus((strstr($search_status, ',') ? -1 : $search_status), 1, 'search_status');
-			print '</td>';
-		}
-		// Status billed
-		if (!empty($arrayfields['cf.billed']['checked'])) {
-			print '<td class="liste_titre center">';
-			print $form->selectyesno('search_billed', $search_billed, 1, 0, 1);
-			print '</td>';
-		}
+//		$parameters = array('arrayfields' => $arrayfields);
+//		// Date creation
+//		if (!empty($arrayfields['cf.datec']['checked'])) {
+//			print '<td class="liste_titre">';
+//			print '</td>';
+//		}
+//		// Date modification
+//		if (!empty($arrayfields['cf.tms']['checked'])) {
+//			print '<td class="liste_titre">';
+//			print '</td>';
+//		}
+//		// Status
+//		if (!empty($arrayfields['cf.fk_statut']['checked'])) {
+//			print '<td class="liste_titre right">';
+//			$formorder->selectSupplierOrderStatus((strstr($search_status, ',') ? -1 : $search_status), 1, 'search_status');
+//			print '</td>';
+//		}
+//		// Status billed
+//		if (!empty($arrayfields['cf.billed']['checked'])) {
+//			print '<td class="liste_titre center">';
+//			print $form->selectyesno('search_billed', $search_billed, 1, 0, 1);
+//			print '</td>';
+//		}
 		// Action column
-		print '<td class="liste_titre middle">';
-		$searchpicto = $form->showFilterButtons();
-		print $searchpicto;
+//		print '<td class="liste_titre middle">';
+//		$searchpicto = $form->showFilterButtons();
+//		print $searchpicto;
 		print '</td>';
 
 		print "</tr>\n";
@@ -2556,14 +2556,14 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db)
 		if ($massaction == 'builddoc' || $action == 'remove_file' || $show_files) $hidegeneratedfilelistifempty = 0;
 
 		// Show list of available documents
-		$urlsource = $_SERVER['PHP_SELF'] . '?sortfield=' . $sortfield . '&sortorder=' . $sortorder;
-		$urlsource .= str_replace('&amp;', '&', $param);
+//		$urlsource = $_SERVER['PHP_SELF'] . '?sortfield=' . $sortfield . '&sortorder=' . $sortorder;
+//		$urlsource .= str_replace('&amp;', '&', $param);
 
-		$filedir = $diroutputmassaction;
-		$genallowed = $user->rights->fournisseur->commande->lire;
-		$delallowed = $user->rights->fournisseur->commande->creer;
+//		$filedir = $diroutputmassaction;
+//		$genallowed = $user->rights->fournisseur->commande->lire;
+//		$delallowed = $user->rights->fournisseur->commande->creer;
 
-		print $formfile->showdocuments('massfilesarea_supplier_order', '', $filedir, $urlsource, 0, $delallowed, '', 1, 1, 0, 48, 1, $param, $title, '', '', '', null, $hidegeneratedfilelistifempty);
+//		print $formfile->showdocuments('massfilesarea_supplier_order', '', $filedir, $urlsource, 0, $delallowed, '', 1, 1, 0, 48, 1, $param, $title, '', '', '', null, $hidegeneratedfilelistifempty);
 	} else {
 		dol_print_error($db);
 	}
