@@ -2255,10 +2255,12 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db, Hook
 	$reshook = $hookmanager->executeHooks('printFieldListSelect', $parameters); // Note that $action and $object may have been modified by hook
 	$sql .= $hookmanager->resPrint;
 	$sql .= " FROM " . MAIN_DB_PREFIX . "societe as s";
+	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "commande as c on (s.rowid = c.fk_soc)";
+	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "element_element as e on (c.rowid = e.fk_source AND targettype = 'order_supplier' AND sourcetype = 'commande')";
 	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "c_country as country on (country.rowid = s.fk_pays)";
 	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "c_typent as typent on (typent.id = s.fk_typent)";
 	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "c_departements as state on (state.rowid = s.fk_departement)";
-	$sql .= ", " . MAIN_DB_PREFIX . "commande_fournisseur as cf";
+	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "commande_fournisseur as cf on (cf.rowid = e.fk_target AND targettype = 'order_supplier' AND sourcetype = 'commande')";
 	if (is_array($extrafields->attributes[$object->table_element]['label']) && count($extrafields->attributes[$object->table_element]['label'])) $sql .= " LEFT JOIN " . MAIN_DB_PREFIX . $object->table_element . "_extrafields as ef on (cf.rowid = ef.fk_object)";
 	if ($sall || $search_product_category > 0) $sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'commande_fournisseurdet as pd ON cf.rowid=pd.fk_commande';
 	if ($search_product_category > 0) $sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'categorie_product as cp ON cp.fk_product=pd.fk_product';
@@ -2270,7 +2272,8 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db, Hook
 		$sql .= ", " . MAIN_DB_PREFIX . "element_contact as ec";
 		$sql .= ", " . MAIN_DB_PREFIX . "c_type_contact as tc";
 	}
-	$sql .= ' WHERE cf.fk_soc = '.$commandeClient->socid;
+//	$sql .= ' WHERE cf.fk_soc = '.$commandeClient->socid;
+	$sql .= ' WHERE e.fk_source = '.$commandeClient->id;
 	$sql .= ' AND cf.entity IN (' . getEntity('supplier_order') . ')';
 	if ($socid > 0) $sql .= " AND s.rowid = " . $socid;
 	if (!$user->rights->societe->client->voir && !$socid) $sql .= " AND s.rowid = sc.fk_soc AND sc.fk_user = " . $user->id;
@@ -2307,7 +2310,7 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db, Hook
 	$reshook = $hookmanager->executeHooks('printFieldListWhere', $parameters); // Note that $action and $object may have been modified by hook
 	$sql .= $hookmanager->resPrint;
 
-	$sql .= $db->order($sortfield, $sortorder);
+//	$sql .= $db->order($sortfield, $sortorder);
 
 	$nbtotalofrecords = '';
 	if (empty($conf->global->MAIN_DISABLE_FULL_SCANLIST)) {
