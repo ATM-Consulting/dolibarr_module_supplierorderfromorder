@@ -1182,11 +1182,12 @@ print '	  </div>'.
           		}
 			}
 
-          	// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :
+          	// La quantité à commander correspond à la quantité commandée, elle est préremplie. Si un client commande 10 produits, la quantité à commmander sera prérempli à 10
 
           	if(!$justOFforNeededProduct) {
           	     $stock_expedie_client = getExpedie($prod->id);
-			     $stocktobuy = $objp->desiredstock - ($stock - $stock_expedie_client);
+//			     $stocktobuy = $objp->desiredstock - ($stock - $stock_expedie_client);
+			     $stocktobuy = $stock_commande_client;
 			     $help_stock.=', ' .$langs->trans('Expeditions').' : '.(float)$stock_expedie_client;
             }
             else{
@@ -1962,6 +1963,220 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db)
 
 	$parameters = array('socid' => $socid);
 
+	if ($massaction == 'confirm_createbills')
+	{
+		$orders = GETPOST('toselect', 'array');
+		$createbills_onebythird = GETPOST('createbills_onebythird', 'int');
+		$validate_invoices = GETPOST('validate_invoices', 'int');
+
+		$TFact = array();
+		$TFactThird = array();
+
+		$nb_bills_created = 0;
+
+		$db->begin();
+
+		foreach ($orders as $id_order) {
+			$cmd = new Commande($db);
+			if ($cmd->fetch($id_order) <= 0) continue;
+
+			$object = new Facture($db);
+			if (!empty($createbills_onebythird) && !empty($TFactThird[$cmd->socid])) $object = $TFactThird[$cmd->socid]; // If option "one bill per third" is set, we use already created order.
+			else {
+				$object->socid = $cmd->socid;
+				$object->type = Facture::TYPE_STANDARD;
+				$object->cond_reglement_id	= $cmd->cond_reglement_id;
+				$object->mode_reglement_id	= $cmd->mode_reglement_id;
+				$object->fk_project = $cmd->fk_project;
+
+				$datefacture = dol_mktime(12, 0, 0, $_POST['remonth'], $_POST['reday'], $_POST['reyear']);
+				if (empty($datefacture))
+				{
+					$datefacture = dol_mktime(date("h"), date("M"), 0, date("m"), date("d"), date("Y"));
+				}
+
+				$object->date = $datefacture;
+				$object->origin    = 'commande';
+				$object->origin_id = $id_order;
+
+				$res = $object->create($user);
+
+				if ($res > 0) $nb_bills_created++;
+			}
+
+			if ($object->id > 0)
+			{
+				$sql = "INSERT INTO ".MAIN_DB_PREFIX."element_element (";
+				$sql .= "fk_source";
+				$sql .= ", sourcetype";
+				$sql .= ", fk_target";
+				$sql .= ", targettype";
+				$sql .= ") VALUES (";
+				$sql .= $id_order;
+				$sql .= ", '".$object->origin."'";
+				$sql .= ", ".$object->id;
+				$sql .= ", '".$object->element."'";
+				$sql .= ")";
+
+				if (!$db->query($sql))
+				{
+					$erorr++;
+				}
+
+				if (!$error)
+				{
+					$lines = $cmd->lines;
+					if (empty($lines) && method_exists($cmd, 'fetch_lines'))
+					{
+						$cmd->fetch_lines();
+						$lines = $cmd->lines;
+					}
+
+					$fk_parent_line = 0;
+					$num = count($lines);
+
+					for ($i = 0; $i < $num; $i++)
+					{
+						$desc = ($lines[$i]->desc ? $lines[$i]->desc : $lines[$i]->libelle);
+						if ($lines[$i]->subprice < 0)
+						{
+							// Negative line, we create a discount line
+							$discount = new DiscountAbsolute($db);
+							$discount->fk_soc = $object->socid;
+							$discount->amount_ht = abs($lines[$i]->total_ht);
+							$discount->amount_tva = abs($lines[$i]->total_tva);
+							$discount->amount_ttc = abs($lines[$i]->total_ttc);
+							$discount->tva_tx = $lines[$i]->tva_tx;
+							$discount->fk_user = $user->id;
+							$discount->description = $desc;
+							$discountid = $discount->create($user);
+							if ($discountid > 0)
+							{
+								$result = $object->insert_discount($discountid);
+								//$result=$discount->link_to_invoice($lineid,$id);
+							}
+							else
+							{
+								setEventMessages($discount->error, $discount->errors, 'errors');
+								$error++;
+								break;
+							}
+						}
+						else
+						{
+							// Positive line
+							$product_type = ($lines[$i]->product_type ? $lines[$i]->product_type : 0);
+							// Date start
+							$date_start = false;
+							if ($lines[$i]->date_debut_prevue) $date_start = $lines[$i]->date_debut_prevue;
+							if ($lines[$i]->date_debut_reel) $date_start = $lines[$i]->date_debut_reel;
+							if ($lines[$i]->date_start) $date_start = $lines[$i]->date_start;
+							//Date end
+							$date_end = false;
+							if ($lines[$i]->date_fin_prevue) $date_end = $lines[$i]->date_fin_prevue;
+							if ($lines[$i]->date_fin_reel) $date_end = $lines[$i]->date_fin_reel;
+							if ($lines[$i]->date_end) $date_end = $lines[$i]->date_end;
+							// Reset fk_parent_line for no child products and special product
+							if (($lines[$i]->product_type != 9 && empty($lines[$i]->fk_parent_line)) || $lines[$i]->product_type == 9)
+							{
+								$fk_parent_line = 0;
+							}
+							$result = $object->addline(
+								$desc,
+								$lines[$i]->subprice,
+								$lines[$i]->qty,
+								$lines[$i]->tva_tx,
+								$lines[$i]->localtax1_tx,
+								$lines[$i]->localtax2_tx,
+								$lines[$i]->fk_product,
+								$lines[$i]->remise_percent,
+								$date_start,
+								$date_end,
+								0,
+								$lines[$i]->info_bits,
+								$lines[$i]->fk_remise_except,
+								'HT',
+								0,
+								$product_type,
+								$ii,
+								$lines[$i]->special_code,
+								$object->origin,
+								$lines[$i]->rowid,
+								$fk_parent_line,
+								$lines[$i]->fk_fournprice,
+								$lines[$i]->pa_ht,
+								$lines[$i]->label
+							);
+							if ($result > 0)
+							{
+								$lineid = $result;
+							}
+							else
+							{
+								$lineid = 0;
+								$error++;
+								break;
+							}
+							// Defined the new fk_parent_line
+							if ($result > 0 && $lines[$i]->product_type == 9)
+							{
+								$fk_parent_line = $result;
+							}
+						}
+					}
+				}
+			}
+
+			$cmd->classifyBilled($user); // TODO Move this in workflow like done for customer orders
+
+			if (!empty($createbills_onebythird) && empty($TFactThird[$cmd->socid])) $TFactThird[$cmd->socid] = $object;
+			else $TFact[$object->id] = $object;
+		}
+
+		// Build doc with all invoices
+		$TAllFact = empty($createbills_onebythird) ? $TFact : $TFactThird;
+		$toselect = array();
+
+		if (!$error && $validate_invoices) {
+			$massaction = $action = 'builddoc';
+
+			foreach ($TAllFact as &$object)
+			{
+				$object->validate($user);
+				if ($result <= 0)
+				{
+					$error++;
+					setEventMessages($object->error, $object->errors, 'errors');
+					break;
+				}
+
+				$id = $object->id; // For builddoc action
+
+				// Fac builddoc
+				$donotredirect = 1;
+				$upload_dir = $conf->facture->dir_output;
+				$permissiontoadd=$user->rights->facture->creer;
+				include DOL_DOCUMENT_ROOT.'/core/actions_builddoc.inc.php';
+			}
+
+			$massaction = $action = 'confirm_createbills';
+		}
+
+		if (! $error)
+		{
+			$db->commit();
+			setEventMessages($langs->trans('BillCreated', $nb_bills_created), null, 'mesgs');
+		}
+		else
+		{
+			$db->rollback();
+			$action = 'create';
+			$_GET["origin"] = $_POST["origin"];
+			$_GET["originid"] = $_POST["originid"];
+			setEventMessages($object->error, $object->errors, 'errors');
+			$error++;
+		}
+	}
 
 	/*
 	 *	View
@@ -2137,10 +2352,10 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db)
 			'builddoc' => $langs->trans("PDFMerge"),
 			'presend' => $langs->trans("SendByMail"),
 		);
-		//if($user->rights->fournisseur->facture->creer) $arrayofmassactions['createbills']=$langs->trans("CreateInvoiceForThisCustomer");
+//		if($user->rights->fournisseur->facture->creer) $arrayofmassactions['createbills']=$langs->trans("CreateInvoiceForThisCustomer");
 		if ($user->rights->fournisseur->commande->supprimer) $arrayofmassactions['predelete'] = '<span class="fa fa-trash paddingrightonly"></span>' . $langs->trans("Delete");
 		if (in_array($massaction, array('presend', 'predelete', 'createbills'))) $arrayofmassactions = array();
-//		$massactionbutton = $form->selectMassAction('', $arrayofmassactions);
+		$massactionbutton = $form->selectMassAction('', $arrayofmassactions);
 
 		// Fields title search
 		print '<form method="POST" action="' . $_SERVER["PHP_SELF"] . '">';
@@ -2153,7 +2368,7 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db)
 		print '<input type="hidden" name="sortfield" value="' . $sortfield . '">';
 		print '<input type="hidden" name="sortorder" value="' . $sortorder . '">';
 		print '<input type="hidden" name="search_status" value="' . $search_status . '">';
-		print_barre_liste($title, $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder, '', $num, $nbtotalofrecords, 'commercial', 0, '', '', '');
+		print_barre_liste($title, $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder, $massactionbutton, $num, $nbtotalofrecords, 'commercial', 0, '', '', '');
 
 		$topicmail = "SendOrderRef";
 		$modelmail = "order_supplier_send";
@@ -2201,8 +2416,8 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db)
 //		}
 
 		$varpage = empty($contextpage) ? $_SERVER["PHP_SELF"] : $contextpage;
-//		$selectedfields = $form->multiSelectArrayWithCheckbox('selectedfields', $arrayfields, $varpage); // This also change content of $arrayfields
-//		if ($massactionbutton) $selectedfields .= $form->showCheckAddButtons('checkforselect', 1);
+		$selectedfields = $form->multiSelectArrayWithCheckbox('selectedfields', $arrayfields, $varpage); // This also change content of $arrayfields
+		if ($massactionbutton) $selectedfields .= $form->showCheckAddButtons('checkforselect', 1);
 
 		print '<div class="div-table-responsive">';
 		print '<table class="tagtable liste' . ($moreforfilter ? " listwithfilterbefore" : "") . '">' . "\n";
@@ -2534,11 +2749,11 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db)
 			// Action column
 			print '<td class="nowrap center">';
 			if ($massactionbutton || $massaction)   // If we are in select mode (massactionbutton defined) or if we have already selected and sent an action ($massaction) defined
-//			{
-//				$selected = 0;
-//				if (in_array($obj->rowid, $arrayofselected)) $selected = 1;
-//				print '<input id="cb' . $obj->rowid . '" class="flat checkforselect" type="checkbox" name="toselect[]" value="' . $obj->rowid . '"' . ($selected ? ' checked="checked"' : '') . '>';
-//			}
+			{
+				$selected = 0;
+				if (in_array($obj->rowid, $arrayofselected)) $selected = 1;
+				print '<input id="cb' . $obj->rowid . '" class="flat checkforselect" type="checkbox" name="toselect[]" value="' . $obj->rowid . '"' . ($selected ? ' checked="checked"' : '') . '>';
+			}
 			print '</td>';
 			if (!$i) $totalarray['nbfield']++;
 
@@ -2561,15 +2776,15 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db)
 		$hidegeneratedfilelistifempty = 1;
 		if ($massaction == 'builddoc' || $action == 'remove_file' || $show_files) $hidegeneratedfilelistifempty = 0;
 
-		// Show list of available documents
-//		$urlsource = $_SERVER['PHP_SELF'] . '?sortfield=' . $sortfield . '&sortorder=' . $sortorder;
-//		$urlsource .= str_replace('&amp;', '&', $param);
+		 //Show list of available documents
+		$urlsource = $_SERVER['PHP_SELF'] . '?sortfield=' . $sortfield . '&sortorder=' . $sortorder;
+		$urlsource .= str_replace('&amp;', '&', $param);
 
-//		$filedir = $diroutputmassaction;
-//		$genallowed = $user->rights->fournisseur->commande->lire;
-//		$delallowed = $user->rights->fournisseur->commande->creer;
+		$filedir = $diroutputmassaction;
+		$genallowed = $user->rights->fournisseur->commande->lire;
+		$delallowed = $user->rights->fournisseur->commande->creer;
 
-//		print $formfile->showdocuments('massfilesarea_supplier_order', '', $filedir, $urlsource, 0, $delallowed, '', 1, 1, 0, 48, 1, $param, $title, '', '', '', null, $hidegeneratedfilelistifempty);
+		print $formfile->showdocuments('massfilesarea_supplier_order', '', $filedir, $urlsource, 0, $delallowed, '', 1, 1, 0, 48, 1, $param, $title, '', '', '', null, $hidegeneratedfilelistifempty);
 	} else {
 		dol_print_error($db);
 	}

@@ -27,10 +27,14 @@ class ActionsSupplierorderfromorder
 
         	?>
 			<a id="listeProd" class="butAction" href="<?php
-			echo dol_buildpath('/supplierorderfromorder/ordercustomer.php?id=' . $object->id.'&projectid='.$object->fk_project,1);
 			if($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK == 1)
 			{
 				echo dol_buildpath('/supplierorderfromorder/ordercustomer.php?id=' . $object->id.'&projectid='.$object->fk_project.'&show_stock_no_need=yes',1);
+			}
+			else
+			{
+				echo dol_buildpath('/supplierorderfromorder/ordercustomer.php?id=' . $object->id.'&projectid='.$object->fk_project,1);
+
 			}
 			?>"><?php echo $langs->trans( 'OrderToSuppliers' ); ?></a>
 			<script type="text/javascript">
