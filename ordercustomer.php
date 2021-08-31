@@ -2134,7 +2134,7 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db)
 		//if($user->rights->fournisseur->facture->creer) $arrayofmassactions['createbills']=$langs->trans("CreateInvoiceForThisCustomer");
 		if ($user->rights->fournisseur->commande->supprimer) $arrayofmassactions['predelete'] = '<span class="fa fa-trash paddingrightonly"></span>' . $langs->trans("Delete");
 		if (in_array($massaction, array('presend', 'predelete', 'createbills'))) $arrayofmassactions = array();
-		$massactionbutton = $form->selectMassAction('', $arrayofmassactions);
+//		$massactionbutton = $form->selectMassAction('', $arrayofmassactions);
 
 		// Fields title search
 		print '<form method="POST" action="' . $_SERVER["PHP_SELF"] . '">';
@@ -2147,7 +2147,7 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db)
 		print '<input type="hidden" name="sortfield" value="' . $sortfield . '">';
 		print '<input type="hidden" name="sortorder" value="' . $sortorder . '">';
 		print '<input type="hidden" name="search_status" value="' . $search_status . '">';
-		print_barre_liste($title, $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder, $massactionbutton, $num, $nbtotalofrecords, 'commercial', 0, '', '', '');
+		print_barre_liste($title, $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder, '', $num, $nbtotalofrecords, 'commercial', 0, '', '', '');
 
 		$topicmail = "SendOrderRef";
 		$modelmail = "order_supplier_send";
@@ -2195,8 +2195,8 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db)
 //		}
 
 		$varpage = empty($contextpage) ? $_SERVER["PHP_SELF"] : $contextpage;
-		$selectedfields = $form->multiSelectArrayWithCheckbox('selectedfields', $arrayfields, $varpage); // This also change content of $arrayfields
-		if ($massactionbutton) $selectedfields .= $form->showCheckAddButtons('checkforselect', 1);
+//		$selectedfields = $form->multiSelectArrayWithCheckbox('selectedfields', $arrayfields, $varpage); // This also change content of $arrayfields
+//		if ($massactionbutton) $selectedfields .= $form->showCheckAddButtons('checkforselect', 1);
 
 		print '<div class="div-table-responsive">';
 		print '<table class="tagtable liste' . ($moreforfilter ? " listwithfilterbefore" : "") . '">' . "\n";
@@ -2315,31 +2315,31 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db)
 		print "</tr>\n";
 
 		print '<tr class="liste_titre">';
-		if (!empty($arrayfields['cf.ref']['checked'])) print_liste_field_titre($arrayfields['cf.ref']['label'], $_SERVER["PHP_SELF"], "cf.ref", "", $param, '', $sortfield, $sortorder);
-		if (!empty($arrayfields['cf.ref_supplier']['checked'])) print_liste_field_titre($arrayfields['cf.ref_supplier']['label'], $_SERVER["PHP_SELF"], "cf.ref_supplier", "", $param, '', $sortfield, $sortorder);
-		if (!empty($arrayfields['p.project_ref']['checked'])) print_liste_field_titre($arrayfields['p.project_ref']['label'], $_SERVER["PHP_SELF"], "p.ref", "", $param, '', $sortfield, $sortorder);
-		if (!empty($arrayfields['u.login']['checked'])) print_liste_field_titre($arrayfields['u.login']['label'], $_SERVER["PHP_SELF"], "u.login", "", $param, '', $sortfield, $sortorder);
-		if (!empty($arrayfields['s.nom']['checked'])) print_liste_field_titre($arrayfields['s.nom']['label'], $_SERVER["PHP_SELF"], "s.nom", "", $param, '', $sortfield, $sortorder);
-		if (!empty($arrayfields['s.town']['checked'])) print_liste_field_titre($arrayfields['s.town']['label'], $_SERVER["PHP_SELF"], 's.town', '', $param, '', $sortfield, $sortorder);
-		if (!empty($arrayfields['s.zip']['checked'])) print_liste_field_titre($arrayfields['s.zip']['label'], $_SERVER["PHP_SELF"], 's.zip', '', $param, '', $sortfield, $sortorder);
-		if (!empty($arrayfields['state.nom']['checked'])) print_liste_field_titre($arrayfields['state.nom']['label'], $_SERVER["PHP_SELF"], "state.nom", "", $param, '', $sortfield, $sortorder);
-		if (!empty($arrayfields['country.code_iso']['checked'])) print_liste_field_titre($arrayfields['country.code_iso']['label'], $_SERVER["PHP_SELF"], "country.code_iso", "", $param, '', $sortfield, $sortorder, 'center ');
-		if (!empty($arrayfields['typent.code']['checked'])) print_liste_field_titre($arrayfields['typent.code']['label'], $_SERVER["PHP_SELF"], "typent.code", "", $param, '', $sortfield, $sortorder, 'center ');
-		if (!empty($arrayfields['cf.fk_author']['checked'])) print_liste_field_titre($arrayfields['cf.fk_author']['label'], $_SERVER["PHP_SELF"], "cf.fk_author", "", $param, '', $sortfield, $sortorder);
-		if (!empty($arrayfields['cf.date_commande']['checked'])) print_liste_field_titre($arrayfields['cf.date_commande']['label'], $_SERVER["PHP_SELF"], "cf.date_commande", "", $param, '', $sortfield, $sortorder, 'center ');
-		if (!empty($arrayfields['cf.date_delivery']['checked'])) print_liste_field_titre($arrayfields['cf.date_delivery']['label'], $_SERVER["PHP_SELF"], 'cf.date_livraison', '', $param, '', $sortfield, $sortorder, 'center ');
-		if (!empty($arrayfields['cf.total_ht']['checked'])) print_liste_field_titre($arrayfields['cf.total_ht']['label'], $_SERVER["PHP_SELF"], "cf.total_ht", "", $param, '', $sortfield, $sortorder, 'right ');
-		if (!empty($arrayfields['cf.total_vat']['checked'])) print_liste_field_titre($arrayfields['cf.total_vat']['label'], $_SERVER["PHP_SELF"], "cf.tva", "", $param, '', $sortfield, $sortorder, 'right ');
-		if (!empty($arrayfields['cf.total_ttc']['checked'])) print_liste_field_titre($arrayfields['cf.total_ttc']['label'], $_SERVER["PHP_SELF"], "cf.total_ttc", "", $param, '', $sortfield, $sortorder, 'right ');
+		if (!empty($arrayfields['cf.ref']['checked'])) print_liste_field_titre($arrayfields['cf.ref']['label'], $_SERVER["PHP_SELF"], "", "", $param, '', $sortfield, $sortorder);
+		if (!empty($arrayfields['cf.ref_supplier']['checked'])) print_liste_field_titre($arrayfields['cf.ref_supplier']['label'], $_SERVER["PHP_SELF"], "", "", $param, '', $sortfield, $sortorder);
+		if (!empty($arrayfields['p.project_ref']['checked'])) print_liste_field_titre($arrayfields['p.project_ref']['label'], $_SERVER["PHP_SELF"], "", "", $param, '', $sortfield, $sortorder);
+		if (!empty($arrayfields['u.login']['checked'])) print_liste_field_titre($arrayfields['u.login']['label'], $_SERVER["PHP_SELF"], "", "", $param, '', $sortfield, $sortorder);
+		if (!empty($arrayfields['s.nom']['checked'])) print_liste_field_titre($arrayfields['s.nom']['label'], $_SERVER["PHP_SELF"], "", "", $param, '', $sortfield, $sortorder);
+		if (!empty($arrayfields['s.town']['checked'])) print_liste_field_titre($arrayfields['s.town']['label'], $_SERVER["PHP_SELF"], '', '', $param, '', $sortfield, $sortorder);
+		if (!empty($arrayfields['s.zip']['checked'])) print_liste_field_titre($arrayfields['s.zip']['label'], $_SERVER["PHP_SELF"], '', '', $param, '', $sortfield, $sortorder);
+		if (!empty($arrayfields['state.nom']['checked'])) print_liste_field_titre($arrayfields['state.nom']['label'], $_SERVER["PHP_SELF"], "", "", $param, '', $sortfield, $sortorder);
+		if (!empty($arrayfields['country.code_iso']['checked'])) print_liste_field_titre($arrayfields['country.code_iso']['label'], $_SERVER["PHP_SELF"], "", "", $param, '', $sortfield, $sortorder, 'center ');
+		if (!empty($arrayfields['typent.code']['checked'])) print_liste_field_titre($arrayfields['typent.code']['label'], $_SERVER["PHP_SELF"], "", "", $param, '', $sortfield, $sortorder, 'center ');
+		if (!empty($arrayfields['cf.fk_author']['checked'])) print_liste_field_titre($arrayfields['cf.fk_author']['label'], $_SERVER["PHP_SELF"], "", "", $param, '', $sortfield, $sortorder);
+		if (!empty($arrayfields['cf.date_commande']['checked'])) print_liste_field_titre($arrayfields['cf.date_commande']['label'], $_SERVER["PHP_SELF"], "", "", $param, '', $sortfield, $sortorder, 'center ');
+		if (!empty($arrayfields['cf.date_delivery']['checked'])) print_liste_field_titre($arrayfields['cf.date_delivery']['label'], $_SERVER["PHP_SELF"], '', '', $param, '', $sortfield, $sortorder, 'center ');
+		if (!empty($arrayfields['cf.total_ht']['checked'])) print_liste_field_titre($arrayfields['cf.total_ht']['label'], $_SERVER["PHP_SELF"], "", "", $param, '', $sortfield, $sortorder, 'right ');
+		if (!empty($arrayfields['cf.total_vat']['checked'])) print_liste_field_titre($arrayfields['cf.total_vat']['label'], $_SERVER["PHP_SELF"], "", "", $param, '', $sortfield, $sortorder, 'right ');
+		if (!empty($arrayfields['cf.total_ttc']['checked'])) print_liste_field_titre($arrayfields['cf.total_ttc']['label'], $_SERVER["PHP_SELF"], "", "", $param, '', $sortfield, $sortorder, 'right ');
 		// Extra fields
 		include DOL_DOCUMENT_ROOT . '/core/tpl/extrafields_list_search_title.tpl.php';
 
 		$parameters = array('arrayfields' => $arrayfields, 'param' => $param, 'sortfield' => $sortfield, 'sortorder' => $sortorder);
-		if (!empty($arrayfields['cf.datec']['checked'])) print_liste_field_titre($arrayfields['cf.datec']['label'], $_SERVER["PHP_SELF"], "cf.date_creation", "", $param, '', $sortfield, $sortorder, 'center nowrap ');
-		if (!empty($arrayfields['cf.tms']['checked'])) print_liste_field_titre($arrayfields['cf.tms']['label'], $_SERVER["PHP_SELF"], "cf.tms", "", $param, '', $sortfield, $sortorder, 'center nowrap ');
-		if (!empty($arrayfields['cf.fk_statut']['checked'])) print_liste_field_titre($arrayfields['cf.fk_statut']['label'], $_SERVER["PHP_SELF"], "cf.fk_statut", "", $param, '', $sortfield, $sortorder, 'right ');
-		if (!empty($arrayfields['cf.billed']['checked'])) print_liste_field_titre($arrayfields['cf.billed']['label'], $_SERVER["PHP_SELF"], 'cf.billed', '', $param, '', $sortfield, $sortorder, 'center ');
-		print_liste_field_titre($selectedfields, $_SERVER["PHP_SELF"], "", '', '', '', $sortfield, $sortorder, 'center maxwidthsearch ');
+		if (!empty($arrayfields['cf.datec']['checked'])) print_liste_field_titre($arrayfields['cf.datec']['label'], $_SERVER["PHP_SELF"], "", "", $param, '', $sortfield, $sortorder, 'center nowrap ');
+		if (!empty($arrayfields['cf.tms']['checked'])) print_liste_field_titre($arrayfields['cf.tms']['label'], $_SERVER["PHP_SELF"], "", "", $param, '', $sortfield, $sortorder, 'center nowrap ');
+		if (!empty($arrayfields['cf.fk_statut']['checked'])) print_liste_field_titre($arrayfields['cf.fk_statut']['label'], $_SERVER["PHP_SELF"], "", "", $param, '', $sortfield, $sortorder, 'right ');
+		if (!empty($arrayfields['cf.billed']['checked'])) print_liste_field_titre($arrayfields['cf.billed']['label'], $_SERVER["PHP_SELF"], '', '', $param, '', $sortfield, $sortorder, 'center ');
+		print_liste_field_titre('', $_SERVER["PHP_SELF"], "", '', '', '', $sortfield, $sortorder, 'center maxwidthsearch ');
 		print "</tr>\n";
 
 
@@ -2528,11 +2528,11 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db)
 			// Action column
 			print '<td class="nowrap center">';
 			if ($massactionbutton || $massaction)   // If we are in select mode (massactionbutton defined) or if we have already selected and sent an action ($massaction) defined
-			{
-				$selected = 0;
-				if (in_array($obj->rowid, $arrayofselected)) $selected = 1;
-				print '<input id="cb' . $obj->rowid . '" class="flat checkforselect" type="checkbox" name="toselect[]" value="' . $obj->rowid . '"' . ($selected ? ' checked="checked"' : '') . '>';
-			}
+//			{
+//				$selected = 0;
+//				if (in_array($obj->rowid, $arrayofselected)) $selected = 1;
+//				print '<input id="cb' . $obj->rowid . '" class="flat checkforselect" type="checkbox" name="toselect[]" value="' . $obj->rowid . '"' . ($selected ? ' checked="checked"' : '') . '>';
+//			}
 			print '</td>';
 			if (!$i) $totalarray['nbfield']++;
 
