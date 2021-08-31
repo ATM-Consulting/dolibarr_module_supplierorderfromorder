@@ -733,14 +733,20 @@ if ($resql || $resql2) {
          '<input type="hidden" name="type" value="' . $type . '">'.
          '<input type="hidden" name="linecount" value="' . ($num+$num2) . '">'.
          '<input type="hidden" name="fk_commande" value="' . GETPOST('fk_commande','int'). '">'.
-         '<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need'). '">'.
+         '<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need'). '">';
 
-         '<div style="text-align:right">
-			<a href="'.$_SERVER["PHP_SELF"].'?'.$_SERVER["QUERY_STRING"].'&show_stock_no_need=yes">'.$langs->trans('ShowLineEvenIfStockIsSuffisant').'</a>';
-
-	if(!empty($TCachedProductId)) {
-		echo '<a style="color:red; font-weight:bold;" href="'.$_SERVER["PHP_SELF"].'?'.$_SERVER["QUERY_STRING"].'&purge_cached_product=yes">'.$langs->trans('PurgeSessionForCachedProduct').'</a>';
+	if (isset($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK) && ($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK == 0))
+	{
+		if($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK == 0)
+		{
+			echo '<div style="text-align:right">
+				<a href="'.$_SERVER["PHP_SELF"].'?'.$_SERVER["QUERY_STRING"].'&show_stock_no_need=yes">'.$langs->trans('ShowLineEvenIfStockIsSuffisant').'</a>';
+		}
 	}
+
+		if(!empty($TCachedProductId)) {
+			echo '<a style="color:red; font-weight:bold;" href="'.$_SERVER["PHP_SELF"].'?'.$_SERVER["QUERY_STRING"].'&purge_cached_product=yes">'.$langs->trans('PurgeSessionForCachedProduct').'</a>';
+		}
 
 print '	  </div>'.
          '<table class="liste" width="100%">';
@@ -1236,7 +1242,7 @@ print '	  </div>'.
 			$var =! $var;
 			print '<tr ' . $bc[$var] . ' data-productid="'.$objp->rowid.'"  data-i="'.$i.'"   >
 						<td>
-							<input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '>';
+							<input type="checkbox" class="check" name="check' . $i . '"' . $disabled . ' checked>';
 
 			$lineid = '';
 
@@ -1794,7 +1800,7 @@ function get_categs_enfants(&$cat) {
 
 
 /**
- *  		Shows the list of created suppliar invoices
+ *  		Shows the list of suppliar invoices for the current order
 
  * 		@param $langs
  * 		@param $user
