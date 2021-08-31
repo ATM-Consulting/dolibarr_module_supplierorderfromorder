@@ -1898,8 +1898,6 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db)
 
 	$extrafields = new ExtraFields($db);
 
-	$object->fetchObjectLinked();
-
 
 // fetch optionals attributes and labels
 	$extrafields->fetch_name_optionals_label('commande_fournisseur');
@@ -2298,13 +2296,10 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db)
 
 	$resql = $db->query($sql);
 	if ($resql) {
-		if ($socid > 0) {
-			$soc = new Societe($db);
-			$soc->fetch($socid);
-			$title = $langs->trans('ListOfSupplierOrders') . ' - ' . $soc->name;
-		} else {
+		if(!empty($commandeClient->ref))
+			$title = $langs->trans('ListOfSupplierOrdersFromOrder', $commandeClient->ref);
+		else
 			$title = $langs->trans('ListOfSupplierOrders');
-		}
 
 		$num = $db->num_rows($resql);
 
@@ -2348,8 +2343,7 @@ function displayCreatedFactFournList($id, $langs, $user, $conf, DoliDB $db)
 
 		// List of mass actions available
 		$arrayofmassactions = array(
-			'generate_doc' => $langs->trans("ReGeneratePDF"),
-			'builddoc' => $langs->trans("PDFMerge"),
+			'validate'=>$langs->trans("Validate"),
 			'presend' => $langs->trans("SendByMail"),
 		);
 //		if($user->rights->fournisseur->facture->creer) $arrayofmassactions['createbills']=$langs->trans("CreateInvoiceForThisCustomer");

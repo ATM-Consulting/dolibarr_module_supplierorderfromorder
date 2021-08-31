@@ -35,6 +35,7 @@ SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER=Filtre par défaut sur les catégories
 INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK=Inclure toutes les lignes de produit avec un stock suffisant par défault
 DeleteFilter=Supprimer le filtre
 NoFilter=Filtre vide
+ListOfSupplierOrdersFromOrder= Liste des commandes fournisseurs issues de la commande %s
 
 # dispatch_dispatch_to_supplier_order
 FournDispatch=Passer commande(s) fournisseur(s)
