@@ -803,7 +803,9 @@ if ($resql || $resql2) {
 		'<input type="hidden" name="fk_commande" value="' . GETPOST('fk_commande', 'int') . '">' .
 		'<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need', 'none') . '">';
 
-		if (isset($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK) && ($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK == 0))
+		print '<div class="div">';
+
+	if (isset($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK) && ($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK == 0))
 		{
 			if($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK == 0)
 			{
@@ -816,7 +818,9 @@ if ($resql || $resql2) {
 		echo '<a style="color:red; font-weight:bold;" href="' . $_SERVER["PHP_SELF"] . '?' . $_SERVER["QUERY_STRING"] . '&purge_cached_product=yes">' . $langs->trans('PurgeSessionForCachedProduct') . '</a>';
 	}
 
+
 	print '	  </div>' .
+
 		'<table class="liste" width="100%">';
 
 
