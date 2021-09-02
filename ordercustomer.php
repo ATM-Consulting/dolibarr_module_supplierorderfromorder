@@ -630,7 +630,7 @@ if ($_REQUEST['id'] && $conf->global->SOFO_ADD_FREE_LINES) {
 	}
 	//echo $sql2;
 }
-
+ // Restriction des alias pour qu'il n'y ai pas de mélange des deux listes avec un résultat complétmenet incohérent
 if(strpos($sortfield, 'cf.') === false
 	&& strpos($sortfield, 'ef.') === false
 	&& strpos($sortfield, 's.') === false
@@ -641,7 +641,6 @@ if(strpos($sortfield, 'cf.') === false
 	$sql .= $db->order($sortfield, $sortorder);
 }
 
-//echo $sql;
 
 if (!$conf->global->SOFO_USE_DELIVERY_TIME)
 	$sql .= $db->plimit($limit + 1, $offset);
@@ -1921,6 +1920,7 @@ function get_categs_enfants(&$cat)
 
 // Suppression de la liste des commandes sélectionnées si existantes pour ne pas remplir inutilement l'url lors de l'appel à la liste standard des commandes fournisseur (sinon bug)
 $TParamURL = $_REQUEST;
+// Ici, on restreint la portée de la requête ajax pour éviter des confusions entre les deux listes,
 if(in_array($sortfield, array('stock_physique', 'prod.desiredstock', 'prod.finished', 'prod.ref', 'prod.label', 'cd.rang'))) {
 	unset($TParamURL['sortfield']);
 }

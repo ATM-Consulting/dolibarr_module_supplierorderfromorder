@@ -197,4 +197,32 @@ class ActionsSupplierorderfromorder
 
 	}
 
+	function addMoreMassActions($parameters, &$object, &$action, $hookmanager) {
+
+		global $langs;
+		$TContext = explode(':', $parameters['context']);
+		if(in_array('supplierorderlist', $TContext)) {
+
+			$origin_page = GETPOST('origin_page');
+			if($origin_page === 'ordercustomer') {
+
+				$label = $langs->trans('Validate');
+				$hookmanager->resPrint = '<option value="0">-- '.$langs->trans("SelectAction").' --</option>';
+				$hookmanager->resPrint.= '<option value="distributionlist_add_contacts" data-html="'.dol_escape_htmltag($label).'">'.$label.'</option>';
+
+				return 1;
+
+			} elseif($origin_page === 'ordercustomer') {
+
+				$label = $langs->trans('Validate');
+				$hookmanager->resPrint = '<option value="0">-- '.$langs->trans("SelectAction").' --</option>';
+				$hookmanager->resPrint.= '<option value="distributionlist_delete_contacts" data-html="'.dol_escape_htmltag($label).'">'.$label.'</option>';
+
+				return 1;
+
+			}
+		}
+
+	}
+
 }
