@@ -1340,6 +1340,8 @@ if ($resql || $resql2) {
 				$stocktobuy = 0;
 			}
 
+			$stocktobuy = $ordered;
+
 			if ((empty($prod->type) && $stocktobuy == 0 && GETPOST('show_stock_no_need', 'none') != 'yes') || ($prod->type == 1 && $stocktobuy == 0 && GETPOST('show_stock_no_need', 'none') != 'yes' && !empty($conf->global->STOCK_SUPPORTS_SERVICES))) {
 				$i++;
 				continue;
