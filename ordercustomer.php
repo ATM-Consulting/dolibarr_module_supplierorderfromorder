@@ -1915,9 +1915,6 @@ function get_categs_enfants(&$cat)
 	return $TCat;
 }
 
-//$commande = new Commande($db);
-//$TRes = $commande->fetchAll('', '', 0, 0, array('customsql'=>' fk_distributionlist = '.GETPOST('id', 'int')));
-
 // Suppression de la liste des commandes sélectionnées si existantes pour ne pas remplir inutilement l'url lors de l'appel à la liste standard des commandes fournisseur (sinon bug)
 $TParamURL = $_REQUEST;
 // Ici, on restreint la portée de la requête ajax pour éviter des confusions entre les deux listes,
@@ -1953,6 +1950,9 @@ if(in_array($sortfield, array('stock_physique', 'prod.desiredstock', 'prod.finis
 					$(this).attr('href', $(this).attr('href').replace("<?php print dol_buildpath('/fourn/commande/list.php', 1); ?>", "<?php print dol_buildpath('/supplierorderfromorder/ordercustomer.php', 1); ?>"));
 					$(this).attr('href', $(this).attr('href') + '&id=' + <?php print $id; $hookmanager->executeHooks('addMoreURLParams', $parameters, $object, $action); ?>);
 				});
+
+
+				//form_commandes.find('div.titre').html("<?php //print $langs->trans('ListOfSupplierOrdersFromOrder', $commandeClient->id); ?>//");
 
 				// On remplace les liens de tri pour rester sur la liste de diffusion en cas de tri sur une colonne
 				form_commandes.find('table.liste tr.liste_titre a').each(function() {

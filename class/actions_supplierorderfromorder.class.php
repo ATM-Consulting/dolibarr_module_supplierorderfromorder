@@ -193,36 +193,99 @@ class ActionsSupplierorderfromorder
     	        }
 	        }
 	    }
-
-
 	}
 
-	function addMoreMassActions($parameters, &$object, &$action, $hookmanager) {
+	function doActions($parameters, &$object, &$action, $hookmanager) {
 
-		global $langs;
+		global $db, $user, $langs, $title;
+
+		$commandeClient = new Commande($db);
+
 		$TContext = explode(':', $parameters['context']);
 		if(in_array('supplierorderlist', $TContext)) {
+			$origin_page = GETPOST('origin_page');
+			if($origin_page === 'list' || $origin_page === 'ordercustomer') {
 
+				/* On personnalise le titre de la liste des commandes fournisseur dans le contexte d'une liste de commmande fournisseur lié
+					à la commande depuis laquelle on veut générer la/les commandes fournisseurs */
+				if($origin_page === 'ordercustomer')
+					$title = $langs->trans('ListOfSupplierOrdersFromOrder', $commandeClient->ref);
+
+				// On retire la permission de créer dans ce contexte pour enlever le bouton avec le lien "Nouvelle commande"
+				unset($user->rights->fournisseur->commande->creer);
+
+			}
+		}
+	}
+
+	function printFieldListOption($parameters, &$object, &$action, $hookmanager) {
+
+		$TContext = explode(':', $parameters['context']);
+		if(in_array('supplierorderlist', $TContext)) {
+			$origin_page = GETPOST('origin_page');
+			if($origin_page === 'ordercustomer') $hookmanager->resPrint = '<td class="liste_titre"></td>';
+		}
+
+		return 1;
+	}
+
+	function printFieldListValue($parameters, &$object, &$action, $hookmanager) {
+
+		$TContext = explode(':', $parameters['context']);
+		if(in_array('supplierorderlist', $TContext)) {
+			$origin_page = GETPOST('origin_page');
+			if ($origin_page === 'ordercustomer') {
+
+				dol_include_once('/supplierorderfromorder/class/sofo.class.php');
+			}
+		}
+		return 1;
+	}
+
+
+	/**
+	 * 		On tri ma par commande client
+	 *
+	 * 		@param $parameters
+	 * 		@param $object
+	 * 		@param $action
+	 * 		@param $hookmanager
+	 */
+	function printFieldListWhere($parameters, &$object, &$action, $hookmanager) {
+
+		dol_include_once('/supplierorderfromorder/class/sofo.class.php');
+		$TContext = explode(':', $parameters['context']);
+		if(in_array('supplierorderlist', $TContext)) {
 			$origin_page = GETPOST('origin_page');
 			if($origin_page === 'ordercustomer') {
-
-				$label = $langs->trans('Validate');
-				$hookmanager->resPrint = '<option value="0">-- '.$langs->trans("SelectAction").' --</option>';
-				$hookmanager->resPrint.= '<option value="distributionlist_add_contacts" data-html="'.dol_escape_htmltag($label).'">'.$label.'</option>';
-
-				return 1;
-
-			} elseif($origin_page === 'ordercustomer') {
-
-				$label = $langs->trans('Validate');
-				$hookmanager->resPrint = '<option value="0">-- '.$langs->trans("SelectAction").' --</option>';
-				$hookmanager->resPrint.= '<option value="distributionlist_delete_contacts" data-html="'.dol_escape_htmltag($label).'">'.$label.'</option>';
-
-				return 1;
-
+				$this->resprints = ' AND e.fk_source = '.GETPOST('id', 'int');
 			}
 		}
 
 	}
+
+	/**
+	 * 		Ajoute une jointure avec element_element qui permet de trier les factures fournisseur par id de commande client
+	 * 		On copie donc la liste standard avec un appel ajax mais sans pour autant reprendre son contenu exact, on la tri par commande client
+	 *
+	 * 		@param $parameters
+	 * 		@param $object
+	 * 		@param $action
+	 * 		@param $hookmanage
+	 */
+	function printFieldListFrom($parameters, &$object, &$action, $hookmanage)
+	{
+
+		dol_include_once('/supplierorderfromorder/class/sofo.class.php');
+
+		$TContext = explode(':', $parameters['context']);
+		if(in_array('supplierorderlist', $TContext)) {
+			$origin_page = GETPOST('origin_page');
+			if($origin_page === 'ordercustomer') {
+				$this->resprints = " LEFT JOIN ".MAIN_DB_PREFIX."element_element as e ON (cf.rowid = e.fk_target AND targettype = 'order_supplier' AND sourcetype = 'commande')";
+			}
+		}
+	}
+
 
 }
