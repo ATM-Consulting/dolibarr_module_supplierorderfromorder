@@ -199,7 +199,7 @@ class ActionsSupplierorderfromorder
 
 		global $db, $user, $langs, $title;
 
-		$commandeClient = new Commande($db);
+//		$commandeClient = new Commande($db);
 
 		$TContext = explode(':', $parameters['context']);
 		if(in_array('supplierorderlist', $TContext)) {
@@ -207,9 +207,9 @@ class ActionsSupplierorderfromorder
 			if($origin_page === 'list' || $origin_page === 'ordercustomer') {
 
 				/* On personnalise le titre de la liste des commandes fournisseur dans le contexte d'une liste de commmande fournisseur lié
-					à la commande depuis laquelle on veut générer la/les commandes fournisseurs */
+					à la commande depuis laquelle on veut générer la/les commandes fournisseurs
 				if($origin_page === 'ordercustomer')
-					$title = $langs->trans('ListOfSupplierOrdersFromOrder', $commandeClient->ref);
+					$title = $langs->trans('ListOfSupplierOrdersFromOrder', $commandeClient->ref);*/
 
 				// On retire la permission de créer dans ce contexte pour enlever le bouton avec le lien "Nouvelle commande"
 				unset($user->rights->fournisseur->commande->creer);
