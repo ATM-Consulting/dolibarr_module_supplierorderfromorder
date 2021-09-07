@@ -1924,19 +1924,12 @@ if(in_array($sortfield, array('stock_physique', 'prod.desiredstock', 'prod.finis
 	unset($TParamURL['sortfield']);
 }
 
-/*if(!empty($conf->listincsv->enabled)) {
 
-	// Récupération du bouton listincsv
-	dol_include_once('/listincsv/lib/listincsv.lib.php');
-	$download = getListInCSVDownloadLink();
-
-	// URL spécifique pour listincsv
-	// Explication : Sur distributionlist_card, on fait un appel ajax à la liste des contacts avec le paramètre origin_page=distributionlist_card et l'id de la liste de diffusion.
-	// Tout ça est intercepté par un hook printFieldListWhere de la liste des contacts de manière à n'afficher que les contacts qui font partie de la lite de distribution,
-	// or si change le nombre d'éléments affichés via la liste déroulante qui contient les choix 10, 25, 50, 100, 500, etc... le paramètre url limit empêche list in csv de récupérer tous les contacts de la liste de diffusion
-	// à cause de la requête sql dont le nombre de résultats est limité
-	$TParamURLForListInCSV = $TParamURL;
-	unset($TParamURLForListInCSV['limit']);
+/*
+	 EXPLICATIONS : Sur ordercustomer.php, on fait un appel ajax à la liste des commandes fournisseurs
+				    avec le paramètre origin_page=ordercustomer (qui est la page sur laquelle je veux afficher la liste) et l'id de la liste de commandes.
+	 			    Tout ça est intercepté par un hook printFieldListWhere et printFieldListFrom de la liste des commandes fournisseurs
+				    de manière à n'afficher que les commandes fournisseurs qui sont issues de la commande client sur laquelle on est.
 }*/
 ?>
 
@@ -1946,17 +1939,14 @@ if(in_array($sortfield, array('stock_physique', 'prod.desiredstock', 'prod.finis
 				url:"<?php print dol_buildpath('/fourn/commande/list.php', 2).'?origin_page=ordercustomer&'.http_build_query($TParamURL); ?>"
 			}).done(function(data) {
 
-				// On remplace les liens de la pagination pour rester sur la liste de diffusion en cas de changement de page
+				// On remplace les liens de la pagination pour rester sur la liste de commandes fournisseurs en cas de changement de page
 				var form_commandes = $(data).find('div.fiche form[action*="list.php"]');
 				form_commandes.find('table.table-fiche-title a').each(function() {
 					$(this).attr('href', $(this).attr('href').replace("<?php print dol_buildpath('/fourn/commande/list.php', 1); ?>", "<?php print dol_buildpath('/supplierorderfromorder/ordercustomer.php', 1); ?>"));
 					$(this).attr('href', $(this).attr('href') + '&id=' + <?php print $id; $hookmanager->executeHooks('addMoreURLParams', $parameters, $object, $action); ?>);
 				});
 
-
-				//form_commandes.find('div.titre').html("<?php //print $langs->trans('ListOfSupplierOrdersFromOrder', $commandeClient->id); ?>//");
-
-				// On remplace les liens de tri pour rester sur la liste de diffusion en cas de tri sur une colonne
+				// On remplace les liens de tri pour rester sur la liste de commandes fournisseurs en cas de tri sur une colonne
 				form_commandes.find('table.liste tr.liste_titre a').each(function() {
 					$(this).attr('href', $(this).attr('href').replace("<?php print dol_buildpath('/fourn/commande/list.php', 1); ?>", "<?php print dol_buildpath('/supplierorderfromorder/ordercustomer.php', 1); ?>"));
 					$(this).attr('href', $(this).attr('href') + '&id=' + <?php print $id; $hookmanager->executeHooks('addMoreURLParams', $parameters, $object, $action); ?>);
@@ -1971,19 +1961,6 @@ if(in_array($sortfield, array('stock_physique', 'prod.desiredstock', 'prod.finis
 				$("#inclusion").append(form_commandes);
 
 				<?php
-				/*if(!empty($conf->listincsv->enabled)) {
-
-				?>
-				// Ajout d'une url spécifique au formulaire pour listincsv
-				form_commandes.attr('data-listincsv-url', "<?php print dol_buildpath('/commande/list.php', 1).'?&origin_page=ordercustomer&'.http_build_query($TParamURLForListInCSV); ?>");
-
-				<?php
-
-				//print "$('div.fiche div.titre').first().append('".$download."');";
-				}*/
-				?>
-
-				<?php
 
 				$reshook = $hookmanager->executeHooks('printMoreAfterAjax', $parameters, $object, $action);
 
@@ -1993,3 +1970,4 @@ if(in_array($sortfield, array('stock_physique', 'prod.desiredstock', 'prod.finis
 
 		});
 	</script>
+
