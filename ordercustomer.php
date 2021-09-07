@@ -510,6 +510,27 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 	}
 }
 
+// Mass actions
+$objectclass = 'CommandeFournisseur';
+$objectlabel = 'SupplierOrders';
+$permissiontoread = $user->rights->fournisseur->commande->lire;
+$permissiontoadd = $user->rights->fournisseur->commande->creer;
+$permissiontodelete = $user->rights->fournisseur->commande->supprimer;
+if (!empty($conf->global->MAIN_USE_ADVANCED_PERMS)) {
+	$permissiontovalidate = $user->rights->fournisseur->commande->order_advance->validate;
+	$permissiontoclose = $user->rights->fournisseur->commande->order_advance->close;
+	$permissiontocancel = $user->rights->fournisseur->commande->order_advance->annuler;
+	$permissiontosendbymail = $user->rights->fournisseur->commande->order_advance->send;
+} else {
+	$permissiontovalidate = $user->rights->fournisseur->commande->creer;
+	$permissiontoclose = $user->rights->fournisseur->commande->creer;
+	$permissiontocancel = $user->rights->fournisseur->commande->creer;
+	$permissiontosendbymail = $user->rights->fournisseur->commande->creer;
+}
+$uploaddir = $conf->fournisseur->commande->multidir_output[$conf->entity];
+$triggersendname = 'ORDER_SENTBYMAIL';
+require_once DOL_DOCUMENT_ROOT."/core/actions_massactions.inc.php";
+
 /*
  * View
  */
