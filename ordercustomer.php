@@ -68,6 +68,7 @@ if ($user->societe_id) {
 }
 $result = restrictedArea($user, 'produit|service&supplierorderfromorder');
 
+
 //checks if a product has been ordered
 
 $action = GETPOST('action', 'alpha');
@@ -78,8 +79,10 @@ $type = GETPOST('type', 'int');
 $tobuy = GETPOST('tobuy', 'int');
 $salert = GETPOST('salert', 'alpha');
 $id = GETPOST('id', 'int');
+$toselect = GETPOST('toselect', 'array');
 $fourn_id = GETPOST('fourn_id', 'intcomma');
 $contextpage = GETPOST('contextpage', 'aZ') ?GETPOST('contextpage', 'aZ') : 'supplierrderlist'; // To manage different context of search
+$massaction = GETPOST('massaction', 'alpha');
 
 
 $sortfield = GETPOST('sortfield', 'alpha');
@@ -150,9 +153,12 @@ $parameters = array();
 $reshook = $hookmanager->executeHooks('doActions', $parameters, $object, $action); // Note that $action and $object may have been modified by some hooks
 if ($reshook < 0) setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
 
+
+
 /*
  * Actions
  */
+
 
 
 if (isset($_POST['button_removefilter']) || in_array($action, array('valid-propal', 'valid-order'))) {
@@ -516,19 +522,8 @@ $objectlabel = 'SupplierOrders';
 $permissiontoread = $user->rights->fournisseur->commande->lire;
 $permissiontoadd = $user->rights->fournisseur->commande->creer;
 $permissiontodelete = $user->rights->fournisseur->commande->supprimer;
-if (!empty($conf->global->MAIN_USE_ADVANCED_PERMS)) {
-	$permissiontovalidate = $user->rights->fournisseur->commande->order_advance->validate;
-	$permissiontoclose = $user->rights->fournisseur->commande->order_advance->close;
-	$permissiontocancel = $user->rights->fournisseur->commande->order_advance->annuler;
-	$permissiontosendbymail = $user->rights->fournisseur->commande->order_advance->send;
-} else {
-	$permissiontovalidate = $user->rights->fournisseur->commande->creer;
-	$permissiontoclose = $user->rights->fournisseur->commande->creer;
-	$permissiontocancel = $user->rights->fournisseur->commande->creer;
-	$permissiontosendbymail = $user->rights->fournisseur->commande->creer;
-}
-$uploaddir = $conf->fournisseur->commande->multidir_output[$conf->entity];
-$triggersendname = 'ORDER_SENTBYMAIL';
+$uploaddir = $conf->fournisseur->commande->dir_output;
+
 require_once DOL_DOCUMENT_ROOT."/core/actions_massactions.inc.php";
 
 /*
