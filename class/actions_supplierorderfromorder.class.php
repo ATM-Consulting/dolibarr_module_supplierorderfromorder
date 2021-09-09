@@ -206,8 +206,8 @@ class ActionsSupplierorderfromorder
 			$origin_page = GETPOST('origin_page');
 			if($origin_page === 'list' || $origin_page === 'ordercustomer') {
 
-				/* On personnalise le titre de la liste des commandes fournisseur dans le contexte d'une liste de commmande fournisseur lié
-					à la commande depuis laquelle on veut générer la/les commandes fournisseurs
+				/*// On personnalise le titre de la liste des commandes fournisseur dans le contexte d'une liste de commmande fournisseur lié
+					//à la commande depuis laquelle on veut générer la/les commandes fournisseurs
 				if($origin_page === 'ordercustomer')
 					$title = $langs->trans('ListOfSupplierOrdersFromOrder', $commandeClient->ref);*/
 
@@ -218,16 +218,6 @@ class ActionsSupplierorderfromorder
 		}
 	}
 
-	function printFieldListOption($parameters, &$object, &$action, $hookmanager) {
-
-		$TContext = explode(':', $parameters['context']);
-		if(in_array('supplierorderlist', $TContext)) {
-			$origin_page = GETPOST('origin_page');
-			if($origin_page === 'ordercustomer') $hookmanager->resPrint = '<td class="liste_titre"></td>';
-		}
-
-		return 1;
-	}
 
 	function printFieldListValue($parameters, &$object, &$action, $hookmanager) {
 
