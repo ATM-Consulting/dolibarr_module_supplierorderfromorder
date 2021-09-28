@@ -81,3 +81,4 @@ INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK=Inclure toutes les lignes de produit a
 Diff=Qté dans CF
 ViewSupplierOrderGenerated=Voir cf liées
 InitialCommande=Commande initiale
+listOrderSupplierForCustomerCommand=Liste des commandes fournisseurs liées à une commande

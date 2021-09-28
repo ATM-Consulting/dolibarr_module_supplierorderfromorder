@@ -249,10 +249,11 @@ class ActionsSupplierorderfromorder
 		global $langs;
 
 		$TContext = explode(':', $parameters['context']);
-		var_dump($parameters);
+
 		if(in_array('supplierorderlist', $TContext)) {
 			// la page
 			$origin_page = GETPOST('origin_page');
+
 			if($origin_page === 'ordercustomer'){
 				$pos = strpos($_SERVER['SCRIPT_NAME'],DOL_URL_ROOT);
 				if (is_int($pos)){
@@ -262,7 +263,7 @@ class ActionsSupplierorderfromorder
 						print '<script type="text/javascript">';
 						// on remplace le titre original de la fiche par celui-ci
 						print 'let nbElement = document.querySelector(".fiche .titre").firstChild.nodeValue.substring('.strlen($langs->trans('ListOfSupplierOrders')).'); ';
-						print 'document.querySelector(".fiche .titre").firstChild.nodeValue = "'.$langs->trans('listOrderSupplierForCustomerCommand').'" + nbElement';
+						print 'document.querySelector(".fiche .titre").firstChild.nodeValue = "'.$langs->transnoentities('listOrderSupplierForCustomerCommand').'" + nbElement';
 						print '</script>';
 					}
 				}

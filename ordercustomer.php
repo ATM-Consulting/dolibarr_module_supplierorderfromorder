@@ -1407,7 +1407,7 @@ if ($resql || $resql2) {
 			}
 			print '</td>';
 
-			// on check is une cmd fourn exite pour ce produit et on affiche la ref avec link
+			// on check si une cmd fourn existe pour ce produit et on affiche la ref avec link
 			$currentCmdFourn =   TSOFO::getCmdFournFromCmdCustomer($id, $objp->rowid);
 			$r = is_object($currentCmdFourn) ?  $currentCmdFourn->getNomUrl(1) : '';
 			print '<td>' . $objp->label . $r . '</td>';
