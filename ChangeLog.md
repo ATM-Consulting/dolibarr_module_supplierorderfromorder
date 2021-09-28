@@ -1,5 +1,9 @@
 # ChangeLog
 
+# New - add redirection button to command fourn 2.2.0- *28/09/2021*
+# New - restrict input number on product 
+# New - add Qty product column and link to cmd fourn if exit.
+
 ## [Unreleased]
 - Fix : bad if conditions - 2.1.0 - *16/08/2021*
 - Fix : refacto de batard - 2.1.0 - *16/08/2021*
