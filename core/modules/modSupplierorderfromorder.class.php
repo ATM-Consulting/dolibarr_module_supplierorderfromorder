@@ -1,4 +1,4 @@
-<?php
+ <?php
 /* <one line to give the program's name and a brief idea of what it does.>
  * Copyright (C) 2013 ATM Consulting <support@atm-consulting.fr>
  *
@@ -99,6 +99,7 @@ class modSupplierorderfromorder extends DolibarrModules
             'hooks' => array(
                 'ordercard'
                 ,'ordersuppliercard'
+				,'supplierorderlist'
             )
             // Set here all workflow context managed by module
             //'workflow' => array('order' => array('WORKFLOW_ORDER_AUTOCREATE_INVOICE'))

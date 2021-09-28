@@ -77,7 +77,7 @@ $type = GETPOST('type', 'int');
 $tobuy = GETPOST('tobuy', 'int');
 $salert = GETPOST('salert', 'alpha');
 $fourn_id = GETPOST('fourn_id', 'intcomma');
-
+$diff = GETPOST('diff', 'int');
 $sortfield = GETPOST('sortfield', 'alpha');
 $sortorder = GETPOST('sortorder', 'alpha');
 $page = GETPOST('page', 'int');
@@ -286,6 +286,11 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 								$lineOrderFetched->desc,
 								// FIXME: The current existing line may very well not be at the same purchase price
 								$lineOrderFetched->pu_ht,
+								// la qty est fuckée  !!!
+								/*
+								 * il faut verifier que la qty totale ne depasse pas la qty déjà existante.
+								 *
+								 */
 								$lineOrderFetched->qty + $line->qty,
 								$remise_percent,
 								$lineOrderFetched->tva_tx
@@ -424,7 +429,9 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 			$i++;
 		}
 
-
+		$id = GETPOST('id','int');
+		$origin_page = 'ordercustomer';
+		header("Location: ".DOL_URL_ROOT."/fourn/commande/list.php?id=".$id.'&origin_page='.$origin_page);
 	}
 
 	if ($nb_orders_created > 0) {
@@ -499,6 +506,13 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 			setEventMessage($mess, 'mesgs');
 		}
 	}
+}
+
+
+if (in_array($action, array('view-valid-order'))) {
+$id = GETPOST('id','int');
+$origin_page = 'ordercustomer';
+	header("Location: ".DOL_URL_ROOT."/fourn/commande/list.php?id=".$id.'&origin_page='.$origin_page);
 }
 
 /*
@@ -733,6 +747,8 @@ if ($resql || $resql2) {
 	$helpurl = 'EN:Module_Stocks_En|FR:Module_Stock|';
 	$helpurl .= 'ES:M&oacute;dulo_Stocks';
 	llxHeader('', $title, $helpurl, $title);
+
+
 	$head = array();
 	$head[0][0] = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id=' . $_REQUEST['id'], 2);
 	$head[0][1] = $title;
@@ -749,6 +765,21 @@ if ($resql || $resql2) {
 	$head[1][1] = $langs->trans("ReplenishmentOrders");
 	$head[1][2] = 'replenishorders';*/
 	dol_fiche_head($head, 'supplierorderfromorder', $langs->trans('Replenishment'), 0, 'stock');
+
+	$origin = New Commande($db);
+	$id = GETPOST('id','int');
+	$res = $origin->fetch($id);
+
+	if ($res > 0 ){
+		$morehtmlref='<div class="refidno">';
+		$morehtmlref.= $langs->trans('InitialCommande').$origin->getNomUrl();
+		$morehtmlref.='</div>';
+		dol_banner_tab($origin, 'ref', '', 1, 'ref', 'ref', $morehtmlref );
+	}
+
+
+
+
 
 
 	if ($sref || $snom || $sall || $salert || GETPOST('search', 'alpha')) {
@@ -800,16 +831,18 @@ if ($resql || $resql2) {
 		'<input type="hidden" name="type" value="' . $type . '">' .
 		'<input type="hidden" name="linecount" value="' . ($num + $num2) . '">' .
 		'<input type="hidden" name="fk_commande" value="' . GETPOST('fk_commande', 'int') . '">' .
-		'<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need', 'none') . '">' .
+		'<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need', 'none') . '">' ;
 
-		'<div style="text-align:right">
-			<a href="' . $_SERVER["PHP_SELF"] . '?' . $_SERVER["QUERY_STRING"] . '&show_stock_no_need=yes">' . $langs->trans('ShowLineEvenIfStockIsSuffisant') . '</a>';
+		if (isset($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK) && ($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK == 0)) {
+				echo '<div style="text-align:right"><a href="'.$_SERVER["PHP_SELF"].'?'.$_SERVER["QUERY_STRING"].'&show_stock_no_need=yes">'.$langs->trans('ShowLineEvenIfStockIsSuffisant').'</a>';
+		}
+
 
 	if (!empty($TCachedProductId)) {
 		echo '<a style="color:red; font-weight:bold;" href="' . $_SERVER["PHP_SELF"] . '?' . $_SERVER["QUERY_STRING"] . '&purge_cached_product=yes">' . $langs->trans('PurgeSessionForCachedProduct') . '</a>';
 	}
 
-	print '	  </div>' .
+	print '<div style="text-align:right">	  </div>' .
 		'<table class="liste" width="100%">';
 
 
@@ -850,7 +883,7 @@ if ($resql || $resql2) {
 		print '<td colspan="2" >';
 		print $langs->trans("Categories");
 		print '</td>';
-		print '<td colspan="' . ($colspan - 2) . '" >';
+		print '<td colspan="' . ($colspan - 1) . '" >';
 		print getCatMultiselect('categorie', $TCategories);
 		print '<a id="clearfilter" href="javascript:;">' . $langs->trans('DeleteFilter') . '</a>';
 		?>
@@ -976,6 +1009,17 @@ if ($resql || $resql2) {
 			$sortorder
 		);
 	}
+	print_liste_field_titre(
+		$langs->trans('Diff'),
+		'ordercustomer.php',
+		'',
+		$param,
+		'',
+		'align="right"',
+		$sortfield,
+		$sortorder
+	);
+
 
 	print_liste_field_titre(
 		$langs->trans('Ordered'),
@@ -997,6 +1041,7 @@ if ($resql || $resql2) {
 		$sortfield,
 		$sortorder
 	);
+
 
 	//print '<td class="liste_titre" >fghf</td>';
 
@@ -1025,6 +1070,7 @@ if ($resql || $resql2) {
 		'</td>' .
 		'<td class="liste_titre">' .
 		'<input class="flat" type="text" name="snom" value="' . $snom . '">' .
+		'<td></td>';
 		'</td>';
 
 	if (!empty($conf->service->enabled) && $type == 1) {
@@ -1072,6 +1118,7 @@ if ($resql || $resql2) {
 
 	$TSupplier = array();
 	$TProductIDAlreadyChecked = array();
+
 
 	foreach($TProducts as $objp){
 
@@ -1313,15 +1360,23 @@ if ($resql || $resql2) {
 				$stocktobuy = 0;
 			}
 
-			if ((empty($prod->type) && $stocktobuy == 0 && GETPOST('show_stock_no_need', 'none') != 'yes') || ($prod->type == 1 && $stocktobuy == 0 && GETPOST('show_stock_no_need', 'none') != 'yes' && !empty($conf->global->STOCK_SUPPORTS_SERVICES))) {
+			if ((empty($prod->type) && $stocktobuy == 0 && GETPOST('show_stock_no_need', 'none') != 'yes')
+				|| ($prod->type == 1 && $stocktobuy == 0 && GETPOST('show_stock_no_need', 'none') != 'yes' && !empty($conf->global->STOCK_SUPPORTS_SERVICES))) {
 				$i++;
 				continue;
 			}
 
+			// on load les commandes fournisseur liées
+			$id = GETPOST('id','int');
+			$TcmdFourn =   TSOFO::getCmdFournFromCmdCustomer($id);
+			$objLineNewQty = TSOFO::getAvailableQty($TcmdFourn, $objp->rowid, $ordered);
+
 			$var = !$var;
+			$checked = ($objLineNewQty->qty > 0) ? ' checked' : '';
+			$disabled = ($objLineNewQty->qty  ==  0)  ? 'disabled' : '';
 			print '<tr ' . $bc[$var] . ' data-productid="' . $objp->rowid . '"  data-i="' . $i . '"   >
 						<td>
-							<input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '>';
+							<input type="checkbox" class="check" name="check' . $i . '" ' . $disabled .' '. $checked .'>';
 
 			$lineid = '';
 
@@ -1350,9 +1405,12 @@ if ($resql || $resql2) {
 			} else {
 				print $prod->getNomUrl(1);
 			}
-
 			print '</td>';
-			print '<td>' . $objp->label . '</td>';
+
+			// on check is une cmd fourn exite pour ce produit et on affiche la ref avec link
+			$currentCmdFourn =   TSOFO::getCmdFournFromCmdCustomer($id, $objp->rowid);
+			$r = is_object($currentCmdFourn) ?  $currentCmdFourn->getNomUrl(1) : '';
+			print '<td>' . $objp->label . $r . '</td>';
 
 			print '<td>' . (empty($prod->type) ? $statutarray[$objp->finished] : '') . '</td>';
 
@@ -1386,7 +1444,7 @@ if ($resql || $resql2) {
 
 			$champs = "";
 			$champs .= $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : '';
-			$champs .= '<td align="right">' .
+			$champs .= '<td align="right" >' .
 				$warning . ((($conf->global->STOCK_SUPPORTS_SERVICES && $prod->type == 1) || empty($prod->type)) ? $stock : img_picto('', './img/no', '', 1)) . //$stocktobuy
 				'</td>';
 			if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) {
@@ -1401,14 +1459,26 @@ if ($resql || $resql2) {
 				$champs .= '<td align="right">' . $qty . '</td>';
 			}
 
+			// déjà present
 			$champs .= '<td align="right">' .
 
-				$ordered . $picto .
-				'</td>' .
+
+
+			$objLineNewQty->oldQty . $picto .
+			'</td>' .
+				//Commandé
+			'<td align="right">' .
+			'<input type="text" name="tobuy' . $i .
+			'" value="' . $ordered . '" ' . $disabled . ' size="3"> <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
+
+			/**
+			 * aller chercher les commandes existantes pour avoir la diff entre la demande es les prov
+			 */
+
+			$champs .= '</td>' .
 				'<td align="right">' .
-				'<input type="text" name="tobuy' . $i .
-				'" value="' . $stocktobuy . '" ' . $disabled . ' size="4">
-                 <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
+				'<input type="text" name="diff' . $i .
+				'" value="' . $objLineNewQty->qty . '" ' . $disabled . ' size="3"> <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
 
 			if ($conf->global->SOFO_USE_DELIVERY_TIME) {
 
@@ -1546,6 +1616,7 @@ if ($resql || $resql2) {
 	print '<tr><td align="right">' .
 		'<button class="butAction" type="submit" name="action" value="valid-propal">' . $langs->trans("GenerateSupplierPropal") . '</button>' .
 		'<button class="butAction" type="submit" name="action" value="valid-order">' . $langs->trans("GenerateSupplierOrder") . '</button>' .
+		'<button class="butAction" type="submit" name="action" value="view-valid-order">' . $langs->trans("ViewSupplierOrderGenerated") . '</button>' .
 		'</td></tr></table>' .
 		'</form>';
 
@@ -1667,7 +1738,7 @@ function _prepareLine($i, $actionTarget = 'order')
 		$qty = GETPOST('tobuy' . $i, 'int');
 		$desc = GETPOST('desc' . $i, 'alpha');
 		$lineid = GETPOST('lineid' . $i, 'int');
-
+		$diff = GETPOST('diff' . $i, 'int');
 		$array_options = array();
 
 		if (!empty($lineid)) {
@@ -1693,7 +1764,8 @@ function _prepareLine($i, $actionTarget = 'order')
 
 		if ($obj) {
 
-			$line->qty = $qty;
+			//$line->qty = $qty;
+			$line->qty = $diff;
 			$line->desc = $desc;
 			$line->fk_product = $obj->fk_product;
 			$line->tva_tx = $obj->tva_tx;

@@ -180,4 +180,85 @@ class TSOFO {
 		}
 	}
 
+	/**
+	 * @param $idCustomerCmd
+	 * @return array|void
+	 */
+	public static  function getCmdFournFromCmdCustomer($idCustomerCmd , $idproduct = null){
+		global $db;
+		$Tfourn = array();
+
+		$sqlCmdFour = " SELECT cf.rowid FROM ".MAIN_DB_PREFIX."commande_fournisseur AS cf";
+		$sqlCmdFour .=" LEFT JOIN ".MAIN_DB_PREFIX."element_element AS e ON (cf.rowid = e.fk_target AND targettype = 'order_supplier' AND sourcetype = 'commande')";
+
+
+
+		$sqlCmdFour .="	WHERE cf.entity IN(1) AND e.fk_source = ".$idCustomerCmd;
+
+		$result = $db->query($sqlCmdFour);
+		while ($obj = $db->fetch_object($result)){
+
+			if (!empty($obj->rowid)) {
+				//
+				$cmdF = new CommandeFournisseur($db);
+				$res  = $cmdF->fetch($obj->rowid);
+				if ($res > 0){
+					$Tfourn[] = $cmdF;
+				}
+			}
+		}
+		// we want to return, if param activated, the ref cmd Fourn where is located the current product
+		if ($idproduct > 0 ){
+
+			if (!empty($Tfourn)){
+				foreach ($Tfourn as $key => $val){
+					foreach ($val->lines as $k => $currentLine){
+						// le produit est present dans une ligne de la commande fournisseur ?
+						if ($currentLine->fk_product == $idproduct){
+							return $val;
+						}
+					}
+				}
+
+			}
+
+		}
+
+		return $Tfourn ;
+	}
+
+	/**
+	 * @param  $Tfourn
+	 * @param $idProduct
+	 */
+	public static function getAvailableQty($Tfourn, $idProduct, $qtyDesired){
+		$find = false;
+		$cmdRef = '';
+		foreach ($Tfourn as $key => $val){
+			foreach ($val->lines as $k => $currentLine){
+				// le produit est present dans une ligne de la commande fournisseur ?
+				if ($currentLine->fk_product == $idProduct){
+					// on à trouvé le produit dans une ligne de cette commande fournisseur on la flag
+					$find = true;
+					$obj = new stdClass();
+					$obj->ref = $val->ref;
+					$obj->qty = $qtyDesired - $currentLine->qty;
+					$obj->oldQty = $currentLine->qty;
+					break;
+				}
+			}
+		}
+		// le produit n'est pas dans une ligne de commande fournisseur
+		// on retour la qty desitée
+		if (!$find){
+			$obj = new stdClass();
+			$obj->ref = '';
+			$obj->qty = $qtyDesired;
+			$obj->oldQty = 0;
+		}
+
+		return $obj;
+	}
+
+
 }
