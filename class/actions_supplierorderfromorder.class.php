@@ -222,7 +222,6 @@ class ActionsSupplierorderfromorder
 
 	/**
 	 * 		Ajoute une jointure avec element_element qui permet de trier les factures fournisseur par id de commande client
-	 * 		On copie donc la liste standard avec un appel ajax mais sans pour autant reprendre son contenu exact, on la tri par commande client
 	 *
 	 * 		@param $parameters
 	 * 		@param $object
