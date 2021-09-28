@@ -7,6 +7,9 @@
  */
 class ActionsSupplierorderfromorder
 {
+
+
+
 	/**
 	 * Add options to the order form
 	 *
@@ -228,7 +231,7 @@ class ActionsSupplierorderfromorder
 	 * 		@param $action
 	 * 		@param $hookmanage
 	 */
-	function printFieldListFrom($parameters, &$object, &$action, $hookmanage)
+	function printFieldListFrom($parameters, &$object, &$action, $hookmanager)
 	{
 
 		dol_include_once('/supplierorderfromorder/class/sofo.class.php');
@@ -240,5 +243,31 @@ class ActionsSupplierorderfromorder
 				$this->resprints = " LEFT JOIN ".MAIN_DB_PREFIX."element_element as e ON (cf.rowid = e.fk_target AND targettype = 'order_supplier' AND sourcetype = 'commande')";
 			}
 		}
+	}
+
+	function printCommonFooter($parameters, &$object, &$action, $hookmanager){
+		global $langs;
+
+		$TContext = explode(':', $parameters['context']);
+		var_dump($parameters);
+		if(in_array('supplierorderlist', $TContext)) {
+			// la page
+			$origin_page = GETPOST('origin_page');
+			if($origin_page === 'ordercustomer'){
+				$pos = strpos($_SERVER['SCRIPT_NAME'],DOL_URL_ROOT);
+				if (is_int($pos)){
+					$file = substr($_SERVER['SCRIPT_NAME'],$pos + strlen(DOL_URL_ROOT));
+					if ($file == "/fourn/commande/list.php"){
+
+						print '<script type="text/javascript">';
+						// on remplace le titre original de la fiche par celui-ci
+						print 'let nbElement = document.querySelector(".fiche .titre").firstChild.nodeValue.substring('.strlen($langs->trans('ListOfSupplierOrders')).'); ';
+						print 'document.querySelector(".fiche .titre").firstChild.nodeValue = "'.$langs->trans('listOrderSupplierForCustomerCommand').'" + nbElement';
+						print '</script>';
+					}
+				}
+			}
+		}
+		return 1;
 	}
 }
