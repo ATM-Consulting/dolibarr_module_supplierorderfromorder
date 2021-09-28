@@ -84,6 +84,10 @@ $page = GETPOST('page', 'int');
 $page = intval($page);
 $selectedSupplier = GETPOST('useSameSupplier', 'int');
 
+$id = GETPOST('id','int');
+$origin_page = 'ordercustomer';
+
+
 if (!$sortfield) {
 	$sortfield = 'cd.rang';
 }
@@ -510,8 +514,7 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 
 
 if (in_array($action, array('view-valid-order'))) {
-$id = GETPOST('id','int');
-$origin_page = 'ordercustomer';
+
 	header("Location: ".DOL_URL_ROOT."/fourn/commande/list.php?id=".$id.'&origin_page='.$origin_page);
 }
 
@@ -748,9 +751,13 @@ if ($resql || $resql2) {
 	$helpurl .= 'ES:M&oacute;dulo_Stocks';
 	llxHeader('', $title, $helpurl, $title);
 
+	$includeProduct = '';
+	if (isset($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK) && ($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK == 1)) {
+		$includeProduct = '&show_stock_no_need=yes';
+	}
 
 	$head = array();
-	$head[0][0] = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id=' . $_REQUEST['id'], 2);
+	$head[0][0] = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id=' . $_REQUEST['id'].'&origin_page='.$origin_page.$includeProduct, 2);
 	$head[0][1] = $title;
 	$head[0][2] = 'supplierorderfromorder';
 
@@ -1470,10 +1477,6 @@ if ($resql || $resql2) {
 			'<td align="right">' .
 			'<input type="text" name="tobuy' . $i .
 			'" value="' . $ordered . '" ' . $disabled . ' size="3"> <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
-
-			/**
-			 * aller chercher les commandes existantes pour avoir la diff entre la demande es les prov
-			 */
 
 			$champs .= '</td>' .
 				'<td align="right">' .

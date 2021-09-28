@@ -8,7 +8,13 @@
 class ActionsSupplierorderfromorder
 {
 
+	function doActions( $parameters, &$object, &$action, $hookmanager ){
+		$TContext = explode(':', $parameters['context']);
 
+		if(in_array('supplierorderlist', $TContext)) {
+
+		}
+	}
 
 	/**
 	 * Add options to the order form

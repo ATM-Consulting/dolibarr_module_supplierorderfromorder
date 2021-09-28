@@ -272,6 +272,15 @@ function getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, $su
 
 }
 
+/**
+ * @param $CommandeFournisseur
+ * @param $line
+ * @param $productid
+ * @param $price
+ * @param $qty
+ * @param $supplierSocId
+ * @return array
+ */
 function updateOrAddlineToSupplierOrder($CommandeFournisseur, $line, $productid, $price, $qty, $supplierSocId)
 {
 	global $db, $conf;
@@ -378,6 +387,14 @@ function updateOrAddlineToSupplierOrder($CommandeFournisseur, $line, $productid,
 	return $ret;
 }
 
+/**
+ * @param $sourceCommandeId
+ * @param $supplierSocId
+ * @param int $shippingContactId
+ * @param int $status
+ * @param array $array_options
+ * @return array|int
+ */
 function getLinkedSupplierOrderFromOrder($sourceCommandeId,$supplierSocId,$shippingContactId=0,$status=-1,$array_options=array())
 {
     global $db, $conf;
@@ -429,7 +446,12 @@ function getLinkedSupplierOrderFromOrder($sourceCommandeId,$supplierSocId,$shipp
 
 }
 
-
+/**
+ * @param null $sourceid
+ * @param string $sourcetype
+ * @param string $targettype
+ * @return array|int
+ */
 function getLinkedObject($sourceid=null,$sourcetype='',$targettype='')
 {
     global $db;
@@ -476,7 +498,11 @@ function getLinkedObject($sourceid=null,$sourcetype='',$targettype='')
 
 }
 
-
+/**
+ * @param $sourceCommandeLineId
+ * @param string $sourcetype
+ * @return int
+ */
 function getLinkedSupplierOrderLineFromElementLine($sourceCommandeLineId, $sourcetype = 'commandedet')
 {
     $TElement = getLinkedSupplierOrdersLinesFromElementLine($sourceCommandeLineId, $sourcetype);
@@ -487,6 +513,11 @@ function getLinkedSupplierOrderLineFromElementLine($sourceCommandeLineId, $sourc
     return 0;
 }
 
+/**
+ * @param $sourceCommandeLineId
+ * @param string $sourcetype
+ * @return array|int
+ */
 function getLinkedSupplierOrdersLinesFromElementLine($sourceCommandeLineId, $sourcetype = 'commandedet')
 {
     global $db;
@@ -514,6 +545,10 @@ function getLinkedSupplierOrdersLinesFromElementLine($sourceCommandeLineId, $sou
 
 }
 
+/**
+ * @param $sourceCommandeLineId
+ * @return int
+ */
 function getLinkedOrderLineFromSupplierOrderLine($sourceCommandeLineId)
 {
     global $db;
@@ -533,6 +568,11 @@ function getLinkedOrderLineFromSupplierOrderLine($sourceCommandeLineId)
 
 }
 
+/**
+ * @param $fk_unit
+ * @param string $return
+ * @return int|string
+ */
 function getUnitLabel($fk_unit, $return = 'code')
 {
     global $db, $langs;
@@ -553,7 +593,15 @@ function getUnitLabel($fk_unit, $return = 'code')
     return '';
 }
 
-
+/**
+ * @param $fk_element
+ * @param $element
+ * @param $fk_product
+ * @param int $qty
+ * @param int $deep
+ * @param int $maxDeep
+ * @return array|false
+ */
 function  sofo_nomenclatureProductDeepCrawl($fk_element, $element, $fk_product,$qty = 1, $deep = 0, $maxDeep = 0){
     global $db,$conf;
 
@@ -609,7 +657,10 @@ function  sofo_nomenclatureProductDeepCrawl($fk_element, $element, $fk_product,$
     return $Tlines;
 }
 
-
+/**
+ * @param $fk_product
+ * @return int
+ */
 function sofo_getFournMinPrice($fk_product)
 {
     global $db;
@@ -640,7 +691,9 @@ function sofo_getFournMinPrice($fk_product)
     return $minFournPriceId;
 }
 
-
+/**
+ * @return array
+ */
 function supplierorderfromorderAdminPrepareHead()
 {
     global $langs, $conf;
