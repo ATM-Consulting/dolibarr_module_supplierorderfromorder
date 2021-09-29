@@ -781,7 +781,7 @@ if ($resql || $resql2) {
 		$morehtmlref='<div class="refidno">';
 		$morehtmlref.= $langs->trans('InitialCommande').$origin->getNomUrl();
 		$morehtmlref.='</div>';
-		dol_banner_tab($origin, 'ref', '', 1, 'ref', 'ref', $morehtmlref );
+		dol_banner_tab($origin, 'ref', '', 0, 'ref', 'ref', $morehtmlref );
 	}
 
 
