@@ -250,24 +250,34 @@ class ActionsSupplierorderfromorder
 	 * @return int
 	 */
 	function printCommonFooter($parameters, &$object, &$action, $hookmanager){
-		global $langs;
+		global $langs , $db;
 
 		$TContext = explode(':', $parameters['context']);
 
 		if(in_array('supplierorderlist', $TContext)) {
 			// la page
-			$origin_page = GETPOST('origin_page');
+			$origin_page = GETPOST('origin_page','alpha');
+			$id = GETPOST('id','int');
+			$ref = '';
 
 			if($origin_page === 'ordercustomer'){
 				$pos = strpos($_SERVER['SCRIPT_NAME'],DOL_URL_ROOT);
 				if (is_int($pos)){
 					$file = substr($_SERVER['SCRIPT_NAME'],$pos + strlen(DOL_URL_ROOT));
 					if ($file == "/fourn/commande/list.php"){
+						dol_include_once('/commande/class/commande.class.php');
+						$cmd = NEW Commande($db);
+						$res = $cmd->fetch($id);
+
+						if ($res > 0 ){
+							$ref = $langs->transnoentities('listOrderSupplierForCustomerCommand');
+							$ref .= " ". $cmd->ref;
+						}
 
 						print '<script type="text/javascript">';
 						// on remplace le titre original de la fiche par celui-ci
 						print 'let nbElement = document.querySelector(".fiche .titre").firstChild.nodeValue.substring('.strlen($langs->trans('ListOfSupplierOrders')).'); ';
-						print 'document.querySelector(".fiche .titre").firstChild.nodeValue = "'.$langs->transnoentities('listOrderSupplierForCustomerCommand').'" + nbElement';
+						print 'document.querySelector(".fiche .titre").firstChild.nodeValue = "'.$ref.'" + nbElement';
 						print '</script>';
 					}
 				}
