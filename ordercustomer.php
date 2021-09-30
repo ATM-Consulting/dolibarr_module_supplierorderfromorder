@@ -773,7 +773,7 @@ if ($resql || $resql2) {
 	/*$head[1][0] = DOL_URL_ROOT.'/product/stock/replenishorders.php';
 	$head[1][1] = $langs->trans("ReplenishmentOrders");
 	$head[1][2] = 'replenishorders';*/
-	dol_fiche_head($head, 'supplierorderfromorder', $langs->trans('Replenishment'), 0, 'stock');
+	dol_fiche_head($head, 'supplierorderfromorder', $langs->trans('Replenishment'), -1, 'stock');
 
 	$origin = New Commande($db);
 	$id = GETPOST('id','int');
