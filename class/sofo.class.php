@@ -249,7 +249,7 @@ class TSOFO {
 			}
 		}
 		// le produit n'est pas dans une ligne de commande fournisseur
-		// on retour la qty desitée
+		// on retour la qty desirée
 		if (!$find){
 			$obj = new stdClass();
 			$obj->ref = '';
