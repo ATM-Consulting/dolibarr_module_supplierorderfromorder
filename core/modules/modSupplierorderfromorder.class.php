@@ -1,4 +1,4 @@
-<?php
+ <?php
 /* <one line to give the program's name and a brief idea of what it does.>
  * Copyright (C) 2013 ATM Consulting <support@atm-consulting.fr>
  *
@@ -63,7 +63,7 @@ class modSupplierorderfromorder extends DolibarrModules
         // (where XXX is value of numeric property 'numero' of module)
         $this->description = "Module commande fournisseur à partir d'une commande client";
         // Possible values for version are: 'development', 'experimental' or version
-        $this->version = '2.1.1';
+        $this->version = '2.2.0';
         // Key used in llx_const table to save module status enabled/disabled
         // (where MYMODULE is value of property name of module in uppercase)
         $this->const_name = 'MAIN_MODULE_' . strtoupper($this->name);
@@ -99,6 +99,7 @@ class modSupplierorderfromorder extends DolibarrModules
             'hooks' => array(
                 'ordercard'
                 ,'ordersuppliercard'
+				,'supplierorderlist'
             )
             // Set here all workflow context managed by module
             //'workflow' => array('order' => array('WORKFLOW_ORDER_AUTOCREATE_INVOICE'))

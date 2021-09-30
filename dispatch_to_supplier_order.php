@@ -558,10 +558,13 @@ $title = $langs->trans('ProductsToOrder');
 $helpurl = 'EN:Module_Stocks_En|FR:Module_Stock|';
 $helpurl .= 'ES:M&oacute;dulo_Stocks';
 llxHeader('', $langs->trans('Dispath'), $helpurl, 'commercial', 0, 0, '', array('/supplierorderfromorder/css/style.css'));
-
+$includeProduct ='';
+if (isset($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK) && ($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK == 1)) {
+	$includeProduct = '&show_stock_no_need=yes';
+}
 
 $head = array();
-$head[0][0] = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id='.$fromid,1);
+$head[0][0] = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id='. $fromid . $includeProduct,1);
 $head[0][1] = $title;
 $head[0][2] = 'supplierorderfromorder';
 
