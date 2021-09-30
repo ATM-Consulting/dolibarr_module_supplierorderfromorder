@@ -187,6 +187,7 @@ class TSOFO {
 	public static  function getCmdFournFromCmdCustomer($idCustomerCmd , $idproduct = null){
 		global $db;
 		$Tfourn = array();
+		$TfournProduct = array();
 
 		$sqlCmdFour = " SELECT cf.rowid FROM ".MAIN_DB_PREFIX."commande_fournisseur AS cf";
 		$sqlCmdFour .=" LEFT JOIN ".MAIN_DB_PREFIX."element_element AS e ON (cf.rowid = e.fk_target AND targettype = 'order_supplier' AND sourcetype = 'commande')";
@@ -215,10 +216,12 @@ class TSOFO {
 					foreach ($val->lines as $k => $currentLine){
 						// le produit est present dans une ligne de la commande fournisseur ?
 						if ($currentLine->fk_product == $idproduct){
-							return $val;
+							$TfournProduct[] = $val;
+
 						}
 					}
 				}
+				return $TfournProduct;
 
 			}
 
@@ -234,21 +237,27 @@ class TSOFO {
 	public static function getAvailableQty($Tfourn, $idProduct, $qtyDesired){
 		$find = false;
 		$cmdRef = '';
+
+		 $obj = new stdClass();
+
 		foreach ($Tfourn as $key => $val){
+
 			foreach ($val->lines as $k => $currentLine){
+
 				// le produit est present dans une ligne de la commande fournisseur ?
 				if ($currentLine->fk_product == $idProduct){
 					// on à trouvé le produit dans une ligne de cette commande fournisseur on la flag
 					$find = true;
-					$obj = new stdClass();
 					$obj->ref = $val->ref;
-					$obj->qty = $qtyDesired - $currentLine->qty;
+					//qty possible commandable
+					$obj->qty -= $qtyDesired - $currentLine->qty;
+
 					// si le chiffre est negatif on l'initialise à zéro
 
 					if (abs($obj->qty) != $obj->qty) $obj->qty = 0;
 
-					$obj->oldQty = $currentLine->qty;
-					break;
+					$obj->oldQty += $currentLine->qty;
+
 				}
 			}
 		}

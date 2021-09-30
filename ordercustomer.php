@@ -1415,8 +1415,15 @@ if ($resql || $resql2) {
 			print '</td>';
 
 			// on check si une cmd fourn existe pour ce produit et on affiche la ref avec link
-			$currentCmdFourn =   TSOFO::getCmdFournFromCmdCustomer($id, $objp->rowid);
-			$r = is_object($currentCmdFourn) ?  $currentCmdFourn->getNomUrl(1) : '';
+			$TcurrentCmdFourn =   TSOFO::getCmdFournFromCmdCustomer($id, $objp->rowid);
+			$r = '';
+
+			if (!empty($TcurrentCmdFourn)) {
+				foreach ($TcurrentCmdFourn as $currentCmdFourn){
+					$r .= 	'<br>' . $currentCmdFourn->getNomUrl(1) ;
+				}
+			}
+
 			print '<td>' . $objp->label . $r . '</td>';
 
 			print '<td>' . (empty($prod->type) ? $statutarray[$objp->finished] : '') . '</td>';
