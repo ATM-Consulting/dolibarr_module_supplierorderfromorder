@@ -1379,8 +1379,18 @@ if ($resql || $resql2) {
 			$objLineNewQty = TSOFO::getAvailableQty($TcmdFourn, $objp->rowid, $ordered);
 
 			$var = !$var;
-			$checked = ($objLineNewQty->qty > 0) ? ' checked' : '';
-			$disabled = ($objLineNewQty->qty  ==  0)  ? 'disabled' : '';
+
+			/**
+			 *  passage en conf si demande client
+			 *
+			 *  $checked = ($objLineNewQty->qty > 0) ? ' checked' : '';
+			 *	$disabled = ($objLineNewQty->qty  ==  0)  ? 'disabled' : '';
+			 */
+
+			  $checked = ($objLineNewQty->qty > 0) ? ' checked' : '';
+			  $disabled = ($objLineNewQty->qty  ==  0)  ? 'disabled' : '';
+
+
 			print '<tr ' . $bc[$var] . ' data-productid="' . $objp->rowid . '"  data-i="' . $i . '"   >
 						<td>
 							<input type="checkbox" class="check" name="check' . $i . '" ' . $disabled .' '. $checked .'>';
