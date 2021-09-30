@@ -53,6 +53,7 @@ $langs->load("products");
 $langs->load("stocks");
 $langs->load("orders");
 $langs->load("supplierorderfromorder@supplierorderfromorder");
+$hookmanager->initHooks(array('supplierorderlist', 'globalcard')); // Note that conf->hooks_modules contains array
 
 $dolibarr_version35 = false;
 
@@ -149,6 +150,9 @@ if (is_array($TCategoriesQuery) && count($TCategoriesQuery) == 1 && in_array(-1,
  * Actions
  */
 
+$parameters = array('id' => $id);
+$reshook = $hookmanager->executeHooks('doActions', $parameters, $object, $action); // Note that $action and $object may have been modified by some hooks
+if ($reshook < 0) setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
 
 if (isset($_POST['button_removefilter']) || in_array($action, array('valid-propal', 'valid-order'))) {
 	$sref = '';
@@ -290,7 +294,7 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 								$lineOrderFetched->desc,
 								// FIXME: The current existing line may very well not be at the same purchase price
 								$lineOrderFetched->pu_ht,
-								
+
 								$lineOrderFetched->qty + $line->qty,
 								$remise_percent,
 								$lineOrderFetched->tva_tx
