@@ -243,6 +243,10 @@ class TSOFO {
 					$obj = new stdClass();
 					$obj->ref = $val->ref;
 					$obj->qty = $qtyDesired - $currentLine->qty;
+					// si le chiffre est negatif on l'initialise à zéro
+
+					if (abs($obj->qty) != $obj->qty) $obj->qty = 0;
+
 					$obj->oldQty = $currentLine->qty;
 					break;
 				}
