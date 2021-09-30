@@ -240,8 +240,10 @@ class TSOFO {
 
 		 $obj = new stdClass();
 
+		// toutes les commandes fourn
 		foreach ($Tfourn as $key => $val){
 
+			//chaque ligne de la commande fourn
 			foreach ($val->lines as $k => $currentLine){
 
 				// le produit est present dans une ligne de la commande fournisseur ?
@@ -249,11 +251,12 @@ class TSOFO {
 					// on à trouvé le produit dans une ligne de cette commande fournisseur on la flag
 					$find = true;
 					$obj->ref = $val->ref;
-					//qty possible commandable
-					$obj->qty -= $qtyDesired - $currentLine->qty;
+					$obj->qtyAllFourn += $currentLine->qty;
+
+					//qty possible max
+					$obj->qty = $qtyDesired - $obj->qtyAllFourn;
 
 					// si le chiffre est negatif on l'initialise à zéro
-
 					if (abs($obj->qty) != $obj->qty) $obj->qty = 0;
 
 					$obj->oldQty += $currentLine->qty;
