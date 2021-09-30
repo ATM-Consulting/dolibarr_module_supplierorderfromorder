@@ -200,7 +200,7 @@ class ActionsSupplierorderfromorder
 
 
 	/**
-	 * 		On tri ma par commande client
+	 * 		On tri les commandes fournisseurs par commande client
 	 *
 	 * 		@param $parameters
 	 * 		@param $object
