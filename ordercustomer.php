@@ -290,11 +290,7 @@ if (in_array($action, array('valid-propal', 'valid-order'))) {
 								$lineOrderFetched->desc,
 								// FIXME: The current existing line may very well not be at the same purchase price
 								$lineOrderFetched->pu_ht,
-								// la qty est fuckée  !!!
-								/*
-								 * il faut verifier que la qty totale ne depasse pas la qty déjà existante.
-								 *
-								 */
+								
 								$lineOrderFetched->qty + $line->qty,
 								$remise_percent,
 								$lineOrderFetched->tva_tx
