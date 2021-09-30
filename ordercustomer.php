@@ -53,6 +53,7 @@ $langs->load("products");
 $langs->load("stocks");
 $langs->load("orders");
 $langs->load("supplierorderfromorder@supplierorderfromorder");
+$hookmanager->initHooks(array('supplierorderlist', 'globalcard')); // Note that conf->hooks_modules contains array
 
 $dolibarr_version35 = false;
 
@@ -149,371 +150,376 @@ if (is_array($TCategoriesQuery) && count($TCategoriesQuery) == 1 && in_array(-1,
  * Actions
  */
 
+$parameters = array('id' => $id);
+$reshook = $hookmanager->executeHooks('doActions', $parameters, $object, $action); // Note that $action and $object may have been modified by some hooks
+if ($reshook < 0) setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
 
-if (isset($_POST['button_removefilter']) || in_array($action, array('valid-propal', 'valid-order'))) {
-	$sref = '';
-	$snom = '';
-	$sal = '';
-	$salert = '';
-	$TCategoriesQuery = array();
-	$TCategories = array(-1);
-}
-
-/*echo "<pre>";
-print_r($_REQUEST);
-echo "</pre>";
-exit;*/
-
-
-//orders creation
-//FIXME: could go in the lib
-if (in_array($action, array('valid-propal', 'valid-order'))) {
-
-
-	$actionTarget = 'order';
-	if ($action == 'valid-propal') {
-		$actionTarget = 'propal';
+if(empty($reshook))
+{
+	if (isset($_POST['button_removefilter']) || in_array($action, array('valid-propal', 'valid-order'))) {
+		$sref = '';
+		$snom = '';
+		$sal = '';
+		$salert = '';
+		$TCategoriesQuery = array();
+		$TCategories = array(-1);
 	}
 
+	/*echo "<pre>";
+	print_r($_REQUEST);
+	echo "</pre>";
+	exit;*/
 
-	$linecount = GETPOST('linecount', 'int');
-	$box = false;
-	unset($_POST['linecount']);
-	if ($linecount > 0) {
 
-		$suppliers = array();
+	//orders creation
+	//FIXME: could go in the lib
+	if (in_array($action, array('valid-propal', 'valid-order'))) {
 
-		for ($i = 0; $i < $linecount; $i++) {
 
-			if (GETPOST('check' . $i, 'alpha') === 'on' && (GETPOST('fourn' . $i, 'int') > 0 || GETPOST('fourn_free' . $i, 'int') > 0)) { //one line
-				_prepareLine($i, $actionTarget);
-			}
-			unset($_POST[$i]);
-
+		$actionTarget = 'order';
+		if ($action == 'valid-propal') {
+			$actionTarget = 'propal';
 		}
 
-		//we now know how many orders we need and what lines they have
-		$i = 0;
-		$id = 0;
-		$nb_orders_created = 0;
-		$orders = array();
-		$suppliersid = array_keys($suppliers);
-		$projectid = GETPOST('projectid', 'int');
 
-		foreach ($suppliers as $idsupplier => $supplier) {
+		$linecount = GETPOST('linecount', 'int');
+		$box = false;
+		unset($_POST['linecount']);
+		if ($linecount > 0) {
 
+			$suppliers = array();
 
-			if ($actionTarget == 'propal') {
-				$order = new SupplierProposal($db);
-				$obj = _getSupplierProposalInfos($idsupplier, $projectid);
-			} else {
-				$order = new CommandeFournisseur($db);
-				$obj = _getSupplierOrderInfos($idsupplier, $projectid);
-			}
+			for ($i = 0; $i < $linecount; $i++) {
 
-			$commandeClient = new Commande($db);
-			$commandeClient->fetch($_REQUEST['id']);
-
-			// Test recupération contact livraison
-			if ($conf->global->SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY) {
-				$contact_ship = $commandeClient->getIdContact('external', 'SHIPPING');
-				$contact_ship = $contact_ship[0];
-			} else {
-				$contact_ship = null;
-			}
-
-
-			//Si une commande au statut brouillon existe déjà et que l'option SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME
-			if ($obj && !$conf->global->SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME) {
-
-				$order->fetch($obj->rowid);
-				$order->socid = $idsupplier;
-
-				if (!empty($projectid)) {
-					$order->fk_project = GETPOST('projectid', 'int');
+				if (GETPOST('check' . $i, 'alpha') === 'on' && (GETPOST('fourn' . $i, 'int') > 0 || GETPOST('fourn_free' . $i, 'int') > 0)) { //one line
+					_prepareLine($i, $actionTarget);
 				}
-
-				// On vérifie qu'il n'existe pas déjà un lien entre la commande client et la commande fournisseur dans la table element_element.
-				// S'il n'y en a pas, on l'ajoute, sinon, on ne l'ajoute pas
-				$order->fetchObjectLinked('', 'commande', $order->id, 'order_supplier');
-				$order->add_object_linked('commande', $_REQUEST['id']);
-
-				// cond reglement, mode reglement, delivery date
-				_appliCond($order, $commandeClient);
-
-
-				$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
-				$newCommande = false;
-
-			} else {
-
-				$order->socid = $idsupplier;
-				if (!empty($projectid)) {
-					$order->fk_project = GETPOST('projectid', 'int');
-				}
-
-				// cond reglement, mode reglement, delivery date
-				_appliCond($order, $commandeClient);
-
-				$id = $order->create($user);
-				if ($contact_ship && $conf->global->SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY)
-					$order->add_contact($contact_ship, 'SHIPPING');
-				$order->add_object_linked('commande', $_REQUEST['id']);
-				$newCommande = true;
-
-				$nb_orders_created++;
-			}
-
-
-			$order_id = $order->id;
-			//trick to know which orders have been generated this way
-			$order->source = 42;
-			$MaxAvailability = 0;
-
-			foreach ($supplier['lines'] as $line) {
-
-				$done = false;
-
-				$prodfourn = new ProductFournisseur($db);
-				$prodfourn->fetch_product_fournisseur_price($_REQUEST['fourn' . $i]);
-
-				foreach ($order->lines as $lineOrderFetched) {
-					if ($line->fk_product == $lineOrderFetched->fk_product) {
-
-						$remise_percent = $lineOrderFetched->remise_percent;
-						if ($line->remise_percent > $remise_percent)
-							$remise_percent = $line->remise_percent;
-
-						if ($order->element == 'order_supplier') {
-							$order->updateline(
-								$lineOrderFetched->id,
-								$lineOrderFetched->desc,
-								// FIXME: The current existing line may very well not be at the same purchase price
-								$lineOrderFetched->pu_ht,
-								
-								$lineOrderFetched->qty + $line->qty,
-								$remise_percent,
-								$lineOrderFetched->tva_tx
-							);
-						} else if ($order->element == 'supplier_proposal') {
-
-							$order->updateline(
-								$lineOrderFetched->id,
-								$prodfourn->fourn_unitprice, //$lineOrderFetched->pu_ht is empty,
-								$lineOrderFetched->qty + $line->qty,
-								$remise_percent,
-								$lineOrderFetched->tva_tx,
-								0, //$txlocaltax1=0,
-								0, //$txlocaltax2=0,
-								$lineOrderFetched->desc
-							//$price_base_type='HT',
-							//$info_bits=0,
-							//$special_code=0,
-							//$fk_parent_line=0,
-							//$skip_update_total=0,
-							//$fk_fournprice=0,
-							//$pa_ht=0,
-							//$label='',
-							//$type=0,
-							//$array_option=0,
-							//$ref_fourn='',
-							//$fk_unit=''
-							);
-						}
-
-						$done = true;
-						break;
-
-					}
-
-				}
-
-				// On ajoute une ligne seulement si un "updateline()" n'a pas été fait et si la quantité souhaitée est supérieure à zéro
-
-				if (!$done) {
-
-					if ($order->element == 'order_supplier') {
-						$order->addline(
-							$line->desc,
-							$line->subprice,
-							$line->qty,
-							$line->tva_tx,
-							null,
-							null,
-							$line->fk_product,
-							// We need to pass fk_prod_fourn_price to get the right price.
-							$line->fk_prod_fourn_price,
-							$line->ref_fourn,
-							$line->remise_percent
-							, 'HT'
-							, 0
-							, $line->product_type
-							, $line->info_bits
-							, FALSE // $notrigger
-							, NULL // $date_start
-							, NULL // $date_end
-							, $line->array_options
-							, null
-							, 0
-							, $line->origin
-							, $line->origin_id
-						);
-					} else if ($order->element == 'supplier_proposal') {
-						$order->addline(
-							$line->desc,
-							$line->subprice,
-							$line->qty,
-							$line->tva_tx,
-							null,
-							null,
-							$line->fk_product,
-							$line->remise_percent,
-							'HT',
-							0, //$pu_ttc=0,
-							$line->info_bits, //$info_bits=0,
-							$line->product_type, //$type=0,
-							-1, //$rang=-1,
-							0, //$special_code=0, ,
-							0, //$fk_parent_line=0, ,
-							$line->fk_prod_fourn_price, //$fk_fournprice=0, ,
-							0, //$pa_ht=0, ,
-							'', //$label='',,
-							$line->array_options, //$array_option=0, ,
-							$line->ref_fourn, //$ref_fourn='', ,
-							'', //$fk_unit='', ,
-							$line->origin, //$origin='', ,
-							$line->origin_id//$origin_id=0
-						);
-
-
-					}
-
-				}
-
-				$nb_day = (int)TSOFO::getMinAvailability($line->fk_product, $line->qty, 1, $prodfourn->fourn_id);
-				if ($MaxAvailability < $nb_day) {
-					$MaxAvailability = $nb_day;
-				}
-
+				unset($_POST[$i]);
 
 			}
 
-			if (!empty($conf->global->SOFO_USE_MAX_DELIVERY_DATE)) {
-				$order->date_livraison = dol_now() + $MaxAvailability * 86400;
-				if (version_compare(DOL_VERSION, '14', '>=')) {
-					$order->setDeliveryDate($user, $order->date_livraison);
-				} else {
-					$order->set_date_livraison($user, $order->date_livraison);
-				}
-			}
+			//we now know how many orders we need and what lines they have
+			$i = 0;
+			$id = 0;
+			$nb_orders_created = 0;
+			$orders = array();
+			$suppliersid = array_keys($suppliers);
+			$projectid = GETPOST('projectid', 'int');
 
-			$order->cond_reglement_id = 0;
-			$order->mode_reglement_id = 0;
+			foreach ($suppliers as $idsupplier => $supplier) {
 
-			if ($id < 0) {
-				$fail++; // FIXME: declare somewhere and use, or get rid of it!
-				$msg = $langs->trans('OrderFail') . "&nbsp;:&nbsp;";
-				$msg .= $order->error;
-				setEventMessage($msg, 'errors');
-			} else {
-				// CODE de redirection s'il y a un seul fournisseur (évite de le laisser sur la page sans comprendre)
-				if ($conf->global->SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER) {
-					if (count($suppliersid) == 1) {
-						if ($action === 'valid-order')
-							$link = dol_buildpath('/fourn/commande/card.php?id=' . $order_id, 1);
-						else $link = dol_buildpath('/supplier_proposal/card.php?id=' . $order_id, 1);
-						header('Location:' . $link);
-					}
-				}
-			}
-			$i++;
-		}
-
-		$id = GETPOST('id','int');
-		$origin_page = 'ordercustomer';
-		header("Location: ".DOL_URL_ROOT."/fourn/commande/list.php?id=".$id.'&origin_page='.$origin_page);
-	}
-
-	if ($nb_orders_created > 0) {
-		setEventMessages($langs->trans('supplierorderfromorder_nb_orders_created', $nb_orders_created), array());
-	}
-
-	if ($box === false) {
-		setEventMessage($langs->trans('SelectProduct'), 'warnings');
-	} else {
-
-		foreach ($suppliers as $idSupplier => $lines) {
-			$j = 0;
-			foreach ($lines as $line) {
-				$sql = "SELECT quantity";
-				$sql .= " FROM " . MAIN_DB_PREFIX . "product_fournisseur_price";
-				$sql .= " WHERE fk_soc = " . $idSupplier;
-				$sql .= " AND fk_product = " . $line[$j]->fk_product;
-				$sql .= " ORDER BY quantity ASC";
-				$sql .= " LIMIT 1";
-				$resql = $db->query($sql);
-				if ($resql) {
-					$resql = $db->fetch_object($resql);
-
-					//echo $j;
-
-					if ($line[$j]->qty < $resql->quantity) {
-						$p = new Product($db);
-						$p->fetch($line[$j]->fk_product);
-						$f = new Fournisseur($db);
-						$f->fetch($idSupplier);
-						$rates[$f->name] = $p->label;
-					} else {
-						$p = new Product($db);
-						$p->fetch($line[$j]->fk_product);
-						$f = new Fournisseur($db);
-						$f->fetch($idSupplier);
-						$ajoutes[$f->name] = $p->label;
-					}
-				}
-
-				/*echo "<pre>";
-				print_r($rates);
-				echo "</pre>";
-				echo "<pre>";
-				print_r($ajoutes);
-				echo "</pre>";*/
-				$j++;
-			}
-		}
-		$mess = "";
-		// FIXME: declare $ajoutes somewhere. It's unclear if it should be reinitialized or not in the interlocking loops.
-		if ($ajoutes) {
-			foreach ($ajoutes as $nomFournisseur => $nomProd) {
 
 				if ($actionTarget == 'propal') {
-					$mess .= $langs->trans('ProductAddToSupplierQuotation', $nomProd, $nomFournisseur) . '<br />';
+					$order = new SupplierProposal($db);
+					$obj = _getSupplierProposalInfos($idsupplier, $projectid);
 				} else {
-					$mess .= $langs->trans('ProductAddToSupplierOrder', $nomProd, $nomFournisseur) . '<br />';
+					$order = new CommandeFournisseur($db);
+					$obj = _getSupplierOrderInfos($idsupplier, $projectid);
 				}
 
+				$commandeClient = new Commande($db);
+				$commandeClient->fetch($_REQUEST['id']);
+
+				// Test recupération contact livraison
+				if ($conf->global->SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY) {
+					$contact_ship = $commandeClient->getIdContact('external', 'SHIPPING');
+					$contact_ship = $contact_ship[0];
+				} else {
+					$contact_ship = null;
+				}
+
+
+				//Si une commande au statut brouillon existe déjà et que l'option SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME
+				if ($obj && !$conf->global->SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME) {
+
+					$order->fetch($obj->rowid);
+					$order->socid = $idsupplier;
+
+					if (!empty($projectid)) {
+						$order->fk_project = GETPOST('projectid', 'int');
+					}
+
+					// On vérifie qu'il n'existe pas déjà un lien entre la commande client et la commande fournisseur dans la table element_element.
+					// S'il n'y en a pas, on l'ajoute, sinon, on ne l'ajoute pas
+					$order->fetchObjectLinked('', 'commande', $order->id, 'order_supplier');
+					$order->add_object_linked('commande', $_REQUEST['id']);
+
+					// cond reglement, mode reglement, delivery date
+					_appliCond($order, $commandeClient);
+
+
+					$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
+					$newCommande = false;
+
+				} else {
+
+					$order->socid = $idsupplier;
+					if (!empty($projectid)) {
+						$order->fk_project = GETPOST('projectid', 'int');
+					}
+
+					// cond reglement, mode reglement, delivery date
+					_appliCond($order, $commandeClient);
+
+					$id = $order->create($user);
+					if ($contact_ship && $conf->global->SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY)
+						$order->add_contact($contact_ship, 'SHIPPING');
+					$order->add_object_linked('commande', $_REQUEST['id']);
+					$newCommande = true;
+
+					$nb_orders_created++;
+				}
+
+
+				$order_id = $order->id;
+				//trick to know which orders have been generated this way
+				$order->source = 42;
+				$MaxAvailability = 0;
+
+				foreach ($supplier['lines'] as $line) {
+
+					$done = false;
+
+					$prodfourn = new ProductFournisseur($db);
+					$prodfourn->fetch_product_fournisseur_price($_REQUEST['fourn' . $i]);
+
+					foreach ($order->lines as $lineOrderFetched) {
+						if ($line->fk_product == $lineOrderFetched->fk_product) {
+
+							$remise_percent = $lineOrderFetched->remise_percent;
+							if ($line->remise_percent > $remise_percent)
+								$remise_percent = $line->remise_percent;
+
+							if ($order->element == 'order_supplier') {
+								$order->updateline(
+									$lineOrderFetched->id,
+									$lineOrderFetched->desc,
+									// FIXME: The current existing line may very well not be at the same purchase price
+									$lineOrderFetched->pu_ht,
+
+									$lineOrderFetched->qty + $line->qty,
+									$remise_percent,
+									$lineOrderFetched->tva_tx
+								);
+							} else if ($order->element == 'supplier_proposal') {
+
+								$order->updateline(
+									$lineOrderFetched->id,
+									$prodfourn->fourn_unitprice, //$lineOrderFetched->pu_ht is empty,
+									$lineOrderFetched->qty + $line->qty,
+									$remise_percent,
+									$lineOrderFetched->tva_tx,
+									0, //$txlocaltax1=0,
+									0, //$txlocaltax2=0,
+									$lineOrderFetched->desc
+								//$price_base_type='HT',
+								//$info_bits=0,
+								//$special_code=0,
+								//$fk_parent_line=0,
+								//$skip_update_total=0,
+								//$fk_fournprice=0,
+								//$pa_ht=0,
+								//$label='',
+								//$type=0,
+								//$array_option=0,
+								//$ref_fourn='',
+								//$fk_unit=''
+								);
+							}
+
+							$done = true;
+							break;
+
+						}
+
+					}
+
+					// On ajoute une ligne seulement si un "updateline()" n'a pas été fait et si la quantité souhaitée est supérieure à zéro
+
+					if (!$done) {
+
+						if ($order->element == 'order_supplier') {
+							$order->addline(
+								$line->desc,
+								$line->subprice,
+								$line->qty,
+								$line->tva_tx,
+								null,
+								null,
+								$line->fk_product,
+								// We need to pass fk_prod_fourn_price to get the right price.
+								$line->fk_prod_fourn_price,
+								$line->ref_fourn,
+								$line->remise_percent
+								, 'HT'
+								, 0
+								, $line->product_type
+								, $line->info_bits
+								, FALSE // $notrigger
+								, NULL // $date_start
+								, NULL // $date_end
+								, $line->array_options
+								, null
+								, 0
+								, $line->origin
+								, $line->origin_id
+							);
+						} else if ($order->element == 'supplier_proposal') {
+							$order->addline(
+								$line->desc,
+								$line->subprice,
+								$line->qty,
+								$line->tva_tx,
+								null,
+								null,
+								$line->fk_product,
+								$line->remise_percent,
+								'HT',
+								0, //$pu_ttc=0,
+								$line->info_bits, //$info_bits=0,
+								$line->product_type, //$type=0,
+								-1, //$rang=-1,
+								0, //$special_code=0, ,
+								0, //$fk_parent_line=0, ,
+								$line->fk_prod_fourn_price, //$fk_fournprice=0, ,
+								0, //$pa_ht=0, ,
+								'', //$label='',,
+								$line->array_options, //$array_option=0, ,
+								$line->ref_fourn, //$ref_fourn='', ,
+								'', //$fk_unit='', ,
+								$line->origin, //$origin='', ,
+								$line->origin_id//$origin_id=0
+							);
+
+
+						}
+
+					}
+
+					$nb_day = (int)TSOFO::getMinAvailability($line->fk_product, $line->qty, 1, $prodfourn->fourn_id);
+					if ($MaxAvailability < $nb_day) {
+						$MaxAvailability = $nb_day;
+					}
+
+
+				}
+
+				if (!empty($conf->global->SOFO_USE_MAX_DELIVERY_DATE)) {
+					$order->date_livraison = dol_now() + $MaxAvailability * 86400;
+					if (version_compare(DOL_VERSION, '14', '>=')) {
+						$order->setDeliveryDate($user, $order->date_livraison);
+					} else {
+						$order->set_date_livraison($user, $order->date_livraison);
+					}
+				}
+
+				$order->cond_reglement_id = 0;
+				$order->mode_reglement_id = 0;
+
+				if ($id < 0) {
+					$fail++; // FIXME: declare somewhere and use, or get rid of it!
+					$msg = $langs->trans('OrderFail') . "&nbsp;:&nbsp;";
+					$msg .= $order->error;
+					setEventMessage($msg, 'errors');
+				} else {
+					// CODE de redirection s'il y a un seul fournisseur (évite de le laisser sur la page sans comprendre)
+					if ($conf->global->SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER) {
+						if (count($suppliersid) == 1) {
+							if ($action === 'valid-order')
+								$link = dol_buildpath('/fourn/commande/card.php?id=' . $order_id, 1);
+							else $link = dol_buildpath('/supplier_proposal/card.php?id=' . $order_id, 1);
+							header('Location:' . $link);
+						}
+					}
+				}
+				$i++;
 			}
+
+			$id = GETPOST('id','int');
+			$origin_page = 'ordercustomer';
+			header("Location: ".DOL_URL_ROOT."/fourn/commande/list.php?id=".$id.'&origin_page='.$origin_page);
 		}
-		// FIXME: same as $ajoutes.
-		if ($rates) {
-			foreach ($rates as $nomFournisseur => $nomProd) {
-				$mess .= "Quantité insuffisante de ' " . $nomProd . " ' pour le fournisseur ' " . $nomFournisseur . " '<br />";
-			}
+
+		if ($nb_orders_created > 0) {
+			setEventMessages($langs->trans('supplierorderfromorder_nb_orders_created', $nb_orders_created), array());
 		}
-		if ($rates) {
-			setEventMessage($mess, 'warnings');
+
+		if ($box === false) {
+			setEventMessage($langs->trans('SelectProduct'), 'warnings');
 		} else {
-			setEventMessage($mess, 'mesgs');
+
+			foreach ($suppliers as $idSupplier => $lines) {
+				$j = 0;
+				foreach ($lines as $line) {
+					$sql = "SELECT quantity";
+					$sql .= " FROM " . MAIN_DB_PREFIX . "product_fournisseur_price";
+					$sql .= " WHERE fk_soc = " . $idSupplier;
+					$sql .= " AND fk_product = " . $line[$j]->fk_product;
+					$sql .= " ORDER BY quantity ASC";
+					$sql .= " LIMIT 1";
+					$resql = $db->query($sql);
+					if ($resql) {
+						$resql = $db->fetch_object($resql);
+
+						//echo $j;
+
+						if ($line[$j]->qty < $resql->quantity) {
+							$p = new Product($db);
+							$p->fetch($line[$j]->fk_product);
+							$f = new Fournisseur($db);
+							$f->fetch($idSupplier);
+							$rates[$f->name] = $p->label;
+						} else {
+							$p = new Product($db);
+							$p->fetch($line[$j]->fk_product);
+							$f = new Fournisseur($db);
+							$f->fetch($idSupplier);
+							$ajoutes[$f->name] = $p->label;
+						}
+					}
+
+					/*echo "<pre>";
+					print_r($rates);
+					echo "</pre>";
+					echo "<pre>";
+					print_r($ajoutes);
+					echo "</pre>";*/
+					$j++;
+				}
+			}
+			$mess = "";
+			// FIXME: declare $ajoutes somewhere. It's unclear if it should be reinitialized or not in the interlocking loops.
+			if ($ajoutes) {
+				foreach ($ajoutes as $nomFournisseur => $nomProd) {
+
+					if ($actionTarget == 'propal') {
+						$mess .= $langs->trans('ProductAddToSupplierQuotation', $nomProd, $nomFournisseur) . '<br />';
+					} else {
+						$mess .= $langs->trans('ProductAddToSupplierOrder', $nomProd, $nomFournisseur) . '<br />';
+					}
+
+				}
+			}
+			// FIXME: same as $ajoutes.
+			if ($rates) {
+				foreach ($rates as $nomFournisseur => $nomProd) {
+					$mess .= "Quantité insuffisante de ' " . $nomProd . " ' pour le fournisseur ' " . $nomFournisseur . " '<br />";
+				}
+			}
+			if ($rates) {
+				setEventMessage($mess, 'warnings');
+			} else {
+				setEventMessage($mess, 'mesgs');
+			}
 		}
 	}
+
+
+	if (in_array($action, array('view-valid-order'))) {
+
+		header("Location: ".DOL_URL_ROOT."/fourn/commande/list.php?id=".$id.'&origin_page='.$origin_page);
+	}
 }
-
-
-if (in_array($action, array('view-valid-order'))) {
-
-	header("Location: ".DOL_URL_ROOT."/fourn/commande/list.php?id=".$id.'&origin_page='.$origin_page);
-}
-
 /*
  * View
  */

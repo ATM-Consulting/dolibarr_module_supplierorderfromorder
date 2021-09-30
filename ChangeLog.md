@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- New - add doAction hook 2.3.0 - *30/09/2021*
 - New - add redirection button to command fourn 2.2.0- *28/09/2021*
 - New - restrict input number on product 
 - New - add Qty product column and link to cmd fourn if exit.
