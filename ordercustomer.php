@@ -53,7 +53,7 @@ $langs->load("products");
 $langs->load("stocks");
 $langs->load("orders");
 $langs->load("supplierorderfromorder@supplierorderfromorder");
-$hookmanager->initHooks(array('supplierorderlist', 'globalcard')); // Note that conf->hooks_modules contains array
+$hookmanager->initHooks(array('ordercustomer')); // Note that conf->hooks_modules contains array
 
 $dolibarr_version35 = false;
 
@@ -523,7 +523,7 @@ if(empty($reshook))
 /*
  * View
  */
-
+$param = (isset($type) ? '&type=' . $type : '');
 $TCachedProductId =& $_SESSION['TCachedProductId'];
 if (empty($TCachedProductId))
 	$TCachedProductId = array();
@@ -539,23 +539,24 @@ if (empty($conf->global->SOFO_CHECK_STOCK_ON_SHARED_STOCK)) {
 
 $title = $langs->trans('ProductsToOrder');
 $db->query("SET SQL_MODE=''");
-$sql = 'SELECT p.rowid, p.ref, p.label, cd.description, p.price, SUM(cd.qty) as qty, cd.buy_price_ht';
-$sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type';
-$sql .= ', p.tms as datem, p.duration, p.tobuy, p.seuil_stock_alerte, p.finished, cd.rang,';
+
+$sql = 'SELECT prod.rowid, prod.ref, prod.label, cd.description, prod.price, SUM(cd.qty) as qty, cd.buy_price_ht';
+$sql .= ', prod.price_ttc, prod.price_base_type,prod.fk_product_type';
+$sql .= ', prod.tms as datem, prod.duration, prod.tobuy, prod.seuil_stock_alerte, prod.finished, cd.rang,';
 $sql .= ' GROUP_CONCAT(cd.rowid SEPARATOR "@") as lineid,';
 $sql .= ' ( SELECT SUM(s.reel) FROM ' . MAIN_DB_PREFIX . 'product_stock s
-		INNER JOIN ' . MAIN_DB_PREFIX . 'entrepot as entre ON entre.rowid=s.fk_entrepot WHERE s.fk_product=p.rowid
+		INNER JOIN ' . MAIN_DB_PREFIX . 'entrepot as entre ON entre.rowid=s.fk_entrepot WHERE s.fk_product=prod.rowid
 		AND entre.entity IN (' . $entityToTest . ')) as stock_physique';
-$sql .= $dolibarr_version35 ? ', p.desiredstock' : "";
-$sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as p';
-$sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd ON (p.rowid = cd.fk_product)';
+$sql .= $dolibarr_version35 ? ', prod.desiredstock' : "";
+$sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as prod';
+$sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd ON (prod.rowid = cd.fk_product)';
 
 if (!empty($TCategoriesQuery)) {
-	$sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'categorie_product as cp ON (p.rowid = cp.fk_product)';
+	$sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'categorie_product as cp ON (prod.rowid = cp.fk_product)';
 }
 
-//$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s ON (p.rowid = s.fk_product)';
-$sql .= ' WHERE p.fk_product_type IN (0,1) AND p.entity IN (' . getEntity("product", 1) . ')';
+//$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s ON (prod.rowid = s.fk_product)';
+$sql .= ' WHERE prod.fk_product_type IN (0,1) AND prod.entity IN (' . getEntity("product", 1) . ')';
 
 $fk_commande = GETPOST('id', 'int');
 
@@ -566,65 +567,65 @@ if (!empty($TCategoriesQuery))
 	$sql .= ' AND cp.fk_categorie IN ( ' . implode(',', $TCategoriesQuery) . ' ) ';
 
 if ($sall) {
-	$sql .= ' AND (p.ref LIKE "%' . $db->escape($sall) . '%" ';
-	$sql .= 'OR p.label LIKE "%' . $db->escape($sall) . '%" ';
-	$sql .= 'OR p.description LIKE "%' . $db->escape($sall) . '%" ';
-	$sql .= 'OR p.note LIKE "%' . $db->escape($sall) . '%")';
+	$sql .= ' AND (prod.ref LIKE "%' . $db->escape($sall) . '%" ';
+	$sql .= 'OR prod.label LIKE "%' . $db->escape($sall) . '%" ';
+	$sql .= 'OR prod.description LIKE "%' . $db->escape($sall) . '%" ';
+	$sql .= 'OR prod.note LIKE "%' . $db->escape($sall) . '%")';
 }
 // if the type is not 1, we show all products (type = 0,2,3)
 if (dol_strlen($type)) {
 	if ($type == 1) {
-		$sql .= ' AND p.fk_product_type = 1';
+		$sql .= ' AND prod.fk_product_type = 1';
 	} else {
-		$sql .= ' AND p.fk_product_type != 1';
+		$sql .= ' AND prod.fk_product_type != 1';
 	}
 }
 if ($sref) {
 	//natural search
 	$scrit = explode(' ', $sref);
 	foreach ($scrit as $crit) {
-		$sql .= ' AND p.ref LIKE "%' . $crit . '%"';
+		$sql .= ' AND prod.ref LIKE "%' . $crit . '%"';
 	}
 }
 if ($snom) {
 	//natural search
 	$scrit = explode(' ', $snom);
 	foreach ($scrit as $crit) {
-		$sql .= ' AND p.label LIKE "%' . $db->escape($crit) . '%"';
+		$sql .= ' AND prod.label LIKE "%' . $db->escape($crit) . '%"';
 	}
 }
 
-$sql .= ' AND p.tobuy = 1';
+$sql .= ' AND prod.tobuy = 1';
 
 $finished = GETPOST('finished', 'none');
 if ($finished != '' && $finished != '-1')
-	$sql .= ' AND p.finished = ' . $finished;
+	$sql .= ' AND prod.finished = ' . $finished;
 elseif (!isset($_REQUEST['button_search_x']) && isset($conf->global->SOFO_DEFAUT_FILTER) && $conf->global->SOFO_DEFAUT_FILTER >= 0)
-	$sql .= ' AND p.finished = ' . $conf->global->SOFO_DEFAUT_FILTER;
+	$sql .= ' AND prod.finished = ' . $conf->global->SOFO_DEFAUT_FILTER;
 
 if (!empty($canvas)) {
-	$sql .= ' AND p.canvas = "' . $db->escape($canvas) . '"';
+	$sql .= ' AND prod.canvas = "' . $db->escape($canvas) . '"';
 }
 
 if ($salert == 'on') {
-	$sql .= " AND p.seuil_stock_alerte is not NULL ";
+	$sql .= " AND prod.seuil_stock_alerte is not NULL ";
 
 }
 
-$sql .= ' GROUP BY p.rowid, p.ref, p.label, p.price';
-$sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type, p.tms';
-$sql .= ', p.duration, p.tobuy, p.seuil_stock_alerte';
+$sql .= ' GROUP BY prod.rowid, prod.ref, prod.label, prod.price';
+$sql .= ', prod.price_ttc, prod.price_base_type,prod.fk_product_type, prod.tms';
+$sql .= ', prod.duration, prod.tobuy, prod.seuil_stock_alerte';
 //$sql .= ', cd.rang';
-//$sql .= ', p.desiredstock';
+//$sql .= ', prod.desiredstock';
 //$sql .= ', s.fk_product';
 
 //if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
 $sql .= ', cd.description';
 //}
-//$sql .= ' HAVING p.desiredstock > SUM(COALESCE(s.reel, 0))';
-//$sql .= ' HAVING p.desiredstock > 0';
+//$sql .= ' HAVING prod.desiredstock > SUM(COALESCE(s.reel, 0))';
+//$sql .= ' HAVING prod.desiredstock > 0';
 if ($salert == 'on') {
-	$sql .= ' HAVING stock_physique < p.seuil_stock_alerte ';
+	$sql .= ' HAVING stock_physique < prod.seuil_stock_alerte ';
 	$alertchecked = 'checked="checked"';
 }
 
@@ -641,8 +642,6 @@ if ($_REQUEST['id'] && $conf->global->SOFO_ADD_FREE_LINES) {
 	//echo $sql2;
 }
 $sql .= $db->order($sortfield, $sortorder);
-
-//echo $sql;
 
 if (!$conf->global->SOFO_USE_DELIVERY_TIME)
 	$sql .= $db->plimit($limit + 1, $offset);
@@ -756,6 +755,7 @@ if ($resql || $resql2) {
 	$includeProduct = '';
 	if (isset($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK) && ($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK == 1)) {
 		$includeProduct = '&show_stock_no_need=yes';
+		$param .= '&show_stock_no_need=yes';
 	}
 
 	$head = array();
@@ -910,7 +910,6 @@ if ($resql || $resql2) {
 	}
 
 
-	$param = (isset($type) ? '&type=' . $type : '');
 	$param .= '&fourn_id=' . $fourn_id . '&snom=' . $snom . '&salert=' . $salert;
 	$param .= '&sref=' . $sref;
 
@@ -920,7 +919,7 @@ if ($resql || $resql2) {
 	print_liste_field_titre(
 		$langs->trans('Ref'),
 		'ordercustomer.php',
-		'p.ref',
+		'prod.ref',
 		$param,
 		'id=' . $_REQUEST['id'],
 		'',
@@ -930,7 +929,7 @@ if ($resql || $resql2) {
 	print_liste_field_titre(
 		$langs->trans('Label'),
 		'ordercustomer.php',
-		'p.label',
+		'prod.label',
 		$param,
 		'id=' . $_REQUEST['id'],
 		'',
@@ -940,7 +939,7 @@ if ($resql || $resql2) {
 	print_liste_field_titre(
 		$langs->trans('Nature'),
 		'ordercustomer.php',
-		'p.label',
+		'prod.label',
 		$param,
 		'id=' . $_REQUEST['id'],
 		'',
@@ -963,7 +962,7 @@ if ($resql || $resql2) {
 		print_liste_field_titre(
 			$langs->trans('Duration'),
 			'ordercustomer.php',
-			'p.duration',
+			'prod.duration',
 			$param,
 			'id=' . $_REQUEST['id'],
 			'align="center"',
@@ -976,7 +975,7 @@ if ($resql || $resql2) {
 		print_liste_field_titre(
 			$langs->trans('DesiredStock'),
 			'ordercustomer.php',
-			'p.desiredstock',
+			'prod.desiredstock',
 			$param,
 			'id=' . $_REQUEST['id'],
 			'align="right"',
