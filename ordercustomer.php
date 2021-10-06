@@ -830,9 +830,10 @@ if ($resql || $resql2) {
 
 		}
 	}
+$yesno = !empty($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK) ? '&show_stock_no_need=yes' : '';
 
 	print'</div>';
-	print '<form action="' . $_SERVER['PHP_SELF'] . '?id=' . $_REQUEST['id'] . '&projectid=' . $_REQUEST['projectid'] . '" method="post" name="formulaire">' .
+	print '<form action="' . $_SERVER['PHP_SELF'] . '?id=' . $_REQUEST['id'] . '&projectid=' . $_REQUEST['projectid'] . $yesno .'" method="post" name="formulaire">' .
 		'<input type="hidden" name="id" value="' . $_REQUEST['id'] . '">' .
 		'<input type="hidden" name="token" value="' . $_SESSION['newtoken'] . '">' .
 		'<input type="hidden" name="sortfield" value="' . $sortfield . '">' .
