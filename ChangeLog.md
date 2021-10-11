@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 2.3
+
 - FIX : change SQL query aliases for list: `p` is now `prod` - 2.3.1 - 01/10/2021
 - New - add doAction hook 2.3.0 - *30/09/2021*
 - New - add redirection button to command fourn 2.2.0- *28/09/2021*
