@@ -1966,11 +1966,11 @@ function _appliCond($order, $commandeClient)
 		$extrafieldsCustomerOrder->fetch_name_optionals_label($commandeClient->table_element);
 
 		if (!empty($commandeClient->array_options) && !empty($extrafieldsOrderSupplier->attributes)
-			&& array_key_exists('commande_fournisseur', $extrafieldsOrderSupplier->attributes)
-			&& array_key_exists('label', $extrafieldsOrderSupplier->attributes['commande_fournisseur'])
-			   && !empty($extrafieldsOrderSupplier->attributes['commande_fournisseur']['label'])) {
-			foreach($commandeClient->array_options as $key=>$val) {
-				$key = str_replace('options_','', $key);
+			&& array_key_exists($order->table_element, $extrafieldsOrderSupplier->attributes)
+			&& array_key_exists('label', $extrafieldsOrderSupplier->attributes[$order->table_element])
+			   && !empty($extrafieldsOrderSupplier->attributes[$order->table_element]['label'])) {
+			foreach ($commandeClient->array_options as $key=>$val) {
+				$key = str_replace('options_', '', $key);
 				if (array_key_exists($key, $extrafieldsOrderSupplier->attributes[$order->table_element]['type']) &&
 					$extrafieldsOrderSupplier->attributes[$order->table_element]['type'][$key] == $extrafieldsCustomerOrder->attributes[$commandeClient->table_element]['type'][$key]) {
 					$order->array_options['options_'.$key] = $commandeClient->array_options['options_'.$key];
