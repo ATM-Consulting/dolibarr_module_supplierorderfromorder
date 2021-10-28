@@ -1950,12 +1950,33 @@ function _appliCond($order, $commandeClient)
 		}
 	}
 
-	if ($conf->global->SOFO_GET_INFOS_FROM_ORDER) {
+	if (!empty($conf->global->SOFO_GET_INFOS_FROM_ORDER)) {
 		$order->mode_reglement_code = $commandeClient->mode_reglement_code;
 		$order->mode_reglement_id = $commandeClient->mode_reglement_id;
 		$order->cond_reglement_id = $commandeClient->cond_reglement_id;
 		$order->cond_reglement_code = $commandeClient->cond_reglement_code;
 		$order->date_livraison = $commandeClient->date_livraison;
+	}
+
+	if (!empty($conf->global->SOFO_GET_EXTRAFIELDS_FROM_ORDER)) {
+		require_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
+		$extrafieldsOrderSupplier = new ExtraFields($db);
+		$extrafieldsOrderSupplier->fetch_name_optionals_label($order->table_element);
+		$extrafieldsCustomerOrder = new ExtraFields($db);
+		$extrafieldsCustomerOrder->fetch_name_optionals_label($commandeClient->table_element);
+
+		if (!empty($commandeClient->array_options) && !empty($extrafieldsOrderSupplier->attributes)
+			&& array_key_exists('commande_fournisseur', $extrafieldsOrderSupplier->attributes)
+			&& array_key_exists('label', $extrafieldsOrderSupplier->attributes['commande_fournisseur'])
+			   && !empty($extrafieldsOrderSupplier->attributes['commande_fournisseur']['label'])) {
+			foreach($commandeClient->array_options as $key=>$val) {
+				$key = str_replace('options_','', $key);
+				if (array_key_exists($key, $extrafieldsOrderSupplier->attributes[$order->table_element]['type']) &&
+					$extrafieldsOrderSupplier->attributes[$order->table_element]['type'][$key] == $extrafieldsCustomerOrder->attributes[$commandeClient->table_element]['type'][$key]) {
+					$order->array_options['options_'.$key] = $commandeClient->array_options['options_'.$key];
+				}
+			}
+		}
 	}
 }
 
