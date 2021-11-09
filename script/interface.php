@@ -95,7 +95,7 @@ function _stockDetails()
 		$sql.= " AND c.entity = ".$conf->entity;
 		$sql.= " AND cd.fk_product = ".$prod->id;
 		$sql.= " AND c.fk_statut in (1,2)";
-		$sql.= " GROUP BY c.rowid";
+		$sql.= " GROUP BY cd.rowid";
 
 		$r ='';
 		$result =$db->query($sql);

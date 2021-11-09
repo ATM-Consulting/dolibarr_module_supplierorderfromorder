@@ -216,7 +216,7 @@ class TSOFO {
 					foreach ($val->lines as $k => $currentLine){
 						// le produit est present dans une ligne de la commande fournisseur ?
 						if ($currentLine->fk_product == $idproduct){
-							$TfournProduct[] = $val;
+							$TfournProduct[$val->id] = $val;
 
 						}
 					}
@@ -231,44 +231,48 @@ class TSOFO {
 	}
 
 	/**
-	 * @param  $Tfourn
-	 * @param $idProduct
+	 * @param $lineid
 	 */
-	public static function getAvailableQty($Tfourn, $idProduct, $qtyDesired){
+	public static function getAvailableQty($orderlineid, $qtyDesired){
+		global $db;
 		$find = false;
 		$cmdRef = '';
 
 		 $obj = new stdClass();
 
-		// toutes les commandes fourn
-		foreach ($Tfourn as $key => $val){
+		$q = 'SELECT cfd.qty
+				FROM '.MAIN_DB_PREFIX.'commande_fournisseurdet cfd
+				INNER JOIN '.MAIN_DB_PREFIX.'element_element ee ON (ee.fk_target = cfd.rowid)
+				WHERE ee.sourcetype="commandedet"
+				AND ee.targettype = "commande_fournisseurdet"
+				AND ee.fk_source = '.((int)$orderlineid);
 
-			//chaque ligne de la commande fourn
-			foreach ($val->lines as $k => $currentLine){
+		$resql = $db->query($q);
+		if(!empty($resql)) {
+			while($res = $db->fetch_object($resql)) {
 
 				// le produit est present dans une ligne de la commande fournisseur ?
-				if ($currentLine->fk_product == $idProduct){
-					// on à trouvé le produit dans une ligne de cette commande fournisseur on la flag
-					$find = true;
-					$obj->ref = $val->ref;
-					$obj->qtyAllFourn += $currentLine->qty;
+				// on à trouvé le produit dans une ligne de cette commande fournisseur on la flag
+				$find = true;
+				//$obj->ref = $val->ref;
+				$obj->qtyAllFourn += $res->qty;
 
-					//qty possible max
-					$obj->qty = $qtyDesired - $obj->qtyAllFourn;
+				//qty possible max
+				$obj->qty = $qtyDesired - $obj->qtyAllFourn;
 
-					// si le chiffre est negatif on l'initialise à zéro
-					if (abs($obj->qty) != $obj->qty) $obj->qty = 0;
+				// si le chiffre est negatif on l'initialise à zéro
+				if (abs($obj->qty) != $obj->qty) $obj->qty = 0;
 
-					$obj->oldQty += $currentLine->qty;
+				$obj->oldQty += $res->qty;
 
-				}
 			}
 		}
+
 		// le produit n'est pas dans une ligne de commande fournisseur
 		// on retour la qty desirée
 		if (!$find){
 			$obj = new stdClass();
-			$obj->ref = '';
+			//$obj->ref = '';
 			$obj->qty = $qtyDesired;
 			$obj->oldQty = 0;
 		}
