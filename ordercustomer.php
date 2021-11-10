@@ -901,7 +901,6 @@ if ($resql || $resql2) {
 		$colspan++;
 	}
 		$colspan++;
-//	}
 
 	if (!empty($conf->global->SOFO_USE_DELIVERY_TIME)) {
 		$week_to_replenish = (int)GETPOST('week_to_replenish', 'int');
