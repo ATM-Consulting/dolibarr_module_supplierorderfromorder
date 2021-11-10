@@ -82,3 +82,5 @@ Diff=Qté dans CF
 ViewSupplierOrderGenerated=Voir cf liées
 InitialCommande=Commande initiale :
 listOrderSupplierForCustomerCommand=Liste des commandes fournisseurs liées à la commande
+SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY=Les quantités des colonnes "Commandé" et "À commander" proviennent uniquement de la commande d'origine
+SOFO_GROUP_LINES_BY_PRODUCT=Grouper les lignes par produit

@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## 2.4
+
+- NEW : conf SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY, when it's on : columns "ordered" and "to order" are only filled with origin cmd lines quantities - 2.4.0 - *10/11/2021*
+- NEW : conf SOFO_GROUP_LINES_BY_PRODUCT, when it's on : each product reference is grouped on one and only line - 2.4.0 - *10/11/2021*
+
 ## 2.3
 
 - FIX : change SQL query aliases for list: `p` is now `prod` - 2.3.1 - 01/10/2021

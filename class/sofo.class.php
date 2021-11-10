@@ -181,20 +181,20 @@ class TSOFO {
 	}
 
 	/**
-	 * @param $idCustomerCmd
+	 * @param $cmd_line_id id line customer cmd
 	 * @return array|void
 	 */
-	public static  function getCmdFournFromCmdCustomer($idCustomerCmd , $idproduct = null){
+	public static  function getCmdFournFromCmdCustomer($cmd_line_id , $idproduct = null){
 		global $db;
 		$Tfourn = array();
 		$TfournProduct = array();
 
-		$sqlCmdFour = " SELECT cf.rowid FROM ".MAIN_DB_PREFIX."commande_fournisseur AS cf";
-		$sqlCmdFour .=" LEFT JOIN ".MAIN_DB_PREFIX."element_element AS e ON (cf.rowid = e.fk_target AND targettype = 'order_supplier' AND sourcetype = 'commande')";
-
-
-
-		$sqlCmdFour .="	WHERE cf.entity IN(1) AND e.fk_source = ".$idCustomerCmd;
+		$sqlCmdFour = " SELECT cf.rowid FROM ".MAIN_DB_PREFIX."commande_fournisseur cf
+						INNER JOIN ".MAIN_DB_PREFIX."commande_fournisseurdet AS cfd ON cfd.fk_commande = cf.rowid
+		 				INNER JOIN ".MAIN_DB_PREFIX."element_element AS e ON (cfd.rowid = e.fk_target)
+						WHERE sourcetype = 'commandedet'
+						AND targettype = 'commande_fournisseurdet'
+						AND cf.entity IN(1) AND e.fk_source = ".((int)$cmd_line_id);
 
 		$result = $db->query($sqlCmdFour);
 		while ($obj = $db->fetch_object($result)){
@@ -216,7 +216,7 @@ class TSOFO {
 					foreach ($val->lines as $k => $currentLine){
 						// le produit est present dans une ligne de la commande fournisseur ?
 						if ($currentLine->fk_product == $idproduct){
-							$TfournProduct[] = $val;
+							$TfournProduct[$val->id] = $val;
 
 						}
 					}
@@ -231,44 +231,46 @@ class TSOFO {
 	}
 
 	/**
-	 * @param  $Tfourn
-	 * @param $idProduct
+	 * @param $lineid
 	 */
-	public static function getAvailableQty($Tfourn, $idProduct, $qtyDesired){
+	public static function getAvailableQty($orderlineid, $qtyDesired){
+		global $db;
 		$find = false;
 		$cmdRef = '';
 
 		 $obj = new stdClass();
 
-		// toutes les commandes fourn
-		foreach ($Tfourn as $key => $val){
+		$q = 'SELECT cfd.qty
+				FROM '.MAIN_DB_PREFIX.'commande_fournisseurdet cfd
+				INNER JOIN '.MAIN_DB_PREFIX.'element_element ee ON (ee.fk_target = cfd.rowid)
+				WHERE ee.sourcetype="commandedet"
+				AND ee.targettype = "commande_fournisseurdet"
+				AND ee.fk_source = '.((int)$orderlineid);
 
-			//chaque ligne de la commande fourn
-			foreach ($val->lines as $k => $currentLine){
+		$resql = $db->query($q);
+		if(!empty($resql)) {
+			while($res = $db->fetch_object($resql)) {
 
 				// le produit est present dans une ligne de la commande fournisseur ?
-				if ($currentLine->fk_product == $idProduct){
-					// on à trouvé le produit dans une ligne de cette commande fournisseur on la flag
-					$find = true;
-					$obj->ref = $val->ref;
-					$obj->qtyAllFourn += $currentLine->qty;
+				// on à trouvé le produit dans une ligne de cette commande fournisseur on la flag
+				$find = true;
+				$obj->qtyAllFourn += $res->qty;
 
-					//qty possible max
-					$obj->qty = $qtyDesired - $obj->qtyAllFourn;
+				//qty possible max
+				$obj->qty = $qtyDesired - $obj->qtyAllFourn;
 
-					// si le chiffre est negatif on l'initialise à zéro
-					if (abs($obj->qty) != $obj->qty) $obj->qty = 0;
+				// si le chiffre est negatif on l'initialise à zéro
+				if (abs($obj->qty) != $obj->qty) $obj->qty = 0;
 
-					$obj->oldQty += $currentLine->qty;
+				$obj->oldQty += $res->qty;
 
-				}
 			}
 		}
+
 		// le produit n'est pas dans une ligne de commande fournisseur
 		// on retour la qty desirée
 		if (!$find){
 			$obj = new stdClass();
-			$obj->ref = '';
 			$obj->qty = $qtyDesired;
 			$obj->oldQty = 0;
 		}
