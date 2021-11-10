@@ -1056,7 +1056,6 @@ if ($resql || $resql2) {
 			$sortfield,
 			$sortorder
 		);
-//	}
 
 	print_liste_field_titre(
 		$langs->trans('Ordered'),
