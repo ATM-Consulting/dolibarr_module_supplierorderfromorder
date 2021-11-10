@@ -271,7 +271,6 @@ class TSOFO {
 		// on retour la qty desirée
 		if (!$find){
 			$obj = new stdClass();
-			//$obj->ref = '';
 			$obj->qty = $qtyDesired;
 			$obj->oldQty = 0;
 		}
