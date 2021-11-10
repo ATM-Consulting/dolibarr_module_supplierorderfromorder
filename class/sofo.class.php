@@ -254,7 +254,6 @@ class TSOFO {
 				// le produit est present dans une ligne de la commande fournisseur ?
 				// on à trouvé le produit dans une ligne de cette commande fournisseur on la flag
 				$find = true;
-				//$obj->ref = $val->ref;
 				$obj->qtyAllFourn += $res->qty;
 
 				//qty possible max
