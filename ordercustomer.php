@@ -1410,7 +1410,7 @@ if ($resql || $resql2) {
 
 			// on load les commandes fournisseur liées
 			$id = GETPOST('id','int');
-			$TcmdFourn =   TSOFO::getCmdFournFromCmdCustomer($id);
+			//$TcmdFourn =   TSOFO::getCmdFournFromCmdCustomer($id);
 			$objLineNewQty = TSOFO::getAvailableQty(/*$TcmdFourn, */$objp->lineid, !empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT) ? $ordered : $objp->qty);
 
 			$var = !$var;
@@ -1461,7 +1461,7 @@ if ($resql || $resql2) {
 			print '</td>';
 
 			// on check si une cmd fourn existe pour ce produit et on affiche la ref avec link
-			$TcurrentCmdFourn =   TSOFO::getCmdFournFromCmdCustomer($id, $objp->rowid);
+			$TcurrentCmdFourn =   TSOFO::getCmdFournFromCmdCustomer($objp->lineid, $objp->rowid);
 			$r = '';
 
 			if (!empty($TcurrentCmdFourn)) {

@@ -181,20 +181,20 @@ class TSOFO {
 	}
 
 	/**
-	 * @param $idCustomerCmd
+	 * @param $cmd_line_id id line customer cmd
 	 * @return array|void
 	 */
-	public static  function getCmdFournFromCmdCustomer($idCustomerCmd , $idproduct = null){
+	public static  function getCmdFournFromCmdCustomer($cmd_line_id , $idproduct = null){
 		global $db;
 		$Tfourn = array();
 		$TfournProduct = array();
 
-		$sqlCmdFour = " SELECT cf.rowid FROM ".MAIN_DB_PREFIX."commande_fournisseur AS cf";
-		$sqlCmdFour .=" LEFT JOIN ".MAIN_DB_PREFIX."element_element AS e ON (cf.rowid = e.fk_target AND targettype = 'order_supplier' AND sourcetype = 'commande')";
-
-
-
-		$sqlCmdFour .="	WHERE cf.entity IN(1) AND e.fk_source = ".$idCustomerCmd;
+		$sqlCmdFour = " SELECT cf.rowid FROM ".MAIN_DB_PREFIX."commande_fournisseur cf
+						INNER JOIN ".MAIN_DB_PREFIX."commande_fournisseurdet AS cfd ON cfd.fk_commande = cf.rowid
+		 				INNER JOIN ".MAIN_DB_PREFIX."element_element AS e ON (cfd.rowid = e.fk_target)
+						WHERE sourcetype = 'commandedet'
+						AND targettype = 'commande_fournisseurdet'
+						AND cf.entity IN(1) AND e.fk_source = ".((int)$cmd_line_id);
 
 		$result = $db->query($sqlCmdFour);
 		while ($obj = $db->fetch_object($result)){
