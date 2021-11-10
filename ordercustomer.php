@@ -1129,7 +1129,6 @@ if ($resql || $resql2) {
 	}
 
 		$liste_titre .= '<td class="liste_titre" align="right"></td>';
-//	}
 
 	$liste_titre .= '<td class="liste_titre" align="right">&nbsp;</td>' .
 		'<td class="liste_titre">&nbsp;</td>' .
