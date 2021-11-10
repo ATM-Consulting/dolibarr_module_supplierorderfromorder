@@ -1046,7 +1046,6 @@ if ($resql || $resql2) {
 		);
 	}
 
-//	if(!empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT)) {
 		print_liste_field_titre(
 			$langs->trans('Diff'),
 			'ordercustomer.php',
