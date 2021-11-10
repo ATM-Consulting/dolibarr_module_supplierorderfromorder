@@ -1515,7 +1515,6 @@ if ($resql || $resql2) {
 			}
 
 			// déjà present
-//			if(!empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT)) {
 				$champs .= '<td align="right">' .
 					$objLineNewQty->oldQty . $picto .
 					'</td>';
