@@ -1128,7 +1128,6 @@ if ($resql || $resql2) {
 		$liste_titre .= '<td class="liste_titre" align="right"></td>';
 	}
 
-//	if(!empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT)) {
 		$liste_titre .= '<td class="liste_titre" align="right"></td>';
 //	}
 
