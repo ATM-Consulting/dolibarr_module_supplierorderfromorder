@@ -282,7 +282,23 @@ if(empty($reshook))
 					$prodfourn->fetch_product_fournisseur_price($_REQUEST['fourn' . $i]);
 
 					foreach ($order->lines as $lineOrderFetched) {
-						if ($line->fk_product == $lineOrderFetched->fk_product) {
+
+
+						$q = 'SELECT ee.rowid
+						 		FROM '.MAIN_DB_PREFIX.'element_element ee
+								WHERE ee.sourcetype="commandedet"
+								AND ee.targettype = "commande_fournisseurdet"
+								AND ee.fk_source = '.((int)$line->id).'
+								AND ee.fk_target = '.((int)$lineOrderFetched->id);
+						$resultquery = $db->query($q);
+
+						$id_line_element_element=0;
+						if(!empty($resultquery)) {
+							$res = $db->fetch_object($resultquery);
+							$id_line_element_element = $res->rowid;
+						}
+
+						if (!empty($id_line_element_element)/*$line->fk_product == $lineOrderFetched->fk_product*/) {
 
 							$remise_percent = $lineOrderFetched->remise_percent;
 							if ($line->remise_percent > $remise_percent)
@@ -795,7 +811,6 @@ if ($resql || $resql2) {
 
 
 
-
 	if ($sref || $snom || $sall || $salert || GETPOST('search', 'alpha')) {
 		$filters = '&sref=' . $sref . '&snom=' . $snom;
 		$filters .= '&sall=' . $sall;
@@ -835,7 +850,13 @@ if ($resql || $resql2) {
 
 		}
 	}
-$yesno = !empty($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK) ? '&show_stock_no_need=yes' : '';
+
+
+	if(!empty($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY)) {
+		print '<br>'.img_warning().'&nbsp;<STRONG><span style="color:red">' . $langs->trans('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') . '</span></STRONG><br>';
+	}
+
+	$yesno = !empty($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK) ? '&show_stock_no_need=yes' : '';
 
 	print'</div>';
 	print '<form action="' . $_SERVER['PHP_SELF'] . '?id=' . GETPOST('id','int') . '&projectid=' . $_REQUEST['projectid'] . $yesno .'" method="post" name="formulaire">' .
@@ -1506,7 +1527,7 @@ $yesno = !empty($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK) ? '&sh
 //			}
 				//Commandé
 			$champs .= '<td align="right">';
-			$champs .= (empty($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY) ? $ordered : $objLineNewQty->qty);
+			$champs .= (empty($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY) ? $ordered : (empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT) ? $objp->qty : $objLineNewQty->qty));
 			$champs .= '</td>';
 
 			$champs .= '</td>' .
@@ -1797,6 +1818,7 @@ function _prepareLine($i, $actionTarget = 'order')
 
 		if ($obj) {
 
+			$line->id = $lineid;
 			$line->qty = $qty;
 			$line->desc = $desc;
 			$line->fk_product = $obj->fk_product;
