@@ -298,7 +298,7 @@ if(empty($reshook))
 							$id_line_element_element = $res->rowid;
 						}
 
-						if (!empty($id_line_element_element)/*$line->fk_product == $lineOrderFetched->fk_product*/) {
+						if (!empty($id_line_element_element)) {
 
 							$remise_percent = $lineOrderFetched->remise_percent;
 							if ($line->remise_percent > $remise_percent)
