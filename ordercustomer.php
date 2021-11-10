@@ -900,7 +900,6 @@ if ($resql || $resql2) {
 	if ($dolibarr_version35) {
 		$colspan++;
 	}
-//	if(!empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT)) {
 		$colspan++;
 //	}
 
