@@ -1518,7 +1518,6 @@ if ($resql || $resql2) {
 				$champs .= '<td align="right">' .
 					$objLineNewQty->oldQty . $picto .
 					'</td>';
-//			}
 				//Commandé
 			$champs .= '<td align="right">';
 			$champs .= (empty($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY) ? $ordered : (empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT) ? $objp->qty : $objLineNewQty->qty));
