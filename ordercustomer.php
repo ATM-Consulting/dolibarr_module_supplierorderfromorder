@@ -1407,7 +1407,6 @@ if ($resql || $resql2) {
 
 			// on load les commandes fournisseur liées
 			$id = GETPOST('id','int');
-			//$TcmdFourn =   TSOFO::getCmdFournFromCmdCustomer($id);
 			$objLineNewQty = TSOFO::getAvailableQty($objp->lineid, !empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT) ? $ordered : $objp->qty);
 
 			$var = !$var;
