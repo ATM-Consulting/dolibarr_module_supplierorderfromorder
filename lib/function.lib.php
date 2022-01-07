@@ -295,7 +295,7 @@ function updateOrAddlineToSupplierOrder($CommandeFournisseur, $line, $productid,
 	// Get subprice from product
 	if(!empty($productid)){
 		$ProductFournisseur = new ProductFournisseur($db);
-		if($ProductFournisseur->find_min_price_product_fournisseur($line->fk_product, $qty, $supplierSocId)>0){
+		if($ProductFournisseur->find_min_price_product_fournisseur($productid, $qty, $supplierSocId) > 0){
 			$price = floatval($ProductFournisseur->fourn_price); // floatval is used to remove non used zero
 			$tva_tx = $ProductFournisseur->tva_tx;
 			$fk_prod_fourn_price = $ProductFournisseur->product_fourn_price_id;
