@@ -154,6 +154,7 @@ if ($reshook < 0) setEventMessages($hookmanager->error, $hookmanager->errors, 'e
 
 if(empty($reshook))
 {
+    if($action == 'valid-propal') $getNomUrlConcat = '';
 	if (isset($_POST['button_removefilter']) || in_array($action, array('valid-propal', 'valid-order'))) {
 		$sref = '';
 		$snom = '';
@@ -270,6 +271,7 @@ if(empty($reshook))
 
 
 				$order_id = $order->id;
+                if(!empty($order_id) && $action == 'valid-propal') $getNomUrlConcat .=' '.$order->getNomUrl();
 				//trick to know which orders have been generated this way
 				$order->source = 42;
 				$MaxAvailability = 0;
@@ -458,7 +460,8 @@ if(empty($reshook))
 
 			$id = GETPOST('id','int');
 			$origin_page = 'ordercustomer';
-			header("Location: ".DOL_URL_ROOT."/fourn/commande/list.php?id=".$id.'&origin_page='.$origin_page);
+            if($action == 'valid-order') header("Location: ".DOL_URL_ROOT."/fourn/commande/list.php?id=".$id.'&origin_page='.$origin_page);
+            else if($action == 'valid-propal' && !empty($getNomUrlConcat)) setEventMessage($langs->trans('SupplierProposalSuccessfullyCreated').$getNomUrlConcat, 'mesgs');
 		}
 
 		if ($nb_orders_created > 0) {
