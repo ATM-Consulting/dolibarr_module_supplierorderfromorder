@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+
+
 ## 2.4
 
 - FIX : Don't redirect on order list when it's proposal validation - 2.4.1 - *25/01/2022*
