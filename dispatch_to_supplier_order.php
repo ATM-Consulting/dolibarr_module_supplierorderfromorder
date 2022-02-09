@@ -750,7 +750,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
 
             // GET NOMENCLATURE (show display nomenclature lines for print part)
             $nomenclatureViewToHtml = '';
-			$deep = 0; $maxDeep = 1; $qty = 1 ; //$line->qty
+			$deep = 0; $maxDeep = 0; $qty = 1 ; //$line->qty
 			$Tnomenclature = sofo_nomenclatureProductDeepCrawl($line->id, $origin->element, $line->fk_product,$line->qty, $deep, $maxDeep);
 
 			if(!empty($Tnomenclature)){

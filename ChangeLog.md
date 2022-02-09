@@ -20,6 +20,9 @@
 - New - add Qty product column and link to cmd fourn if exit.
 
 
+## 2.1
+
+- FIX : default val for $maxDeep - 2.1.2 - *20/12/2021*
 - Fix : bad if conditions - 2.1.0 - *16/08/2021*
 - Fix : refacto de batard - 2.1.0 - *16/08/2021*
 - Fix : treatment after error validation - 2.1.0 - *16/08/2021*
