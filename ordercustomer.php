@@ -571,7 +571,14 @@ $db->query("SET SQL_MODE=''");
 $sql = 'SELECT prod.rowid, prod.ref, prod.label, cd.description, prod.price, SUM(cd.qty) as qty, cd.buy_price_ht';
 $sql .= ', prod.price_ttc, prod.price_base_type,prod.fk_product_type';
 $sql .= ', prod.tms as datem, prod.duration, prod.tobuy, prod.seuil_stock_alerte, prod.finished, cd.rang,';
-$sql .= ' GROUP_CONCAT(cd.rowid SEPARATOR "@") as lineid,';
+
+if (in_array($db->type, array('pgsql'))) {
+	$sql .= ' string_agg(DISTINCT cd.rowid::character varying, \'@\') as lineid,';
+}
+else{
+	$sql .= ' GROUP_CONCAT(cd.rowid SEPARATOR "@") as lineid,';
+}
+
 $sql .= ' ( SELECT SUM(s.reel) FROM ' . MAIN_DB_PREFIX . 'product_stock s
 		INNER JOIN ' . MAIN_DB_PREFIX . 'entrepot as entre ON entre.rowid=s.fk_entrepot WHERE s.fk_product=prod.rowid
 		AND entre.entity IN (' . $entityToTest . ')) as stock_physique';
@@ -648,7 +655,7 @@ $sql .= ', prod.duration, prod.tobuy, prod.seuil_stock_alerte';
 //$sql .= ', s.fk_product';
 
 //if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
-$sql .= ', cd.description';
+$sql .= ', cd.description, cd.buy_price_ht, cd.rang';
 //}
 //$sql .= ' HAVING prod.desiredstock > SUM(COALESCE(s.reel, 0))';
 //$sql .= ' HAVING prod.desiredstock > 0';
@@ -667,7 +674,6 @@ if (GETPOST('id','int') && $conf->global->SOFO_ADD_FREE_LINES) {
 	if (!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
 		$sql2 .= ' GROUP BY cd.description';
 	}
-	//echo $sql2;
 }
 $sql .= $db->order($sortfield, $sortorder);
 
@@ -676,7 +682,7 @@ if (!$conf->global->SOFO_USE_DELIVERY_TIME)
 $resql = $db->query($sql);
 
 if (isset($_REQUEST['DEBUG']) || $resql === false) {
-	print $sql;
+	dol_print_error($db);
 	exit;
 }
 

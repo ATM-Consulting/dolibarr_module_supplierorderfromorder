@@ -5,7 +5,8 @@
 
 
 ## 2.4 - 26/01/2022
-- FIX : add exit to header location function on SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER 2.4.2 - *01/02/2022*
+- FIX : add exit to header location function on SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER 2.4.3 - *01/02/2022*
+- FIX : Pgsql query - 2.4.2 *09/02/2022*
 - FIX : Don't redirect on order list when it's proposal validation - 2.4.1 - *25/01/2022*
 - NEW : conf SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY, when it's on : columns "ordered" and "to order" are only filled with origin cmd lines quantities - 2.4.0 - *10/11/2021*
 - NEW : conf SOFO_GROUP_LINES_BY_PRODUCT, when it's on : each product reference is grouped on one and only line - 2.4.0 - *10/11/2021*
