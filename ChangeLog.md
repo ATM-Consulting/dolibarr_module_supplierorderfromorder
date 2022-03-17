@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 ## 2.3
+FIX : changement du calcul de ligne pour prendre en compte le prix unitaire de la nomenclature  - *17/03/2022)* - 2.3.3  
+- FIX : change params passed to find_min_price_product_fournisseur ($productid instaed of $line->fk_product) - 2.3.0 - *30/09/2021*
 - FIX : change params passed to find_min_price_product_fournisseur ($productid instaed of $line->fk_product) - 2.3.2 - 06/01/2022
 - FIX : change SQL query aliases for list: `p` is now `prod` - 2.3.1 - 01/10/2021
 - New - add doAction hook 2.3.0 - *30/09/2021*
