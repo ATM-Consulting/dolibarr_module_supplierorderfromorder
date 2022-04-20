@@ -1361,7 +1361,7 @@ if ($resql || $resql2) {
 			// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :
 
 
-			$stocktobuy = $objp->desiredstock - $stock;
+			$stocktobuy = abs($objp->desiredstock - $stock);
 
 
 			/*			if($stocktobuy<=0 && $prod->ref!='A0000753') {
