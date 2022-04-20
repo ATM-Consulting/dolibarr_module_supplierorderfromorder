@@ -5,7 +5,8 @@
 
 
 ## 2.4 - 26/01/2022
-
+- FIX : set abs on calculation desired_stock - *20/04/2022)* - 2.4.4  
+- FIX : add exit to header location function on SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER 2.4.3 - *01/02/2022*
 - FIX : Pgsql query - 2.4.2 *09/02/2022*
 - FIX : Don't redirect on order list when it's proposal validation - 2.4.1 - *25/01/2022*
 - NEW : conf SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY, when it's on : columns "ordered" and "to order" are only filled with origin cmd lines quantities - 2.4.0 - *10/11/2021*

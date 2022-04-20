@@ -448,10 +448,14 @@ if(empty($reshook))
 					// CODE de redirection s'il y a un seul fournisseur (évite de le laisser sur la page sans comprendre)
 					if ($conf->global->SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER) {
 						if (count($suppliersid) == 1) {
-							if ($action === 'valid-order')
+							if ($action === 'valid-order'){
 								$link = dol_buildpath('/fourn/commande/card.php?id=' . $order_id, 1);
-							else $link = dol_buildpath('/supplier_proposal/card.php?id=' . $order_id, 1);
-							header('Location:' . $link);
+							}
+							else{
+								$link = dol_buildpath('/supplier_proposal/card.php?id=' . $order_id, 1);
+							}
+							header('Location:' . $link);exit();
+
 						}
 					}
 				}
@@ -1357,7 +1361,7 @@ if ($resql || $resql2) {
 			// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :
 
 
-			$stocktobuy = $objp->desiredstock - $stock;
+			$stocktobuy = abs($objp->desiredstock - $stock);
 
 
 			/*			if($stocktobuy<=0 && $prod->ref!='A0000753') {
