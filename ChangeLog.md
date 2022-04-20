@@ -5,6 +5,7 @@
 
 
 ## 2.4 - 26/01/2022
+- FIX : set abs on calculation desired_stock - *20/04/2022)* - 2.4.4  
 - FIX : add exit to header location function on SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER 2.4.3 - *01/02/2022*
 - FIX : Pgsql query - 2.4.2 *09/02/2022*
 - FIX : Don't redirect on order list when it's proposal validation - 2.4.1 - *25/01/2022*
