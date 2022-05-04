@@ -6,6 +6,7 @@
 
 ## 2.4 - 26/01/2022
 
+- FIX ticket DA021862 : SOFO_GROUP_LINES_BY_PRODUCT ne doit pas s'appliquer pour les sous-produits + la "Qté dans CF" doit afficher 0 pour les sous-produits (un chiffre sans aucun sens était affiché) - 2.4.2 - *04/05/2022*
 - FIX : Don't redirect on order list when it's proposal validation - 2.4.1 - *25/01/2022*
 - NEW : conf SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY, when it's on : columns "ordered" and "to order" are only filled with origin cmd lines quantities - 2.4.0 - *10/11/2021*
 - NEW : conf SOFO_GROUP_LINES_BY_PRODUCT, when it's on : each product reference is grouped on one and only line - 2.4.0 - *10/11/2021*

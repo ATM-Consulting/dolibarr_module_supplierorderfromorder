@@ -1158,8 +1158,8 @@ if ($resql || $resql2) {
 
 	foreach($TProducts as $objp){
 
-		// Cas où on a plusieurs fois le même produit dans la même commande : dédoublonnage
-		if(!empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT)) {
+		// Cas où on a plusieurs fois le même produit dans la même commande : dédoublonnage (les sous produits ne sont pas concernés)
+		if(!empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT) && empty($objp->level)) {
 			if (in_array($objp->rowid, $TProductIDAlreadyChecked)) continue;
 			else $TProductIDAlreadyChecked[$objp->rowid] = $objp->rowid;
 		}
@@ -1407,7 +1407,9 @@ if ($resql || $resql2) {
 
 			// on load les commandes fournisseur liées
 			$id = GETPOST('id','int');
-			$objLineNewQty = TSOFO::getAvailableQty($objp->lineid, !empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT) ? $ordered : $objp->qty);
+			if(!empty($objp->lineid)) {
+				$objLineNewQty = TSOFO::getAvailableQty($objp->lineid, !empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT) ? $ordered : $objp->qty);
+			}
 
 			$var = !$var;
 
