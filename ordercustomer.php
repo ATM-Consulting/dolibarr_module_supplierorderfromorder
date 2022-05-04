@@ -448,10 +448,14 @@ if(empty($reshook))
 					// CODE de redirection s'il y a un seul fournisseur (évite de le laisser sur la page sans comprendre)
 					if ($conf->global->SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER) {
 						if (count($suppliersid) == 1) {
-							if ($action === 'valid-order')
+							if ($action === 'valid-order'){
 								$link = dol_buildpath('/fourn/commande/card.php?id=' . $order_id, 1);
-							else $link = dol_buildpath('/supplier_proposal/card.php?id=' . $order_id, 1);
-							header('Location:' . $link);
+							}
+							else{
+								$link = dol_buildpath('/supplier_proposal/card.php?id=' . $order_id, 1);
+							}
+							header('Location:' . $link);exit();
+
 						}
 					}
 				}
@@ -1164,8 +1168,8 @@ if ($resql || $resql2) {
 
 	foreach($TProducts as $objp){
 
-		// Cas où on a plusieurs fois le même produit dans la même commande : dédoublonnage
-		if(!empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT)) {
+		// Cas où on a plusieurs fois le même produit dans la même commande : dédoublonnage (les sous produits ne sont pas concernés)
+		if(!empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT) && empty($objp->level)) {
 			if (in_array($objp->rowid, $TProductIDAlreadyChecked)) continue;
 			else $TProductIDAlreadyChecked[$objp->rowid] = $objp->rowid;
 		}
@@ -1413,7 +1417,9 @@ if ($resql || $resql2) {
 
 			// on load les commandes fournisseur liées
 			$id = GETPOST('id','int');
-			$objLineNewQty = TSOFO::getAvailableQty($objp->lineid, !empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT) ? $ordered : $objp->qty);
+			if(!empty($objp->lineid)) {
+				$objLineNewQty = TSOFO::getAvailableQty($objp->lineid, !empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT) ? $ordered : $objp->qty);
+			}
 
 			$var = !$var;
 
