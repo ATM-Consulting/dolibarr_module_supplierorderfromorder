@@ -6,6 +6,7 @@ if (! $res) $res=@include("../../../main.inc.php");			// For "custom" directory
 require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
 
 dol_include_once('/supplierorderfromorder/lib/function.lib.php');
+dol_include_once('/supplierorderfromorder/lib/supplierorderfromorder.lib.php');
 
 $langs->load("admin");
 $langs->load('supplierorderfromorder@supplierorderfromorder');

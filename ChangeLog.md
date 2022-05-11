@@ -1,7 +1,7 @@
 # ChangeLog
 
 ## [Unreleased]
-
+- NEW : Ajout de la class TechATM pour l'affichage de la page "A propos" *11/05/2022* 2.5.0
 
 
 ## 2.4 - 26/01/2022
