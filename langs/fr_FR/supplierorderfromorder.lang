@@ -87,3 +87,4 @@ listOrderSupplierForCustomerCommand=Liste des commandes fournisseurs liées à l
 SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY=Les quantités des colonnes "Commandé" et "À commander" proviennent uniquement de la commande d'origine
 SOFO_GROUP_LINES_BY_PRODUCT=Grouper les lignes par produit
 SupplierProposalSuccessfullyCreated=Demandes de prix fournisseurs créées
+supplierorderfromorderAbout = A propos du module Commande Fournisseur depuis Commande Client
