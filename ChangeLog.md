@@ -5,6 +5,7 @@
 
 
 ## 2.4 - 26/01/2022
+- FIX DA021939 : SOFO_GROUP_LINES_BY_PRODUCT prend parfois que la 1re ligne s'il y a plusieurs lignes dans la meme commande 2.4.5 - *18/05/2022*
 - FIX ticket DA021862 : SOFO_GROUP_LINES_BY_PRODUCT ne doit pas s'appliquer pour les sous-produits + la "Qté dans CF" doit afficher 0 pour les sous-produits (un chiffre sans aucun sens était affiché) - 2.4.4 - *04/05/2022*
 - FIX : add exit to header location function on SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER 2.4.3 - *01/02/2022*
 - FIX : Pgsql query - 2.4.2 *09/02/2022*
