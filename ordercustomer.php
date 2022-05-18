@@ -1165,6 +1165,21 @@ if ($resql || $resql2) {
 
 	$TSupplier = array();
 	$TProductIDAlreadyChecked = array();
+    //On regroupe les quantités pas produit si la conf est active
+	if(! empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT)  && !empty($TProducts)) {
+        $TProductQtyChecked = array();
+        $TProductSubLevel = array();
+		foreach($TProducts as $key => $objp) {
+            if(empty($objp->level)) {
+				if(array_key_exists($objp->rowid, $TProductQtyChecked)) {
+					$TProductQtyChecked[$objp->rowid]->qty += $objp->qty;
+				}
+				else $TProductQtyChecked[$objp->rowid] = $objp;
+			} else $TProductSubLevel[] = $objp;
+		}
+
+        $TProducts = array_merge($TProductQtyChecked, $TProductSubLevel);
+	}
 
 	foreach($TProducts as $objp){
 
