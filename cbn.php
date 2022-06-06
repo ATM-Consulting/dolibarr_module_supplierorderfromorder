@@ -49,6 +49,9 @@ $langs->load("stocks");
 $langs->load("orders");
 $langs->load("supplierorderfromorder@supplierorderfromorder");
 
+$newToken = function_exists('newToken') ? newToken() : $_SESSION['newtoken'];
+
+
 $dolibarr_version35 = false;
 
 if((float)DOL_VERSION >= 3.5){
@@ -275,7 +278,7 @@ if ($resql || $resql2) {
 
     print '<form action="'.$_SERVER['PHP_SELF'].'?id='.$_REQUEST['id'].'&projectid='.$_REQUEST['projectid'].'" method="post" name="formulaire">'.
          '<input type="hidden" name="id" value="' .$_REQUEST['id'] . '">'.
-         '<input type="hidden" name="token" value="' .$_SESSION['newtoken'] . '">'.
+         '<input type="hidden" name="token" value="' .$newToken. '">'.
          '<input type="hidden" name="sortfield" value="' . $sortfield . '">'.
          '<input type="hidden" name="sortorder" value="' . $sortorder . '">'.
          '<input type="hidden" name="type" value="' . $type . '">'.
