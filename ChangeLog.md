@@ -5,6 +5,7 @@
 
 
 ## 2.4 - 26/01/2022
+- FIX: Compatibility V16 - *06/06/2022* - 2.4.7
 - FIX DA022202 : Error: Trigger InterfaceSupplierorderfromorder does not extends DolibarrTriggers - 2.4.6 - *20/07/2022*
 - FIX DA021939 : SOFO_GROUP_LINES_BY_PRODUCT prend parfois que la 1re ligne s'il y a plusieurs lignes dans la meme commande 2.4.5 - *18/05/2022*
 - FIX ticket DA021862 : SOFO_GROUP_LINES_BY_PRODUCT ne doit pas s'appliquer pour les sous-produits + la "Qté dans CF" doit afficher 0 pour les sous-produits (un chiffre sans aucun sens était affiché) - 2.4.4 - *04/05/2022*
