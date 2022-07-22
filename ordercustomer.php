@@ -914,7 +914,11 @@ if ($resql || $resql2) {
 		$colspan++;
 	}
 		$colspan++;
-
+    $parameters = array();
+    $reshook = $hookmanager->executeHooks('printFieldPreListTitle', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
+    if (!empty($reshook)) {
+        print $hookmanager->resPrint;
+    }
 	if (!empty($conf->global->SOFO_USE_DELIVERY_TIME)) {
 		$week_to_replenish = (int)GETPOST('week_to_replenish', 'int');
 
