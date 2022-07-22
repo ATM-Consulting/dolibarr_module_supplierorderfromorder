@@ -33,10 +33,14 @@
 /**
  * Trigger class
  */
-class InterfaceSupplierorderfromorder
+class InterfaceSupplierorderfromorder extends DolibarrTriggers
 {
 
-    private $db;
+	/**
+	 * Database handler
+	 * @var DoliDB
+	 */
+	protected $db;
 
     /**
      * Constructor
@@ -97,7 +101,19 @@ class InterfaceSupplierorderfromorder
         }
     }
 
-    /**
+	/**
+	 * @param string    $action
+	 * @param Object    $object
+	 * @param User      $user
+	 * @param Translate $langs
+	 * @param Conf      $conf
+	 * @return int
+	 */
+	public function runTrigger($action, $object, User $user, Translate $langs, Conf $conf) {
+		return $this->run_trigger($action, $object, $user, $langs, $conf);
+	}
+
+	/**
      * Function called when a Dolibarrr business event is done.
      * All functions "run_trigger" are triggered if file
      * is inside directory core/triggers
