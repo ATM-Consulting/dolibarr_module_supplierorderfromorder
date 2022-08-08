@@ -5,6 +5,7 @@
 
 
 ## 2.4 - 26/01/2022
+- FIX: PHP 8 - *03/08/2022* - 2.4.8
 - FIX: Compatibility V16 - *06/06/2022* - 2.4.7
 - FIX DA022202 : Error: Trigger InterfaceSupplierorderfromorder does not extends DolibarrTriggers - 2.4.6 - *20/07/2022*
 - FIX DA021939 : SOFO_GROUP_LINES_BY_PRODUCT prend parfois que la 1re ligne s'il y a plusieurs lignes dans la meme commande 2.4.5 - *18/05/2022*
