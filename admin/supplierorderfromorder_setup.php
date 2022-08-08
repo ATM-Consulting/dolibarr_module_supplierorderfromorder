@@ -6,6 +6,7 @@ if (! $res) $res=@include("../../../main.inc.php");			// For "custom" directory
 require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
 
 dol_include_once('/supplierorderfromorder/lib/function.lib.php');
+dol_include_once('/supplierorderfromorder/lib/supplierorderfromorder.lib.php');
 
 $langs->load("admin");
 $langs->load('supplierorderfromorder@supplierorderfromorder');
@@ -291,6 +292,32 @@ print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
 print '<input type="hidden" name="token" value="'.$newToken.'">';
 print '<input type="hidden" name="action" value="set_SOFO_GET_INFOS_FROM_FOURN">';
 print $form->selectyesno("SOFO_GET_INFOS_FROM_FOURN",!empty($conf->global->SOFO_GET_INFOS_FROM_FOURN)?$conf->global->SOFO_GET_INFOS_FROM_FOURN:'',1);
+print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
+print '</form>';
+print '</td></tr>';
+
+$var=!$var;
+print '<tr '.$bc[$var].'>';
+print '<td>'.$langs->trans("SOFO_GET_EXTRAFIELDS_FROM_ORDER").'</td>';
+print '<td align="center" width="20">&nbsp;</td>';
+print '<td align="right" width="300">';
+print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
+print '<input type="hidden" name="action" value="set_SOFO_GET_EXTRAFIELDS_FROM_ORDER">';
+print $form->selectyesno("SOFO_GET_EXTRAFIELDS_FROM_ORDER",$conf->global->SOFO_GET_EXTRAFIELDS_FROM_ORDER,1);
+print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
+print '</form>';
+print '</td></tr>';
+
+$var=!$var;
+print '<tr '.$bc[$var].'>';
+print '<td>'.$langs->trans("SOFO_GET_INFOS_FROM_ORDER").'</td>';
+print '<td align="center" width="20">&nbsp;</td>';
+print '<td align="right" width="300">';
+print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
+print '<input type="hidden" name="action" value="set_SOFO_GET_INFOS_FROM_ORDER">';
+print $form->selectyesno("SOFO_GET_INFOS_FROM_ORDER",$conf->global->SOFO_GET_INFOS_FROM_ORDER,1);
 print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
 print '</form>';
 print '</td></tr>';

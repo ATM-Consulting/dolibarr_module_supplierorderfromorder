@@ -1,7 +1,7 @@
 # ChangeLog
 
 ## [Unreleased]
-
+- NEW : Ajout de la class TechATM pour l'affichage de la page "A propos" *11/05/2022* 2.5.0
 
 
 ## 2.4 - 26/01/2022
@@ -27,6 +27,9 @@ FIX : changement du calcul de ligne pour prendre en compte le prix unitaire de l
 - New - add Qty product column and link to cmd fourn if exit.
 
 
+## 2.1
+
+- FIX : default val for $maxDeep - 2.1.2 - *20/12/2021*
 - Fix : bad if conditions - 2.1.0 - *16/08/2021*
 - Fix : refacto de batard - 2.1.0 - *16/08/2021*
 - Fix : treatment after error validation - 2.1.0 - *16/08/2021*
