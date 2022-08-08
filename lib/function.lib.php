@@ -722,13 +722,13 @@ function supplierorderfromorderAdminPrepareHead()
 
     // Show more tabs from modules
     // Entries must be declared in modules descriptor with line
-    //$this->tabs = array(
+    //$this->tabs = array(&
     //	'entity:+tabname:Title:@supplierorderfromorder:/supplierorderfromorder/mypage.php?id=__ID__'
     //); // to add new tab
     //$this->tabs = array(
     //	'entity:-tabname:Title:@supplierorderfromorder:/supplierorderfromorder/mypage.php?id=__ID__'
     //); // to remove a tab
-    complete_head_from_modules($conf, $langs, $object, $head, $h, 'supplierorderfromorderadmin');
+    complete_head_from_modules($conf, $langs, new stdClass(), $head, $h, 'supplierorderfromorderadmin');
 
     return $head;
 }
