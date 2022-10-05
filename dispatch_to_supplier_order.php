@@ -148,7 +148,7 @@ if (empty($reshook))
                     }
 
                     $CommandeFournisseur = getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, CommandeFournisseur::STATUS_DRAFT);
-
+		    if(empty($CommandeFournisseur->fk_project) && !empty($origin->fk_project)) $CommandeFournisseur->setProject($origin->fk_project);
                     // Vérification de la commande
                     if(empty($CommandeFournisseur->id))
                     {
