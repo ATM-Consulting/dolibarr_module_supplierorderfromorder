@@ -6,6 +6,7 @@
 
 ## 2.5
 
+- FIX : Missing icon  *19/10/2022* 2.5.1
 - NEW : Ajout de la class TechATM pour l'affichage de la page "A propos" *11/05/2022* 2.5.0
 
 ## 2.4 - 26/01/2022
