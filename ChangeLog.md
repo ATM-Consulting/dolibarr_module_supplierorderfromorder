@@ -5,7 +5,7 @@
 
 
 ## 2.5
-
+- FIX : Handle multihook with group by  *02/11/2022* 2.5.3
 - FIX : Missing icon  *19/10/2022* 2.5.1
 - NEW : Ajout de la class TechATM pour l'affichage de la page "A propos" *11/05/2022* 2.5.0
 
