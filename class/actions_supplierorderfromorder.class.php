@@ -214,7 +214,10 @@ class ActionsSupplierorderfromorder
 		if(in_array('supplierorderlist', $TContext)) {
 			$origin_page = GETPOST('origin_page');
 			if($origin_page === 'ordercustomer') {
-				$this->resprints = ' AND e.fk_source = '.GETPOST('id', 'int');
+                if(!empty($hookmanager->resPrint) && strpos(strtolower($hookmanager->resPrint), 'group by')) {
+                    $hookmanager->resPrint = ' AND e.fk_source = '.GETPOST('id', 'int'). ' ' .  $hookmanager->resPrint;
+				}
+				else $this->resprints = ' AND e.fk_source = '.GETPOST('id', 'int');
 			}
 		}
 
