@@ -73,3 +73,4 @@ SOFO_USE_RESTRICTION_TO_CUSTOMER_ORDER=Restrict supplier orders to a single cust
 SOFO_DISABLE_ORDER_POSIBILITY_TO_PRODUCT_WITH_NOMENCLATURE=Disable the possibility of directly ordering the product with a BOM
 ParametersNeedSOFO_USE_NOMENCLATURE=Parameters: the "Components to order" tab is necessary to use these parameters
 SOFO_ADD_QUANTITY_RATHER_THAN_CREATE_LINES=Favor adding quantity to a supplier order line instead of adding a line for each customer order line
+Fabriquer = Create
