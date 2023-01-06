@@ -5,6 +5,7 @@
 
 
 ## 2.4 - 26/01/2022
+- FIX : Création des commandes fournisseurs dans la devise du fournisseur - *06/01/2023* - 2.4.9
 - FIX: PHP 8 - *03/08/2022* - 2.4.8
 - FIX: Compatibility V16 - *06/06/2022* - 2.4.7
 - FIX DA022202 : Error: Trigger InterfaceSupplierorderfromorder does not extends DolibarrTriggers - 2.4.6 - *20/07/2022*
