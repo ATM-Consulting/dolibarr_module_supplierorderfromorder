@@ -2001,9 +2001,22 @@ function _appliCond($order, $commandeClient)
 {
 	global $db, $conf;
 
-	if (!empty($conf->global->SOFO_GET_INFOS_FROM_FOURN)) {
-		$fourn = new Fournisseur($db);
-		if ($fourn->fetch($order->socid) > 0) {
+	$fourn = new Fournisseur($db);
+	if ($fourn->fetch($order->socid) > 0) {
+
+		// Multidevise
+		if (!empty($conf->multicurrency->enabled)) {
+			require_once DOL_DOCUMENT_ROOT . '/multicurrency/class/multicurrency.class.php';
+
+			if (!empty($fourn->multicurrency_code)) {
+				$tmparray = MultiCurrency::getIdAndTxFromCode($db, $fourn->multicurrency_code, dol_now());
+				$order->multicurrency_code = $fourn->multicurrency_code;
+				$order->fk_multicurrency = $tmparray[0];
+				$order->multicurrency_tx = $tmparray[1];
+			}
+		}
+
+		if (!empty($conf->global->SOFO_GET_INFOS_FROM_FOURN)) {
 			$order->mode_reglement_id = $fourn->mode_reglement_supplier_id;
 			$order->mode_reglement_code = getPaiementCode($order->mode_reglement_id);
 
