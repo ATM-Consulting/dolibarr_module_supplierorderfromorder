@@ -847,7 +847,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
 
                 print '<td class="center col-qtytoorder" >';
                 if(empty($conf->global->SOFO_DISABLE_ORDER_POSIBILITY_TO_PRODUCT_WITH_NOMENCLATURE)){
-                    print '<input id="qty-'.$line->id.'" class="qtyform col-qtytoorder" data-lineid="'.$line->id.'" type="number" name="qty['.$line->id.']" value="'.$qty2Order.'" min="0"  >';
+                    print '<input id="qty-'.$line->id.'" class="qtyform col-qtytoorder" data-lineid="'.$line->id.'" type="number" step="any" name="qty['.$line->id.']" value="'.$qty2Order.'" min="0"  >';
                 }
                 print '</td>';
 
@@ -880,7 +880,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                         // In case of a free line
 
                         print $form->select_company(GETPOST('fk_soc_fourn_'.$line->id,'int'),'fk_soc_fourn_'.$line->id, '',1,'supplier');
-                        print ' &nbsp;&nbsp;&nbsp; <input class="unitPriceField" type="number" name="fournUnitPrice['.$line->id.']" value="'.price2num($line->pa_ht).'" min="0" step="any" placeholder="'.$langs->trans('UnitPrice').'" >&euro; ';
+                        print ' &nbsp;&nbsp;&nbsp; <input class="unitPriceField" type="number" step="any" name="fournUnitPrice['.$line->id.']" value="'.price2num($line->pa_ht).'" min="0" step="any" placeholder="'.$langs->trans('UnitPrice').'" >&euro; ';
                         //print $form->selectUnits($line->fk_unit, 'units['.$line->id.']', 1);
 
                         $productDefault->fk_unit = $line->fk_unit;
@@ -1265,7 +1265,7 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $nomI = 0, $overrid
 					$qty2Order = $TNomenclature_qty[$line->id][$nomenclatureI];
 				}
 				$print .= '<td class="center col-qtytoorder" >';
-				$print .= '<input id="qty-' . $line->id . '-n' . $nomenclatureI . '" class="qtyform-nomenclature col-qtytoorder" data-lineid="' . $line->id . '" data-nomenclature="' . $nomenclatureI . '" type="number" name="nomenclature_qty[' . $line->id . '][' . $nomenclatureI . ']" value="' . $qty2Order . '" min="0"  >';
+				$print .= '<input id="qty-' . $line->id . '-n' . $nomenclatureI . '" class="qtyform-nomenclature col-qtytoorder" step="any" data-lineid="' . $line->id . '" data-nomenclature="' . $nomenclatureI . '" type="number" name="nomenclature_qty[' . $line->id . '][' . $nomenclatureI . ']" value="' . $qty2Order . '" min="0"  >';
 				$print .= '</td>';
 
 
