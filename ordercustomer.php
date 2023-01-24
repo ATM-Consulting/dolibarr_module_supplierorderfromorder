@@ -1585,7 +1585,7 @@ if ($resql || $resql2) {
 			else $TSupplier = array_intersect($prod->list_suppliers(), $TSupplier);
 
 			if (!empty($conf->of->enabled) && $user->rights->of->of->write && empty($conf->global->SOFO_REMOVE_MAKE_BTN)) {
-				print '<td><a href="' . dol_buildpath('/of/fiche_of.php', 1) . '?action=new&fk_product=' . $prod->id . '" class="butAction">'.$langs->trans("Fabriquer").'</a></td>';
+				print '<td><a href="' . dol_buildpath('/of/fiche_of.php', 1) . '?action=new&fk_product=' . $prod->id . '&fk_commande=' . $id . '" class="butAction">'.$langs->trans("Fabriquer").'</a></td>';
 			} else {
 				print '<td>&nbsp</td>';
 			}
