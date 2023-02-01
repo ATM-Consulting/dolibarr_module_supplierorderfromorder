@@ -1562,7 +1562,7 @@ if ($resql || $resql2) {
 			$champs .= '</td>' .
 				'<td align="right">' .
 				'<input type="text" name="tobuy' . $i .
-				'" value="' . (empty($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY) ? $stocktobuy : $objLineNewQty->qty) . '" ' . $disabled . ' size="3"> <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
+				'" value="' . (empty($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY) ? $stocktobuy : (empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT) ? $objp->qty : $objLineNewQty->qty)) . '" ' . $disabled . ' size="3"> <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
 
 			if (!empty($conf->global->SOFO_USE_DELIVERY_TIME)) {
 
