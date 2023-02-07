@@ -357,6 +357,9 @@ function updateOrAddlineToSupplierOrder($CommandeFournisseur, $line, $productid,
 	}
 	else
 	{
+		if($line->fk_product != $productid) $line->fk_product = $productid;
+		$line->fetch_product();
+
 		// ADD LINE
 		$ret['return'] = $CommandeFournisseur->addline(
 			$line->desc,
@@ -371,13 +374,13 @@ function updateOrAddlineToSupplierOrder($CommandeFournisseur, $line, $productid,
 			$remise_percent,
 			'HT',
 			0, //$pu_ttc=0.0,
-			$line->product_type,
+			$line->product->type,
 			$line->info_bits,
 			false, //$notrigger=false,
 			null, //$date_start=null,
 			null, //$date_end=null,
 			$line->array_options, //$array_options=0,
-			$line->fk_unit,
+			$line->product->fk_unit,
 			0,//$pu_ht_devise=0,
 			'commandedet', //$origin= // peut être un jour ça sera géré...
 			$line->id //$origin_id=0 // peut être un jour ça sera géré...
