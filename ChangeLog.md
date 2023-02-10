@@ -5,6 +5,7 @@
 
 
 ## 2.5
+- FIX : DA022726 keep unit from component  *07/02/2023* 2.5.6
 - FIX : when SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY is activated column to order was sometimes different from column ordered  *31/01/2023* 2.5.5
 - FIX : add step any on dispatch page *11/01/2023* 2.5.4
 - FIX : Handle multihook with group by  *02/11/2022* 2.5.3
