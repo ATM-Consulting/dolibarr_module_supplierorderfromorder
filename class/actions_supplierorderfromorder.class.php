@@ -26,9 +26,11 @@ class ActionsSupplierorderfromorder
 		  $langs->load( 'supplierorderfromorder@supplierorderfromorder' );
 
 
+		if ($action != 'presend') {
         	?>
+
 			<a id="listeProd" class="butAction" href="<?php
-			if(!empty($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK) && $conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK == 1)
+			if(!empty($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK) && $conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK == 1 )
 			{
 				echo dol_buildpath('/supplierorderfromorder/ordercustomer.php?id=' . $object->id.'&projectid='.$object->fk_project.'&show_stock_no_need=yes',1);
 			}
@@ -38,13 +40,16 @@ class ActionsSupplierorderfromorder
 
 			}
 			?>"><?php echo $langs->trans( 'OrderToSuppliers' ); ?></a>
+
 			<script type="text/javascript">
 				$(document).ready(function () {
+					const element = document.querySelector("#listeProd");
 					$('#listeProd').prependTo('div.tabsAction');
 				})
 			</script>
 
 			<?php
+		}
 		}
 
 		return 0;
