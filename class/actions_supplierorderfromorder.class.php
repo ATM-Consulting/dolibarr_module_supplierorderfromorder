@@ -43,7 +43,6 @@ class ActionsSupplierorderfromorder
 
 			<script type="text/javascript">
 				$(document).ready(function () {
-					const element = document.querySelector("#listeProd");
 					$('#listeProd').prependTo('div.tabsAction');
 				})
 			</script>
