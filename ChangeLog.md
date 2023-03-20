@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- NEW : It's now possible to group by product or dissociate on ordercustomer.php page - *20/03/2023* - 2.6.0
 
 
 ## 2.5

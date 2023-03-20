@@ -83,6 +83,7 @@ $sortorder = GETPOST('sortorder', 'alpha');
 $page = GETPOST('page', 'int');
 $page = intval($page);
 $selectedSupplier = GETPOST('useSameSupplier', 'int');
+$group_lines_by_product = GETPOSTISSET('group_lines_by_product', 'int') ? GETPOST('group_lines_by_product', 'int') : $conf->global->SOFO_GROUP_LINES_BY_PRODUCT;
 
 $id = GETPOST('id','int');
 $origin_page = 'ordercustomer';
@@ -879,16 +880,23 @@ if ($resql || $resql2) {
 		'<input type="hidden" name="sortorder" value="' . $sortorder . '">' .
 		'<input type="hidden" name="type" value="' . $type . '">' .
 		'<input type="hidden" name="linecount" value="' . ($num + $num2) . '">' .
+		'<input type="hidden" name="group_lines_by_product" value="' . $group_lines_by_product . '">' .
 		'<input type="hidden" name="fk_commande" value="' . GETPOST('fk_commande', 'int') . '">' .
 		'<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need', 'none') . '">' ;
 
 		if (isset($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK) && ($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK == 0)) {
-				echo '<div style="text-align:right"><a href="'.$_SERVER["PHP_SELF"].'?'.$_SERVER["QUERY_STRING"].'&show_stock_no_need=yes">'.$langs->trans('ShowLineEvenIfStockIsSuffisant').'</a>';
+				echo '<div style="text-align:right"><a href="'.$_SERVER["PHP_SELF"].'?'.$_SERVER["QUERY_STRING"].'&show_stock_no_need=yes">'.$langs->trans('ShowLineEvenIfStockIsSuffisant').'</a></div><br>';
 		}
 
 
 	if (!empty($TCachedProductId)) {
-		echo '<a style="color:red; font-weight:bold;" href="' . $_SERVER["PHP_SELF"] . '?' . $_SERVER["QUERY_STRING"] . '&purge_cached_product=yes">' . $langs->trans('PurgeSessionForCachedProduct') . '</a>';
+		echo '<a style="color:red; font-weight:bold;" href="' . $_SERVER["PHP_SELF"] . '?' . $_SERVER["QUERY_STRING"] . '&purge_cached_product=yes">' . $langs->trans('PurgeSessionForCachedProduct') . '</a><br>';
+	}
+
+	if(!empty($group_lines_by_product)) {
+		print '<STRONG>'.$langs->trans('SOFO_GROUP_LINES_BY_PRODUCT').'</STRONG> / <a href="'.$_SERVER['PHP_SELF'].'?id='.$id.'&group_lines_by_product=0">'.$langs->trans('DontGroupByProduct').'</a>'.img_help(1, $langs->trans('GroupByProductHelp')).'<br><br>';
+	} else {
+		print '<a href="'.$_SERVER['PHP_SELF'].'?id='.$id.'&group_lines_by_product=1">'.$langs->trans('SOFO_GROUP_LINES_BY_PRODUCT').'</a> / <STRONG>'.$langs->trans('DontGroupByProduct').'</STRONG>'.img_help(1, $langs->trans('GroupByProductHelp')).'<br><br>';
 	}
 
 	print '<div style="text-align:right">	  </div>' .
@@ -957,6 +965,7 @@ if ($resql || $resql2) {
 
 	$param .= '&fourn_id=' . $fourn_id . '&snom=' . $snom . '&salert=' . $salert;
 	$param .= '&sref=' . $sref;
+	$param .= '&group_lines_by_product='.$group_lines_by_product;
 
 	// Lignes des titres
 	print '<tr class="liste_titre_filter">' .
@@ -1172,7 +1181,7 @@ if ($resql || $resql2) {
 	$TSupplier = array();
 	$TProductIDAlreadyChecked = array();
     //On regroupe les quantités pas produit si la conf est active
-	if(! empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT)  && !empty($TProducts)) {
+	if(! empty($group_lines_by_product)  && !empty($TProducts)) {
         $TProductQtyChecked = array();
         $TProductSubLevel = array();
 		foreach($TProducts as $key => $objp) {
@@ -1190,7 +1199,7 @@ if ($resql || $resql2) {
 	foreach($TProducts as $objp){
 
 		// Cas où on a plusieurs fois le même produit dans la même commande : dédoublonnage (les sous produits ne sont pas concernés)
-		if(!empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT) && empty($objp->level)) {
+		if(!empty($group_lines_by_product) && empty($objp->level)) {
 			if (in_array($objp->rowid, $TProductIDAlreadyChecked)) continue;
 			else $TProductIDAlreadyChecked[$objp->rowid] = $objp->rowid;
 		}
@@ -1440,7 +1449,7 @@ if ($resql || $resql2) {
 			// on load les commandes fournisseur liées
 			$id = GETPOST('id','int');
 			if(!empty($objp->lineid)) {
-				$objLineNewQty = TSOFO::getAvailableQty($objp->lineid, !empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT) ? $ordered : $objp->qty);
+				$objLineNewQty = TSOFO::getAvailableQty($objp->lineid, !empty($group_lines_by_product) ? $ordered : $objp->qty);
 			}
 
 			$var = !$var;
@@ -1556,13 +1565,13 @@ if ($resql || $resql2) {
 					'</td>';
 				//Commandé
 			$champs .= '<td align="right">';
-			$champs .= (empty($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY) ? $ordered : (empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT) ? $objp->qty : $objLineNewQty->qty));
+			$champs .= (empty($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY) ? $ordered : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty));
 			$champs .= '</td>';
 
 			$champs .= '</td>' .
 				'<td align="right">' .
 				'<input type="text" name="tobuy' . $i .
-				'" value="' . (empty($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY) ? $stocktobuy : (empty($conf->global->SOFO_GROUP_LINES_BY_PRODUCT) ? $objp->qty : $objLineNewQty->qty)) . '" ' . $disabled . ' size="3"> <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
+				'" value="' . (empty($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY) ? $stocktobuy : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty)) . '" ' . $disabled . ' size="3"> <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
 
 			if (!empty($conf->global->SOFO_USE_DELIVERY_TIME)) {
 
