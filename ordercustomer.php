@@ -894,9 +894,9 @@ if ($resql || $resql2) {
 	}
 
 	if(!empty($group_lines_by_product)) {
-		print '<STRONG>'.$langs->trans('SOFO_GROUP_LINES_BY_PRODUCT').'</STRONG> / <a href="'.$_SERVER['PHP_SELF'].'?id='.$id.'&group_lines_by_product=0">'.$langs->trans('DontGroupByProduct').'</a>'.img_help(1, $langs->trans('GroupByProductHelp')).'<br><br>';
+		print '<STRONG>'.$langs->trans('SOFO_GROUP_LINES_BY_PRODUCT').'</STRONG> / <a href="'.$_SERVER['PHP_SELF'].'?id='.$id.'&group_lines_by_product=0'.$param.'">'.$langs->trans('DontGroupByProduct').'</a>'.img_help(1, $langs->trans('GroupByProductHelp')).'<br><br>';
 	} else {
-		print '<a href="'.$_SERVER['PHP_SELF'].'?id='.$id.'&group_lines_by_product=1">'.$langs->trans('SOFO_GROUP_LINES_BY_PRODUCT').'</a> / <STRONG>'.$langs->trans('DontGroupByProduct').'</STRONG>'.img_help(1, $langs->trans('GroupByProductHelp')).'<br><br>';
+		print '<a href="'.$_SERVER['PHP_SELF'].'?id='.$id.'&group_lines_by_product=1'.$param.'">'.$langs->trans('SOFO_GROUP_LINES_BY_PRODUCT').'</a> / <STRONG>'.$langs->trans('DontGroupByProduct').'</STRONG>'.img_help(1, $langs->trans('GroupByProductHelp')).'<br><br>';
 	}
 
 	print '<div style="text-align:right">	  </div>' .
