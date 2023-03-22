@@ -6,6 +6,7 @@
 
 
 ## 2.5
+- FIX : filter of column "finished" doesn't work - *22/03/2023* - 2.5.9
 - FIX : bad return for printCommonFooter hook - *03/03/2023* - 2.5.8
 - FIX : remove ordersupplierButton on presen action  - *15/02/2023* - 2.5.7  
 - FIX : DA022726 keep unit from component  *07/02/2023* 2.5.6

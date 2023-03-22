@@ -633,11 +633,13 @@ if ($snom) {
 
 $sql .= ' AND prod.tobuy = 1';
 
-$finished = GETPOST('finished', 'none');
-if ($finished != '' && $finished != '-1')
-	$sql .= ' AND prod.finished = ' . $finished;
-elseif (!isset($_REQUEST['button_search_x']) && isset($conf->global->SOFO_DEFAUT_FILTER) && $conf->global->SOFO_DEFAUT_FILTER >= 0)
+if(GETPOSTISSET('finished', 'none') && !GETPOSTISSET('button_removefilter_x')) {
+	if(GETPOST('finished', 'none') >= 0) {
+		$sql .= ' AND prod.finished = ' . GETPOST('finished', 'none');
+	}
+} elseif(isset($conf->global->SOFO_DEFAUT_FILTER) && $conf->global->SOFO_DEFAUT_FILTER >= 0) {
 	$sql .= ' AND prod.finished = ' . $conf->global->SOFO_DEFAUT_FILTER;
+}
 
 if (!empty($canvas)) {
 	$sql .= ' AND prod.canvas = "' . $db->escape($canvas) . '"';
@@ -966,6 +968,7 @@ if ($resql || $resql2) {
 	$param .= '&fourn_id=' . $fourn_id . '&snom=' . $snom . '&salert=' . $salert;
 	$param .= '&sref=' . $sref;
 	$param .= '&group_lines_by_product='.$group_lines_by_product;
+	if(!GETPOSTISSET('button_removefilter_x') && GETPOSTISSET('finished', 'none')) $param .= '&finished=' . GETPOST('finished', 'none');
 
 	// Lignes des titres
 	print '<tr class="liste_titre_filter">' .
@@ -993,7 +996,7 @@ if ($resql || $resql2) {
 	print_liste_field_titre(
 		$langs->trans('Nature'),
 		'ordercustomer.php',
-		'prod.label',
+		'prod.finished',
 		$param,
 		'id=' . GETPOST('id','int'),
 		'',
@@ -1138,8 +1141,7 @@ if ($resql || $resql2) {
 	}
 
 	$liste_titre = "";
-    if(empty($conf->global->SOFO_DEFAUT_FILTER)) $conf->global->SOFO_DEFAUT_FILTER = 0;
-	$liste_titre .= '<td class="liste_titre">' . $form->selectarray('finished', $statutarray, (!isset($_REQUEST['button_search_x']) && $conf->global->SOFO_DEFAUT_FILTER != -1) ? $conf->global->SOFO_DEFAUT_FILTER : GETPOST('finished', 'none'), 1) . '</td>';
+	$liste_titre .= '<td class="liste_titre">' . $form->selectarray('finished', $statutarray, (!GETPOSTISSET('button_removefilter_x') && GETPOSTISSET('finished', 'none')) ? GETPOST('finished', 'none') : $conf->global->SOFO_DEFAUT_FILTER, 1) . '</td>';
 
 	if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN)) {
 		$liste_titre .= '<td class="liste_titre">';
@@ -1511,8 +1513,7 @@ if ($resql || $resql2) {
 			}
 
 			print '<td>' . $objp->label . $r . '</td>';
-            if(empty($objp->finished)) $objp->finished = 0;
-			print '<td>' . (empty($prod->type) ? $statutarray[$objp->finished] : '') . '</td>';
+			print '<td>' . (empty($prod->type && $objp->finished >= 0) ? $statutarray[$objp->finished] : '') . '</td>';
 
 
 			if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN)) {
