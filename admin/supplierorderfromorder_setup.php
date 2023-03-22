@@ -278,7 +278,7 @@ print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
 print '<input type="hidden" name="token" value="'.$newToken.'">';
 print '<input type="hidden" name="action" value="set_SOFO_DEFAUT_FILTER">';
 $statutarray=array('1' => $langs->trans("Finished"), '0' => $langs->trans("RowMaterial"));
-print $form->selectarray('SOFO_DEFAUT_FILTER',$statutarray,!empty($conf->global->SOFO_DEFAUT_FILTER)?$conf->global->SOFO_DEFAUT_FILTER:'',1);
+print $form->selectarray('SOFO_DEFAUT_FILTER',$statutarray,isset($conf->global->SOFO_DEFAUT_FILTER)?$conf->global->SOFO_DEFAUT_FILTER:'-1',1);
 print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
 print '</form>';
 print '</td></tr>';
