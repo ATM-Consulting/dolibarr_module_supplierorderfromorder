@@ -2,8 +2,11 @@
 
 ## [Unreleased]
 
-- NEW : It's now possible to group by product or dissociate on ordercustomer.php page - *20/03/2023* - 2.6.0
 
+
+## 2.6
+
+- NEW : It's now possible to group by product or dissociate on ordercustomer.php page - *20/03/2023* - 2.6.0
 
 ## 2.5
 - FIX : filter of column "finished" doesn't work - *22/03/2023* - 2.5.9
