@@ -5,10 +5,10 @@
 
 
 ## 2.6
-
+- FIX : debugbar - *30/03/2023* - 2.6.1
 - NEW : It's now possible to group by product or dissociate on ordercustomer.php page - *20/03/2023* - 2.6.0
 
-## 2.5
+## 2.5 
 - FIX : filter of column "finished" doesn't work - *22/03/2023* - 2.5.9
 - FIX : bad return for printCommonFooter hook - *03/03/2023* - 2.5.8
 - FIX : remove ordersupplierButton on presen action  - *15/02/2023* - 2.5.7  
