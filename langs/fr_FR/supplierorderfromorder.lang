@@ -92,3 +92,4 @@ supplierorderfromorderAbout = A propos du module Commande Fournisseur depuis Com
 Fabriquer = Fabriquer
 DontGroupByProduct=Ne pas grouper les lignes par produit
 GroupByProductHelp=La valeur par défaut peut être modifiée dans la configuration du module
+SOFO_GET_NOTES_FROM_ORDER=Lors de la génération d'une commande fournisseur, mettre à jour les notes depuis la commande

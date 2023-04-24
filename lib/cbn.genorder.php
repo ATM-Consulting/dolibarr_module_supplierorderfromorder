@@ -156,6 +156,10 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$order->cond_reglement_code = $commandeClient->cond_reglement_code;
 					$order->date_livraison = $commandeClient->date_livraison;
 				}
+				if ($conf->global->SOFO_GET_NOTES_FROM_ORDER) {
+					$order->note_public = $commandeClient->note_public;
+					$order->note_private = $commandeClient->note_private;
+				}
 				$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
 				$newCommande = false;
 			} else {
@@ -168,11 +172,15 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$order->fk_project = $projectid;
 				}
 				if($conf->global->SOFO_GET_INFOS_FROM_ORDER){
-					$order->mode_reglement_code = $commandeClient->mode_reglement_code;
+					$order->mode_reglement_code = $commandeClient->modeF_reglement_code;
 					$order->mode_reglement_id = $commandeClient->mode_reglement_id;
 					$order->cond_reglement_id = $commandeClient->cond_reglement_id;
 					$order->cond_reglement_code = $commandeClient->cond_reglement_code;
 					$order->date_livraison = $commandeClient->date_livraison;
+				}
+				if ($conf->global->SOFO_GET_NOTES_FROM_ORDER) {
+					$order->note_public = $commandeClient->note_public;
+					$order->note_private = $commandeClient->note_private;
 				}
 
 				$id = $order->create($user);

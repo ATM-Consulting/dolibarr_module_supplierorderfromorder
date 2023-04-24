@@ -2046,6 +2046,11 @@ function _appliCond($order, $commandeClient)
 		$order->date_livraison = $commandeClient->date_livraison;
 	}
 
+	if (!empty($conf->global->SOFO_GET_NOTES_FROM_ORDER)) {
+		$order->note_public = $commandeClient->note_public;
+		$order->note_private = $commandeClient->note_private;
+	}
+
 	if (!empty($conf->global->SOFO_GET_EXTRAFIELDS_FROM_ORDER)) {
 		require_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
 		$extrafieldsOrderSupplier = new ExtraFields($db);
