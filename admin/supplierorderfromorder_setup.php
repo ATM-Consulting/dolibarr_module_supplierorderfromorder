@@ -412,7 +412,7 @@ print '<td align="center" width="20">&nbsp;</td>';
 print '<td align="right" width="300">';
 print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
 print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
-print '<input type="hidden" name="action" value="SOFO_GET_NOTES_FROM_ORDER">';
+print '<input type="hidden" name="action" value="set_SOFO_GET_NOTES_FROM_ORDER">';
 print $form->selectyesno("SOFO_GET_NOTES_FROM_ORDER",$conf->global->SOFO_GET_NOTES_FROM_ORDER,1);
 print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
 print '</form>';
