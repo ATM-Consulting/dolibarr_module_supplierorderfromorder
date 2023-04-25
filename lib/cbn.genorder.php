@@ -177,7 +177,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$order->date_livraison = $commandeClient->date_livraison;
 					$order->note_public = $commandeClient->note_public;
 				}
-				
+
 				$id = $order->create($user);
 				if($contact_ship && $conf->global->SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY) $order->add_contact($contact_ship, 'SHIPPING');
 				$order->add_object_linked('commande', $_REQUEST['id']);
