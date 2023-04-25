@@ -247,6 +247,7 @@ if(empty($reshook))
 					// cond reglement, mode reglement, delivery date
 					_appliCond($order, $commandeClient);
 
+					$order->update($user);
 
 					$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
 					$newCommande = false;
@@ -2044,11 +2045,7 @@ function _appliCond($order, $commandeClient)
 		$order->cond_reglement_id = $commandeClient->cond_reglement_id;
 		$order->cond_reglement_code = $commandeClient->cond_reglement_code;
 		$order->date_livraison = $commandeClient->date_livraison;
-	}
-
-	if (!empty($conf->global->SOFO_GET_NOTES_FROM_ORDER)) {
-		$order->note_public = $commandeClient->note_public;
-		$order->note_private = $commandeClient->note_private;
+		$order->note_public = $order->note_public ? sprintf('%s<br/>%s', $order->note_public, $commandeClient->note_public) : $commandeClient->note_public;
 	}
 
 	if (!empty($conf->global->SOFO_GET_EXTRAFIELDS_FROM_ORDER)) {
