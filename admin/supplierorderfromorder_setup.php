@@ -404,7 +404,6 @@ print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">'
 print '</form>';
 print '</td></tr>';
 
-
 if(!empty($conf->global->PRODUIT_SOUSPRODUITS)) {
 	$var = !$var;
 	print '<tr ' . $bc[$var] . '>';

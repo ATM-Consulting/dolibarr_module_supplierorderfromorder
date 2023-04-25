@@ -90,4 +90,3 @@ SOFO_GROUP_LINES_BY_PRODUCT=Zeilen nach Produkt gruppieren
 SupplierProposalSuccessfullyCreated=Erstellte Lieferantenpreisanfragen
 supplierorderfromorderAbout = Über das Modul Lieferantenbestellung aus Kundenauftrag
 Fabriquer = Erstellen
-SOFO_GET_NOTES_FROM_ORDER=Aktualisieren Sie beim Erstellen einer Lieferantenbestellung die Notizen aus der Kundenbestellung
