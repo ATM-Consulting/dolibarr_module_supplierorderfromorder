@@ -1545,8 +1545,9 @@ if ($resql || $resql2) {
 
 			$champs = "";
 			$champs .= $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : '';
+			$prod->load_stock();
 			$champs .= '<td align="right" >' .
-				$warning . (((!empty($conf->global->STOCK_SUPPORTS_SERVICES) && $prod->type == 1) || empty($prod->type)) ? $stock : img_picto('', './img/no', '', 1)) . //$stocktobuy
+				$warning . (((!empty($conf->global->STOCK_SUPPORTS_SERVICES) && $prod->type == 1) || empty($prod->type)) ? $prod->stock_theorique : img_picto('', './img/no', '', 1)) . //$stocktobuy
 				'</td>';
 			if (!empty($conf->of->enabled) && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) {
 				/*					dol_include_once('/of/lib/of.lib.php');
@@ -1554,7 +1555,6 @@ if ($resql || $resql2) {
 									list($qty_to_make, $qty_needed) = _calcQtyOfProductInOf($db, $conf, $prod);
 									$qty = $prod->stock_theorique + $qty_to_make - $qty_needed;
 				*/
-				$prod->load_stock();
 				$qty_of = $stock_of_needed - $stock_of_tomake;
 				$qty = $prod->stock_theorique - $qty_of;
 				$champs .= '<td align="right">' . $qty . '</td>';
