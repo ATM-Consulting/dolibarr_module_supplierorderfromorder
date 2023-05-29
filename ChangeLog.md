@@ -5,6 +5,7 @@
 
 
 ## 2.6
+- FIX : DA023344 - wrong virtual stock - *26/05/2023* - 2.6.2
 - FIX : debugbar - *30/03/2023* - 2.6.1
 - NEW : It's now possible to group by product or dissociate on ordercustomer.php page - *20/03/2023* - 2.6.0
 
