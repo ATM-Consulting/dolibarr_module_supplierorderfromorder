@@ -1812,10 +1812,12 @@ if ($resql || $resql2) {
 	</script>
 <?php
 //Debugbar is making page loading non stop
-$saveRight = $user->rights->debugbar->read;
-$user->rights->debugbar->read = 0;
+if(!empty($user->rights->debugbar)) {
+	$saveRight = $user->rights->debugbar->read;
+	$user->rights->debugbar->read = 0;
+}
 llxFooter();
-$user->rights->debugbar->read = $saveRight;
+if(!empty($user->rights->debugbar)) $user->rights->debugbar->read = $saveRight;
 
 function _prepareLine($i, $actionTarget = 'order')
 {
