@@ -254,6 +254,13 @@ if(empty($reshook))
 				} else {
 
 					$order->socid = $idsupplier;
+					// InfraS add begin
+					if (!empty(GETPOST('id','int'))) {
+						$staticorder = new Commande($db);
+						$staticorder->fetch(GETPOST('id','int'));
+						$order->delivery_date = $staticorder->delivery_date;
+					}
+					// InfraS add end
 					if (!empty($projectid)) {
 						$order->fk_project = GETPOST('projectid', 'int');
 					}
