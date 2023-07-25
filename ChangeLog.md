@@ -5,6 +5,7 @@
 
 
 ## 2.4 - 26/01/2022
+- FIX: Warnings (variables referenced prior to assignment) - *25/07/2023* - 2.4.10
 - FIX : Création des commandes fournisseurs dans la devise du fournisseur - *06/01/2023* - 2.4.9
 - FIX: PHP 8 - *03/08/2022* - 2.4.8
 - FIX: Compatibility V16 - *06/06/2022* - 2.4.7
