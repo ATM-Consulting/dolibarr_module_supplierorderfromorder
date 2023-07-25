@@ -1427,8 +1427,8 @@ if ($resql || $resql2) {
 			}
 
 			//si le produit parent n'a pas besoin d'être commandé, alors les produits fils non plus
-            if(empty($objp->fk_parent)) $objp->fk_parent=0;
-			if($objnottobuy == $objp->fk_parent && !empty($objnottobuy) && !empty($objp->fk_parent)) {
+			if (empty($objp->fk_parent)) $objp->fk_parent = 0;
+			if(!empty($objnottobuy) && !empty($objp->fk_parent) && $objnottobuy == $objp->fk_parent) {
 				$stocktobuy = 0;
 			}
 
