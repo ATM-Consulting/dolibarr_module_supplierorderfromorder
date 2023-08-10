@@ -83,7 +83,7 @@ $sortorder = GETPOST('sortorder', 'alpha');
 $page = GETPOST('page', 'int');
 $page = intval($page);
 $selectedSupplier = GETPOST('useSameSupplier', 'int');
-$group_lines_by_product = GETPOSTISSET('group_lines_by_product', 'int') ? GETPOST('group_lines_by_product', 'int') : $conf->global->SOFO_GROUP_LINES_BY_PRODUCT;
+$group_lines_by_product = GETPOSTISSET('group_lines_by_product', 'int') ? GETPOST('group_lines_by_product', 'int') : (isset($conf->global->SOFO_GROUP_LINES_BY_PRODUCT) ? $conf->global->SOFO_GROUP_LINES_BY_PRODUCT : 0);
 
 $id = GETPOST('id','int');
 $origin_page = 'ordercustomer';
@@ -1141,7 +1141,7 @@ if ($resql || $resql2) {
 	}
 
 	$liste_titre = "";
-	$liste_titre .= '<td class="liste_titre">' . $form->selectarray('finished', $statutarray, (!GETPOSTISSET('button_removefilter_x') && GETPOSTISSET('finished', 'none')) ? GETPOST('finished', 'none') : $conf->global->SOFO_DEFAUT_FILTER, 1) . '</td>';
+	$liste_titre .= '<td class="liste_titre">' . $form->selectarray('finished', $statutarray, (!GETPOSTISSET('button_removefilter_x') && GETPOSTISSET('finished', 'none')) ? GETPOST('finished', 'none') : (isset($conf->global->SOFO_DEFAUT_FILTER) ? $conf->global->SOFO_DEFAUT_FILTER : 0), 1) . '</td>';
 
 	if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN)) {
 		$liste_titre .= '<td class="liste_titre">';
@@ -1513,7 +1513,7 @@ if ($resql || $resql2) {
 			}
 
 			print '<td>' . $objp->label . $r . '</td>';
-			print '<td>' . (empty($prod->type && $objp->finished >= 0) ? $statutarray[$objp->finished] : '') . '</td>';
+			print '<td>' . (isset($statutarray[$objp->finished]) ? $statutarray[$objp->finished] : '') . '</td>';
 
 
 			if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN)) {
