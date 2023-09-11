@@ -447,7 +447,7 @@ if(empty($reshook))
 					setEventMessage($msg, 'errors');
 				} else {
 					// CODE de redirection s'il y a un seul fournisseur (évite de le laisser sur la page sans comprendre)
-					if ($conf->global->SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER) {
+					if (!empty($conf->global->SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER)) {
 						if (count($suppliersid) == 1) {
 							if ($action === 'valid-order'){
 								$link = dol_buildpath('/fourn/commande/card.php?id=' . $order_id, 1);
@@ -530,12 +530,12 @@ if(empty($reshook))
 				}
 			}
 			// FIXME: same as $ajoutes.
-			if ($rates) {
+			if (!empty($rates)) {
 				foreach ($rates as $nomFournisseur => $nomProd) {
 					$mess .= "Quantité insuffisante de ' " . $nomProd . " ' pour le fournisseur ' " . $nomFournisseur . " '<br />";
 				}
 			}
-			if ($rates) {
+			if (!empty($rates)) {
 				setEventMessage($mess, 'warnings');
 			} else {
 				setEventMessage($mess, 'mesgs');

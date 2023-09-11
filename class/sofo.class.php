@@ -45,10 +45,12 @@ class TSOFO {
 
 		while($obj_availability = $db->fetch_object($res_av)) {
 
-			if(!empty($obj_availability->delivery_time_days))$nb_day = $obj_availability->delivery_time_days;
+			if(!empty($obj_availability->delivery_time_days)) $nb_day = $obj_availability->delivery_time_days;
 			else {
-				$av_code = $form->cache_availability[$obj_availability->fk_availability] ;
-				$nb_day = self::getDayFromAvailabilityCode($av_code['code']);
+                if (!empty($obj_availability->fk_availability)) {
+                    $av_code = $form->cache_availability[$obj_availability->fk_availability] ;
+                    $nb_day = self::getDayFromAvailabilityCode($av_code['code']);
+                }
 			}
 			if(($min === false || $nb_day<$min )
 				&& (!$only_with_delai || $nb_day>0)) $min = $nb_day;
