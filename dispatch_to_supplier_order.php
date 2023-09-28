@@ -620,6 +620,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
 
     print '<input type="hidden" name="from" value="'.$from.'" />';
     print '<input type="hidden" name="fromid" value="'.$fromid.'" />';
+    print '<input type="hidden" name="token" value="'.newToken().'" />';
 
     print '<table width="100%" class="noborder noshadow" >';
 
