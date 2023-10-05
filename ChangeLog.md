@@ -5,6 +5,7 @@
 
 
 ## 2.6
+- FIX : remove overwritting initial orderline product in cmdfourn create - *05/10/2023* - 2.6.6  
 - FIX : FIX: missing CSRF token in form - *28/09/2023* - 2.6.5
 - FIX : Warnings DA02684 - *11/09/2023* - 2.6.4
 - FIX : Warnings (accessing global confs without checking for existence) - *03/08/2023* - 2.6.3
