@@ -357,21 +357,25 @@ function updateOrAddlineToSupplierOrder($CommandeFournisseur, $line, $productid,
 	}
 	else
 	{
-		if($line->fk_product != $productid) $line->fk_product = $productid;
-		$res = $line->fetch_product();
+		// les object sont passés par référence par défaut
+		// l'object line est la ligne de commande initiale
+		// nous sommes en train de modifier cette ligne si nous ne clonons pas celle-ci
+		$lineClone = clone $line;
+		if($lineClone->fk_product != $productid) $lineClone->fk_product = $productid;
+		$res = $lineClone->fetch_product();
 		if($res > 0) {
-			$fk_unit = $line->product->fk_unit;
-			$product_type = $line->product->type;
+			$fk_unit = $lineClone->product->fk_unit;
+			$product_type = $lineClone->product->type;
 		} else {
-			$fk_unit = $line->fk_unit;
-			$product_type = $line->product_type;
+			$fk_unit = $lineClone->fk_unit;
+			$product_type = $lineClone->product_type;
 		}
 		// ADD LINE
 		$ret['return'] = $CommandeFournisseur->addline(
-			$line->desc,
+			$lineClone->desc,
 			$price,
 			$qty,
-			$line->tva_tx,
+			$lineClone->tva_tx,
 			$txlocaltax1=0.0,
 			$txlocaltax2=0.0,
 			$productid,
@@ -381,15 +385,15 @@ function updateOrAddlineToSupplierOrder($CommandeFournisseur, $line, $productid,
 			'HT',
 			0, //$pu_ttc=0.0,
 			$product_type,
-			$line->info_bits,
+			$lineClone->info_bits,
 			false, //$notrigger=false,
 			null, //$date_start=null,
 			null, //$date_end=null,
-			$line->array_options, //$array_options=0,
+			$lineClone->array_options, //$array_options=0,
 			$fk_unit,
 			0,//$pu_ht_devise=0,
 			'commandedet', //$origin= // peut être un jour ça sera géré...
-			$line->id //$origin_id=0 // peut être un jour ça sera géré...
+			$lineClone->id //$origin_id=0 // peut être un jour ça sera géré...
 		);
 	}
 
