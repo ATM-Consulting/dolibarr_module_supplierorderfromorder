@@ -117,7 +117,7 @@ class TSOFO {
 							$num == 1
 						||  ($selected_supplier > 0 && $objp->fk_soc == $selected_supplier)
 						||  (
-								! empty($conf->global->SOFO_PRESELECT_SUPPLIER_PRICE_FROM_LINE_BUY_PRICE)
+								getDolGlobalString('SOFO_PRESELECT_SUPPLIER_PRICE_FROM_LINE_BUY_PRICE')
 							&&	$selected_supplier <= 0
 							&&	$selected_price_ht > 0
 							&&	$selected_price_ht == $objp->unitprice * (1 - $objp->remise_percent / 100)

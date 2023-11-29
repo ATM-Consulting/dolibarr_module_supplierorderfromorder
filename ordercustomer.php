@@ -105,7 +105,7 @@ $TCategories = array();
 
 if (!empty($conf->categorie->enabled)) {
 
-	if (!isset($_REQUEST['categorie']) && !empty($conf->global->SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER)) {
+	if (!isset($_REQUEST['categorie']) && getDolGlobalString('SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER')) {
 		$TCategories = unserialize($conf->global->SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER);
 	} else {
 		$categories = GETPOST('categorie', 'none');
@@ -221,7 +221,7 @@ if(empty($reshook))
 				$commandeClient->fetch(GETPOST('id','int'));
 
 				// Test recupération contact livraison
-				if (!empty($conf->global->SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY)) {
+				if (getDolGlobalString('SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY')) {
 					$contact_ship = $commandeClient->getIdContact('external', 'SHIPPING');
 					$contact_ship = $contact_ship[0];
 				} else {
@@ -230,7 +230,7 @@ if(empty($reshook))
 
 
 				//Si une commande au statut brouillon existe déjà et que l'option SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME
-				if ($obj && empty($conf->global->SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME)) {
+				if ($obj && !getDolGlobalString('SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME')) {
 
 					$order->fetch($obj->rowid);
 					$order->socid = $idsupplier;
@@ -428,12 +428,12 @@ if(empty($reshook))
 
 				}
 
-				if (!empty($conf->global->SOFO_USE_MAX_DELIVERY_DATE)) {
-					$order->date_livraison = dol_now() + $MaxAvailability * 86400;
+				if (getDolGlobalString('SOFO_USE_MAX_DELIVERY_DATE')) {
+					$order->delivery_date = dol_now() + $MaxAvailability * 86400;
 					if (version_compare(DOL_VERSION, '14', '>=')) {
-						$order->setDeliveryDate($user, $order->date_livraison);
+						$order->setDeliveryDate($user, $order->delivery_date);
 					} else {
-						$order->set_date_livraison($user, $order->date_livraison);
+						$order->set_date_livraison($user, $order->delivery_date);
 					}
 				}
 
@@ -447,7 +447,7 @@ if(empty($reshook))
 					setEventMessage($msg, 'errors');
 				} else {
 					// CODE de redirection s'il y a un seul fournisseur (évite de le laisser sur la page sans comprendre)
-					if (!empty($conf->global->SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER)) {
+					if (getDolGlobalString('SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER')) {
 						if (count($suppliersid) == 1) {
 							if ($action === 'valid-order'){
 								$link = dol_buildpath('/fourn/commande/card.php?id=' . $order_id, 1);
@@ -560,7 +560,7 @@ if (GETPOST('purge_cached_product', 'none') == 'yes')
 	$TCachedProductId = array();
 
 //Do we want include shared sotck to kwon what order
-if (empty($conf->global->SOFO_CHECK_STOCK_ON_SHARED_STOCK)) {
+if (!getDolGlobalString('SOFO_CHECK_STOCK_ON_SHARED_STOCK')) {
 	$entityToTest = $conf->entity;
 } else {
 	$entityToTest = getEntity('stock');
@@ -637,8 +637,8 @@ if(GETPOSTISSET('finished', 'none') && !GETPOSTISSET('button_removefilter_x')) {
 	if(GETPOST('finished', 'none') >= 0) {
 		$sql .= ' AND prod.finished = ' . GETPOST('finished', 'none');
 	}
-} elseif(isset($conf->global->SOFO_DEFAUT_FILTER) && $conf->global->SOFO_DEFAUT_FILTER >= 0) {
-	$sql .= ' AND prod.finished = ' . $conf->global->SOFO_DEFAUT_FILTER;
+} elseif(isset($conf->global->SOFO_DEFAUT_FILTER) && getDolGlobalInt('SOFO_DEFAUT_FILTER') >= 0) {
+	$sql .= ' AND prod.finished = ' . getDolGlobalString('SOFO_DEFAUT_FILTER');
 }
 
 if (!empty($canvas)) {
@@ -669,18 +669,18 @@ if ($salert == 'on') {
 
 $sql2 = '';
 //On prend les lignes libre
-if (GETPOST('id','int') && !empty($conf->global->SOFO_ADD_FREE_LINES)) {
+if (GETPOST('id','int') && getDolGlobalString('SOFO_ADD_FREE_LINES')) {
 	$sql2 .= 'SELECT cd.rowid, cd.description, cd.qty as qty, cd.product_type, cd.price, cd.buy_price_ht
 			 FROM ' . MAIN_DB_PREFIX . 'commandedet as cd
 			 	LEFT JOIN ' . MAIN_DB_PREFIX . 'commande as c ON (cd.fk_commande = c.rowid)
 			 WHERE c.rowid = ' . GETPOST('id','int') . ' AND cd.product_type IN(0,1) AND fk_product IS NULL';
-	if (!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
+	if (getDolGlobalString('SUPPORDERFROMORDER_USE_ORDER_DESC')) {
 		$sql2 .= ' GROUP BY cd.description';
 	}
 }
 $sql .= $db->order($sortfield, $sortorder);
 
-if (!empty($conf->global->SOFO_USE_DELIVERY_TIME))
+if (getDolGlobalString('SOFO_USE_DELIVERY_TIME'))
 	$sql .= $db->plimit($limit + 1, $offset);
 $resql = $db->query($sql);
 
@@ -695,7 +695,7 @@ if ($sql2 && $fk_commande > 0) {
 	$resql2 = $db->query($sql2);
 }
 //print $sql ;
-$justOFforNeededProduct = !empty($conf->global->SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT) && empty($fk_commande);
+$justOFforNeededProduct = getDolGlobalString('SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT') && empty($fk_commande);
 $statutarray = array('1' => $langs->trans("Finished"), '0' => $langs->trans("RowMaterial"));
 $form = new Form($db);
 
@@ -718,7 +718,7 @@ if ($resql || $resql2) {
 		$product = new Product($db);
 		$product->fetch($objp->rowid);
 
-		if(!empty($conf->global->PRODUIT_SOUSPRODUITS) && !empty($conf->global->SOFO_VIRTUAL_PRODUCTS)) {
+		if(getDolGlobalString('PRODUIT_SOUSPRODUITS') && getDolGlobalString('SOFO_VIRTUAL_PRODUCTS')) {
 
 			//récupération des sous-produits
 			$product->get_sousproduits_arbo();
@@ -790,7 +790,7 @@ if ($resql || $resql2) {
 	llxHeader('', $title, $helpurl, $title);
 
 	$includeProduct = '';
-	if (isset($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK) && ($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK == 1)) {
+	if (getDolGlobalInt('INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK') == 1) {
 		$includeProduct = '&show_stock_no_need=yes';
 		$param .= '&show_stock_no_need=yes';
 	}
@@ -801,7 +801,7 @@ if ($resql || $resql2) {
 	$head[0][2] = 'supplierorderfromorder';
 
 
-	if (!empty($conf->global->SOFO_USE_NOMENCLATURE)) {
+	if (getDolGlobalString('SOFO_USE_NOMENCLATURE')) {
 		$head[1][0] = dol_buildpath('/supplierorderfromorder/dispatch_to_supplier_order.php?from=commande&fromid=' . GETPOST('id','int'), 2);
 		$head[1][1] = $langs->trans('ProductsAssetsToOrder');
 		$head[1][2] = 'supplierorderfromorder_dispatch';
@@ -851,7 +851,7 @@ if ($resql || $resql2) {
 		$filters .= (isset($type) ? '&type=' . $type : '');
 		$filters .= '&salert=' . $salert;
 
-		if (!empty($conf->global->SOFO_USE_DELIVERY_TIME)) {
+		if (getDolGlobalString('SOFO_USE_DELIVERY_TIME')) {
 
 			print_barre_liste(
 				$title,
@@ -868,11 +868,11 @@ if ($resql || $resql2) {
 	}
 
 
-	if(!empty($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY)) {
+	if(getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY')) {
 		print '<br>'.img_warning().'&nbsp;<STRONG><span style="color:red">' . $langs->trans('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') . '</span></STRONG><br>';
 	}
 
-	$yesno = !empty($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK) ? '&show_stock_no_need=yes' : '';
+	$yesno = getDolGlobalString('INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK') ? '&show_stock_no_need=yes' : '';
 
 	print'</div>';
 	print '<form action="' . $_SERVER['PHP_SELF'] . '?id=' . GETPOST('id','int') . '&projectid=' . (!empty($_REQUEST['projectid'])?$_REQUEST['projectid']:'') . $yesno .'" method="post" name="formulaire">' .
@@ -886,7 +886,7 @@ if ($resql || $resql2) {
 		'<input type="hidden" name="fk_commande" value="' . GETPOST('fk_commande', 'int') . '">' .
 		'<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need', 'none') . '">' ;
 
-		if (isset($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK) && ($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK == 0)) {
+		if (getDolGlobalInt('INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK') == 0) {
 				echo '<div style="text-align:right"><a href="'.$_SERVER["PHP_SELF"].'?'.$_SERVER["QUERY_STRING"].'&show_stock_no_need=yes">'.$langs->trans('ShowLineEvenIfStockIsSuffisant').'</a></div><br>';
 		}
 
@@ -906,15 +906,15 @@ if ($resql || $resql2) {
 
 
 	$colspan = 9;
-	if (!empty($conf->global->FOURN_PRODUCT_AVAILABILITY))
+	if (getDolGlobalString('FOURN_PRODUCT_AVAILABILITY'))
 		$colspan++;
-	if (!empty($conf->of->enabled) && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) {
-		$colspan++;
-	}
-	if (!empty($conf->global->SOFO_USE_DELIVERY_TIME)) {
+	if (!empty($conf->of->enabled) && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL')) {
 		$colspan++;
 	}
-	if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN)) {
+	if (getDolGlobalString('SOFO_USE_DELIVERY_TIME')) {
+		$colspan++;
+	}
+	if (!empty($conf->categorie->enabled) && getDolGlobalString('SOFO_DISPLAY_CAT_COLUMN')) {
 		$colspan++;
 	}
 	if (!empty($conf->service->enabled) && $type == 1) {
@@ -929,7 +929,7 @@ if ($resql || $resql2) {
     if (!empty($reshook)) {
         print $hookmanager->resPrint;
     }
-	if (!empty($conf->global->SOFO_USE_DELIVERY_TIME)) {
+	if (getDolGlobalString('SOFO_USE_DELIVERY_TIME')) {
 		$week_to_replenish = (int)GETPOST('week_to_replenish', 'int');
 
 
@@ -1003,7 +1003,7 @@ if ($resql || $resql2) {
 		$sortfield,
 		$sortorder
 	);
-	if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN)) {
+	if (!empty($conf->categorie->enabled) && getDolGlobalString('SOFO_DISPLAY_CAT_COLUMN')) {
 		print_liste_field_titre(
 			$langs->trans("Categories"),
 			'ordercustomer.php',
@@ -1045,7 +1045,7 @@ if ($resql || $resql2) {
 	 * - Si on est dans le cas d'un OF avec les produits nécessaires
 	 * - Si on utilise les stocks virtuels (soit avec la conf globale Dolibarr, soit celle du module) ou qu'on utilise une plage de temps pour le besoin ou qu'on ne prend pas en compte les commandes clients
 	 */
-	if (empty($justOFforNeededProduct) && ($week_to_replenish > 0 || !empty($conf->global->USE_VIRTUAL_STOCK) || !empty($conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) || empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER))) {
+	if (empty($justOFforNeededProduct) && ($week_to_replenish > 0 || getDolGlobalString('USE_VIRTUAL_STOCK') || getDolGlobalString('SOFO_USE_VIRTUAL_ORDER_STOCK') || !getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER'))) {
 		$stocklabel = $langs->trans('VirtualStock');
 	} else {
 		$stocklabel = $langs->trans('PhysicalStock');
@@ -1061,7 +1061,7 @@ if ($resql || $resql2) {
 		$sortorder
 	);
 
-	if (!empty($conf->of->enabled) && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) {
+	if (!empty($conf->of->enabled) && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL')) {
 		dol_include_once('/of/lib/of.lib.php');
 		print_liste_field_titre(
 			'Stock théo - OF',
@@ -1107,7 +1107,7 @@ if ($resql || $resql2) {
 		$sortorder
 	);
 
-	if (!empty($conf->global->FOURN_PRODUCT_AVAILABILITY))
+	if (getDolGlobalString('FOURN_PRODUCT_AVAILABILITY'))
 		print_liste_field_titre($langs->trans("Availability"));
 
 	print_liste_field_titre(
@@ -1143,7 +1143,7 @@ if ($resql || $resql2) {
 	$liste_titre = "";
 	$liste_titre .= '<td class="liste_titre">' . $form->selectarray('finished', $statutarray, (!GETPOSTISSET('button_removefilter_x') && GETPOSTISSET('finished', 'none')) ? GETPOST('finished', 'none') : (isset($conf->global->SOFO_DEFAUT_FILTER) ? $conf->global->SOFO_DEFAUT_FILTER : 0), 1) . '</td>';
 
-	if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN)) {
+	if (!empty($conf->categorie->enabled) && getDolGlobalString('SOFO_DISPLAY_CAT_COLUMN')) {
 		$liste_titre .= '<td class="liste_titre">';
 		$liste_titre .= '</td>';
 	}
@@ -1152,7 +1152,7 @@ if ($resql || $resql2) {
     if(empty($alertchecked)) $alertchecked = '';
 	$liste_titre .= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>';
 
-	if (!empty($conf->of->enabled) && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) {
+	if (!empty($conf->of->enabled) && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL')) {
 		$liste_titre .= '<td class="liste_titre" align="right"></td>';
 	}
 
@@ -1160,7 +1160,7 @@ if ($resql || $resql2) {
 
 	$liste_titre .= '<td class="liste_titre" align="right">&nbsp;</td>' .
 		'<td class="liste_titre">&nbsp;</td>' .
-		'<td class="liste_titre" ' . (!empty($conf->global->SOFO_USE_DELIVERY_TIME) ? 'colspan="2"' : '') . '>&nbsp;</td>' .
+		'<td class="liste_titre" ' . (getDolGlobalString('SOFO_USE_DELIVERY_TIME') ? 'colspan="2"' : '') . '>&nbsp;</td>' .
 		'<td class="liste_titre" align="right">' .
 		'<input type="image" class="liste_titre" name="button_search"' .
 		'src="' . DOL_URL_ROOT . '/theme/' . $conf->theme . '/img/search.png" alt="' . $langs->trans("Search") . '">' .
@@ -1175,7 +1175,7 @@ if ($resql || $resql2) {
 
 	$var = True;
 
-	if (!empty($conf->global->SOFO_USE_DELIVERY_TIME)) {
+	if (getDolGlobalString('SOFO_USE_DELIVERY_TIME')) {
 		$form->load_cache_availability();
 		$limit = 999999;
 	}
@@ -1206,10 +1206,10 @@ if ($resql || $resql2) {
 			else $TProductIDAlreadyChecked[$objp->rowid] = $objp->rowid;
 		}
 
-		if (!empty($conf->global->SOFO_DISPLAY_SERVICES) || $objp->fk_product_type == 0) {
+		if (getDolGlobalString('SOFO_DISPLAY_SERVICES') || $objp->fk_product_type == 0) {
 
 			// Multilangs
-			if (!empty($conf->global->MAIN_MULTILANGS)) {
+			if (getDolGlobalString('MAIN_MULTILANGS')) {
 				$sql = 'SELECT label';
 				$sql .= ' FROM ' . MAIN_DB_PREFIX . 'product_lang';
 				$sql .= ' WHERE fk_product = ' . $objp->rowid;
@@ -1240,7 +1240,7 @@ if ($resql || $resql2) {
 
 				if ($week_to_replenish > 0) {
 					/* là ça déconne pas, on s'en fout, on dépote ! */
-					if (empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)) {
+					if (!getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER')) {
 						$stock_commande_client = _load_stats_commande_date($prod->id, date('Y-m-d', strtotime('+' . $week_to_replenish . 'week')));
 						$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float)$stock_commande_client;
 					}
@@ -1250,11 +1250,11 @@ if ($resql || $resql2) {
 
 
 					$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
-				} else if (!empty($conf->global->USE_VIRTUAL_STOCK) || !empty($conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK)) {
+				} else if (getDolGlobalString('USE_VIRTUAL_STOCK') || getDolGlobalString('SOFO_USE_VIRTUAL_ORDER_STOCK')) {
 					//compute virtual stockshow_stock_no_need
 					$prod->fetch($prod->id);
-					if ((empty($conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER) || !empty($conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK))
-						&& empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)) {
+					if ((!getDolGlobalString('STOCK_CALCULATE_ON_VALIDATE_ORDER') || getDolGlobalString('SOFO_USE_VIRTUAL_ORDER_STOCK'))
+						&& !getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER')) {
 						$result = $prod->load_stats_commande(0, '1,2');
 						if ($result < 0) {
 							dol_print_error($db, $prod->error);
@@ -1268,7 +1268,7 @@ if ($resql || $resql2) {
 					}
 
 					if (!$conf->global->STOCK_CALCULATE_ON_SUPPLIER_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
-						if (!empty($conf->global->SUPPLIER_ORDER_STATUS_FOR_VIRTUAL_STOCK)){
+						if (getDolGlobalString('SUPPLIER_ORDER_STATUS_FOR_VIRTUAL_STOCK')){
 							$result=$prod->load_stats_commande_fournisseur(0, $conf->global->SUPPLIER_ORDER_STATUS_FOR_VIRTUAL_STOCK, 1);
 						} else {
 							$result=$prod->load_stats_commande_fournisseur(0, '1,2,3,4', 1);
@@ -1297,13 +1297,13 @@ if ($resql || $resql2) {
 					}
 
 					if (! empty($conf->expedition->enabled)
-						&& (! empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT) || ! empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT_CLOSE)))
+						&& (getDolGlobalString('STOCK_CALCULATE_ON_SHIPMENT') || getDolGlobalString('STOCK_CALCULATE_ON_SHIPMENT_CLOSE')))
 					{
 						require_once DOL_DOCUMENT_ROOT . '/expedition/class/expedition.class.php';
 						$filterShipmentStatus = '';
-						if (!empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT)) {
+						if (getDolGlobalString('STOCK_CALCULATE_ON_SHIPMENT')) {
 							$filterShipmentStatus = Expedition::STATUS_VALIDATED  . ',' . Expedition::STATUS_CLOSED;
-						} elseif (!empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT_CLOSE)) {
+						} elseif (getDolGlobalString('STOCK_CALCULATE_ON_SHIPMENT_CLOSE')) {
 							$filterShipmentStatus = Expedition::STATUS_CLOSED;
 						}
 						$result = $prod->load_stats_sending(0, '1,2', 1, $filterShipmentStatus);
@@ -1321,7 +1321,7 @@ if ($resql || $resql2) {
 					$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur + $stock_sending_client;
 				} else {
 
-					if (empty($conf->global->SOFO_DO_NOT_USE_CUSTOMER_ORDER)) {
+					if (!getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER')) {
 						$stock_commande_client = $objp->qty;
 						$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float)$stock_commande_client;
 					}
@@ -1443,7 +1443,7 @@ if ($resql || $resql2) {
 			}
 
 			if ((empty($prod->type) && $stocktobuy == 0 && GETPOST('show_stock_no_need', 'none') != 'yes')
-				|| ($prod->type == 1 && $stocktobuy == 0 && GETPOST('show_stock_no_need', 'none') != 'yes' && !empty($conf->global->STOCK_SUPPORTS_SERVICES))) {
+				|| ($prod->type == 1 && $stocktobuy == 0 && GETPOST('show_stock_no_need', 'none') != 'yes' && getDolGlobalString('STOCK_SUPPORTS_SERVICES'))) {
 				$i++;
 				continue;
 			}
@@ -1464,7 +1464,7 @@ if ($resql || $resql2) {
 			 */
             $checked = '';
             $disabled = '';
-			if(!empty($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY)) {
+			if(getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY')) {
 				$checked = ($objLineNewQty->qty > 0) ? ' checked' : '';
 				$disabled = ($objLineNewQty->qty == 0) ? 'disabled' : '';
 			}
@@ -1481,7 +1481,7 @@ if ($resql || $resql2) {
 
 			print '<input type="hidden" name="lineid' . $i . '" value="' . $lineid . '" />';
 
-			if (!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
+			if (getDolGlobalString('SUPPORDERFROMORDER_USE_ORDER_DESC')) {
 				print '<input type="hidden" name="desc' . $i . '" value="' . htmlentities($objp->description, ENT_QUOTES) . '" >';
 			}
 			print '</td>';
@@ -1516,7 +1516,7 @@ if ($resql || $resql2) {
 			print '<td>' . (isset($statutarray[$objp->finished]) ? $statutarray[$objp->finished] : '') . '</td>';
 
 
-			if (!empty($conf->categorie->enabled) && !empty($conf->global->SOFO_DISPLAY_CAT_COLUMN)) {
+			if (!empty($conf->categorie->enabled) && getDolGlobalString('SOFO_DISPLAY_CAT_COLUMN')) {
 				print '<td >';
 				$categorie = new Categorie($db);
 				$Tcategories = $categorie->containing($objp->rowid, 'product', 'label');
@@ -1547,9 +1547,9 @@ if ($resql || $resql2) {
 			$champs .= $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : '';
 			$prod->load_stock();
 			$champs .= '<td align="right" >' .
-				$warning . (((!empty($conf->global->STOCK_SUPPORTS_SERVICES) && $prod->type == 1) || empty($prod->type)) ? $prod->stock_theorique : img_picto('', './img/no', '', 1)) . //$stocktobuy
+				$warning . (((getDolGlobalString('STOCK_SUPPORTS_SERVICES') && $prod->type == 1) || empty($prod->type)) ? $prod->stock_theorique : img_picto('', './img/no', '', 1)) . //$stocktobuy
 				'</td>';
-			if (!empty($conf->of->enabled) && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL)) {
+			if (!empty($conf->of->enabled) && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL')) {
 				/*					dol_include_once('/of/lib/of.lib.php');
 									$prod->load_stock();
 									list($qty_to_make, $qty_needed) = _calcQtyOfProductInOf($db, $conf, $prod);
@@ -1566,15 +1566,15 @@ if ($resql || $resql2) {
 					'</td>';
 				//Commandé
 			$champs .= '<td align="right">';
-			$champs .= (empty($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY) ? $ordered : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty));
+			$champs .= (!getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $ordered : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty));
 			$champs .= '</td>';
 
 			$champs .= '</td>' .
 				'<td align="right">' .
 				'<input type="text" name="tobuy' . $i .
-				'" value="' . (empty($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY) ? $stocktobuy : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty)) . '" ' . $disabled . ' size="3"> <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
+				'" value="' . (!getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $stocktobuy : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty)) . '" ' . $disabled . ' size="3"> <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
 
-			if (!empty($conf->global->SOFO_USE_DELIVERY_TIME)) {
+			if (getDolGlobalString('SOFO_USE_DELIVERY_TIME')) {
 
 				$nb_day = (int)getMinAvailability($objp->rowid, $stocktobuy);
 
@@ -1594,7 +1594,7 @@ if ($resql || $resql2) {
 				$TSupplier = $prod->list_suppliers();
 			else $TSupplier = array_intersect($prod->list_suppliers(), $TSupplier);
 
-			if (!empty($conf->of->enabled) && $user->rights->of->of->write && empty($conf->global->SOFO_REMOVE_MAKE_BTN)) {
+			if (!empty($conf->of->enabled) && $user->hasRight('of', 'of', 'write') && !getDolGlobalString('SOFO_REMOVE_MAKE_BTN')) {
 				print '<td><a href="' . dol_buildpath('/of/fiche_of.php', 1) . '?action=new&fk_product=' . $prod->id . '&fk_commande=' . $id . '" class="butAction">'.$langs->trans("Fabriquer").'</a></td>';
 			} else {
 				print '<td>&nbsp</td>';
@@ -1660,7 +1660,7 @@ if ($resql || $resql2) {
 			if ($dolibarr_version35)
 				print '<td align="right">' . $picto . '</td>'; // Desired stock
 			print '<td align="right">' . $picto . '</td>'; // Physical/virtual stock
-			if ($conf->of->enabled && !empty($conf->global->OF_USE_DESTOCKAGE_PARTIEL))
+			if ($conf->of->enabled && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL'))
 				print '<td align="right">' . $picto . '</td>'; // Stock théorique OF
 
 			print '<td align="right">
@@ -1669,7 +1669,7 @@ if ($resql || $resql2) {
 					</td>'; // Ordered
 
 			print '<td align="right">
-						<input type="text" name="price_free' . $i . '" value="' . (empty($conf->global->SOFO_COST_PRICE_AS_BUYING) ? $objp->price : price($objp->buy_price_ht)) . '" size="5" style="text-align:right">€
+						<input type="text" name="price_free' . $i . '" value="' . (!getDolGlobalString('SOFO_COST_PRICE_AS_BUYING') ? $objp->price : price($objp->buy_price_ht)) . '" size="5" style="text-align:right">€
 						' . $form->select_company((empty($socid) ? '' : $socid), 'fourn_free' . $i, 's.fournisseur = 1', 1, 0, 0, array(), 0, 'minwidth100 maxwidth300') . '
 				   </td>'; // Supplier
 			print '<td></td>'; // Action
@@ -1842,7 +1842,7 @@ function _prepareLine($i, $actionTarget = 'order')
 		if (!empty($lineid)) {
 			$commandeline = new OrderLine($db);
 			$commandeline->fetch($lineid);
-			if (empty($desc) && empty($conf->global->SOFO_DONT_ADD_LINEDESC_ON_SUPPLIERORDER_LINE))
+			if (empty($desc) && !getDolGlobalString('SOFO_DONT_ADD_LINEDESC_ON_SUPPLIERORDER_LINE'))
 				$desc = $commandeline->desc;
 			if (empty($commandeline->id) && !empty($commandeline->rowid)) {
 				$commandeline->id = $commandeline->rowid; // Pas positionné par OrderLine::fetch() donc le fetch_optionals() foire...
@@ -1903,7 +1903,7 @@ function _prepareLine($i, $actionTarget = 'order')
 		$fournid = GETPOST('fourn_free' . $i, 'int');
 		$commandeline = new OrderLine($db);
 		$commandeline->fetch($lineid);
-		if (empty($desc) && empty($conf->global->SOFO_DONT_ADD_LINEDESC_ON_SUPPLIERORDER_LINE))
+		if (empty($desc) && !getDolGlobalString('SOFO_DONT_ADD_LINEDESC_ON_SUPPLIERORDER_LINE'))
 			$desc = $commandeline->desc;
 
 		if (empty($commandeline->id) && !empty($commandeline->rowid)) {
@@ -1966,7 +1966,7 @@ function _getSupplierOrderInfos($idsupplier, $projectid = '')
 	$sql .= ' WHERE fk_soc = ' . $idsupplier;
 	$sql .= ' AND fk_statut = 0'; // 0 = DRAFT (Brouillon)
 
-	if (!empty($conf->global->SOFO_DISTINCT_ORDER_BY_PROJECT) && !empty($projectid)) {
+	if (getDolGlobalString('SOFO_DISTINCT_ORDER_BY_PROJECT') && !empty($projectid)) {
 		$sql .= ' AND fk_projet = ' . $projectid;
 	}
 
@@ -1994,7 +1994,7 @@ function _getSupplierProposalInfos($idsupplier, $projectid = '')
 	$sql .= ' WHERE fk_soc = ' . $idsupplier;
 	$sql .= ' AND fk_statut = 0'; // 0 = DRAFT (Brouillon)
 
-	if (!empty($conf->global->SOFO_DISTINCT_ORDER_BY_PROJECT) && !empty($projectid)) {
+	if (getDolGlobalString('SOFO_DISTINCT_ORDER_BY_PROJECT') && !empty($projectid)) {
 		$sql .= ' AND fk_projet = ' . $projectid;
 	}
 
@@ -2031,7 +2031,7 @@ function _appliCond($order, $commandeClient)
 			}
 		}
 
-		if (!empty($conf->global->SOFO_GET_INFOS_FROM_FOURN)) {
+		if (getDolGlobalString('SOFO_GET_INFOS_FROM_FOURN')) {
 			$order->mode_reglement_id = $fourn->mode_reglement_supplier_id;
 			$order->mode_reglement_code = getPaiementCode($order->mode_reglement_id);
 
@@ -2040,15 +2040,15 @@ function _appliCond($order, $commandeClient)
 		}
 	}
 
-	if (!empty($conf->global->SOFO_GET_INFOS_FROM_ORDER)) {
+	if (getDolGlobalString('SOFO_GET_INFOS_FROM_ORDER')) {
 		$order->mode_reglement_code = $commandeClient->mode_reglement_code;
 		$order->mode_reglement_id = $commandeClient->mode_reglement_id;
 		$order->cond_reglement_id = $commandeClient->cond_reglement_id;
 		$order->cond_reglement_code = $commandeClient->cond_reglement_code;
-		$order->date_livraison = $commandeClient->date_livraison;
+		$order->delivery_date = $commandeClient->delivery_date;
 	}
 
-	if (!empty($conf->global->SOFO_GET_EXTRAFIELDS_FROM_ORDER)) {
+	if (getDolGlobalString('SOFO_GET_EXTRAFIELDS_FROM_ORDER')) {
 		require_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
 		$extrafieldsOrderSupplier = new ExtraFields($db);
 		$extrafieldsOrderSupplier->fetch_name_optionals_label($order->table_element);

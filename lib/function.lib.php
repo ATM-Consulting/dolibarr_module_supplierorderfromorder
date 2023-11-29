@@ -25,7 +25,7 @@ function _load_stats_commande_fournisseur($fk_product, $date,$stocktobuy=1,$filt
     $sql.= " AND c.fk_soc = s.rowid";
     $sql.= " AND c.entity = ".$conf->entity;
     $sql.= " AND cd.fk_product = ".$fk_product;
-    $sql.= " AND (c.date_livraison IS NULL OR c.date_livraison<='".$date."') ";
+    $sql.= " AND (c.delivery_date IS NULL OR c.delivery_date <= '".$date."') ";
     if ($filtrestatut != '') $sql.= " AND c.fk_statut in (".$filtrestatut.")";
 
     $result =$db->query($sql);
@@ -52,7 +52,7 @@ function _load_stats_commande_date($fk_product, $date,$filtrestatut='1,2') {
         $sql.= " AND c.fk_soc = s.rowid";
         $sql.= " AND c.entity = ".$conf->entity;
         $sql.= " AND cd.fk_product = ".$fk_product;
-        $sql.= " AND (c.date_livraison IS NULL OR c.date_livraison<='".$date."') ";
+        $sql.= " AND (c.delivery_date IS NULL OR c.delivery_date <='".$date."') ";
         if ($filtrestatut <> '') $sql.= " AND c.fk_statut in (".$filtrestatut.")";
 
         $result =$db->query($sql);
@@ -243,7 +243,7 @@ function getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, $su
 	{
 		// search draft supplier order with same critera
 		$restrictToCustomerOrder=0;
-		if(!empty($conf->global->SOFO_USE_RESTRICTION_TO_CUSTOMER_ORDER)){
+		if(getDolGlobalString('SOFO_USE_RESTRICTION_TO_CUSTOMER_ORDER')){
 			$restrictToCustomerOrder = $line->fk_commande;
 		}
 
@@ -618,7 +618,7 @@ function getUnitLabel($fk_unit, $return = 'code')
 function  sofo_nomenclatureProductDeepCrawl($fk_element, $element, $fk_product,$qty = 1, $deep = 0, $maxDeep = 0){
     global $db,$conf;
 
-    $maxDeepConf = empty($conf->global->NOMENCLATURE_MAX_NESTED_LEVEL) ? 50 : $conf->global->NOMENCLATURE_MAX_NESTED_LEVEL;
+    $maxDeepConf = !getDolGlobalString('NOMENCLATURE_MAX_NESTED_LEVEL') ? 50 : $conf->global->NOMENCLATURE_MAX_NESTED_LEVEL;
     $maxDeep = !empty($maxDeep)?$maxDeep:$maxDeepConf ;
 
     if($deep>$maxDeep){ return array(); }

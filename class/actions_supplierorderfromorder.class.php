@@ -22,7 +22,7 @@ class ActionsSupplierorderfromorder
 	{
 		global $user, $langs, $conf;
 
-		if (in_array( 'ordercard', explode( ':', $parameters['context'] ) ) && $object->statut > 0 && !empty($user->rights->supplierorderfromorder->read)) {
+		if (in_array( 'ordercard', explode( ':', $parameters['context'] ) ) && $object->statut > 0 && $user->hasRight('supplierorderfromorder', 'read')) {
 		  $langs->load( 'supplierorderfromorder@supplierorderfromorder' );
 
 
@@ -30,7 +30,7 @@ class ActionsSupplierorderfromorder
         	?>
 
 			<a id="listeProd" class="butAction" href="<?php
-			if(!empty($conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK) && $conf->global->INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK == 1 )
+			if(getDolGlobalInt('INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK') == 1 )
 			{
 				echo dol_buildpath('/supplierorderfromorder/ordercustomer.php?id=' . $object->id.'&projectid='.$object->fk_project.'&show_stock_no_need=yes',1);
 			}
@@ -61,7 +61,7 @@ class ActionsSupplierorderfromorder
 
 	    if (in_array('ordersuppliercard',explode(':',$parameters['context'])))
 	    {
-	        if( !empty($conf->global->SOFO_DISPLAY_LINKED_ELEMENT_ON_LINES))
+	        if( getDolGlobalString('SOFO_DISPLAY_LINKED_ELEMENT_ON_LINES'))
 	        {
     	        dol_include_once('supplierorderfromorder/lib/function.lib.php');
 
@@ -130,7 +130,7 @@ class ActionsSupplierorderfromorder
 
 	    if (in_array('ordercard',explode(':',$parameters['context'])))
 	    {
-	        if( !empty($conf->global->SOFO_DISPLAY_LINKED_ELEMENT_ON_LINES))
+	        if( getDolGlobalString('SOFO_DISPLAY_LINKED_ELEMENT_ON_LINES'))
 	        {
     	        extract($parameters, EXTR_SKIP);
     	        dol_include_once('supplierorderfromorder/lib/function.lib.php');
