@@ -5,7 +5,8 @@
  *
  * Hook actions
  */
-class ActionsSupplierorderfromorder
+require_once __DIR__.'/../backport/v19/core/class/commonhookactions.class.php';
+class ActionsSupplierorderfromorder extends \supplierorderfromorder\RetroCompatCommonHookActions
 {
 
 	/**

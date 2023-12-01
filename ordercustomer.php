@@ -1813,7 +1813,7 @@ if ($resql || $resql2) {
 <?php
 //Debugbar is making page loading non stop
 if(!empty($user->rights->debugbar)) {
-	$saveRight = $user->rights->debugbar->read;
+	$saveRight = $user->hasRight('debugbar','read');
 	$user->rights->debugbar->read = 0;
 }
 llxFooter();
