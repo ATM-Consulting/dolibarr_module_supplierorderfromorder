@@ -110,7 +110,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 			$sql2 .= ' FROM ' . MAIN_DB_PREFIX . 'commande_fournisseur';
 			$sql2 .= ' WHERE fk_soc = '.$idsupplier;
 			$sql2 .= ' AND fk_statut = 0'; // 0 = DRAFT (Brouillon)
-			if(!empty($conf->global->SOFO_DISTINCT_ORDER_BY_PROJECT) && !empty($projectid)){
+			if(getDolGlobalString('SOFO_DISTINCT_ORDER_BY_PROJECT') && !empty($projectid)){
 				$sql2 .= ' AND fk_projet = '.$projectid;
 			}
 
@@ -154,7 +154,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$order->mode_reglement_id = $commandeClient->mode_reglement_id;
 					$order->cond_reglement_id = $commandeClient->cond_reglement_id;
 					$order->cond_reglement_code = $commandeClient->cond_reglement_code;
-					$order->date_livraison = $commandeClient->date_livraison;
+					$order->delivery_date = $commandeClient->delivery_date;
 				}
 				$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
 				$newCommande = false;
@@ -172,7 +172,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$order->mode_reglement_id = $commandeClient->mode_reglement_id;
 					$order->cond_reglement_id = $commandeClient->cond_reglement_id;
 					$order->cond_reglement_code = $commandeClient->cond_reglement_code;
-					$order->date_livraison = $commandeClient->date_livraison;
+					$order->delivery_date = $commandeClient->delivery_date;
 				}
 
 				$id = $order->create($user);

@@ -85,7 +85,7 @@ function _stockDetails()
 
 	}
 
-	if(empty($conf->global->SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT)) {
+	if(!getDolGlobalString('SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT')) {
 		$sql = "SELECT DISTINCT c.rowid, SUM(cd.qty) as qty"; //cas où on a plusieurs fois le même produit dans la même commande
 		$sql.= " FROM ".MAIN_DB_PREFIX."commandedet as cd";
 		$sql.= ", ".MAIN_DB_PREFIX."commande as c";
@@ -211,10 +211,10 @@ function _stockDetails()
           		}
 	}
     $filterShipmentStatus = Expedition::STATUS_VALIDATED;
-    if(! empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT)) {
+    if(getDolGlobalString('STOCK_CALCULATE_ON_SHIPMENT')) {
         $filterShipmentStatus = Expedition::STATUS_VALIDATED.','.Expedition::STATUS_CLOSED;
     }
-    else if(! empty($conf->global->STOCK_CALCULATE_ON_SHIPMENT_CLOSE)) {
+    else if(getDolGlobalString('STOCK_CALCULATE_ON_SHIPMENT_CLOSE')) {
         $filterShipmentStatus = Expedition::STATUS_CLOSED;
     }
 
