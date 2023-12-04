@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 
+- NEW : compatv19 - *04/12/2023* - 2.7.0  
 
 ## 2.6
 - FIX : remove warning error display - *30/11/2023* - 2.6.7
