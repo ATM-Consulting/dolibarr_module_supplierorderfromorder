@@ -637,7 +637,7 @@ if(GETPOSTISSET('finished', 'none') && !GETPOSTISSET('button_removefilter_x')) {
 	if(GETPOST('finished', 'none') >= 0) {
 		$sql .= ' AND prod.finished = ' . GETPOST('finished', 'none');
 	}
-} elseif( getDolGlobalInt('SOFO_DEFAUT_FILTER') >= 0) {
+} elseif( getDolGlobalInt('SOFO_DEFAUT_FILTER') >= 0 ) {
 	$sql .= ' AND prod.finished = ' . getDolGlobalInt('SOFO_DEFAUT_FILTER' );
 }
 
@@ -1404,8 +1404,7 @@ if ($resql || $resql2) {
 			if (!empty($conf->of->enabled)) {
 
 				/* Si j'ai des OF je veux savoir combien cela me coûte */
-
-				define('INC_FROM_DOLIBARR', true);
+				if ( ! defined('INC_FROM_DOLIBARR')) define('INC_FROM_DOLIBARR', true);
 				dol_include_once('/of/config.php');
 				dol_include_once('/of/class/ordre_fabrication_asset.class.php');
 
