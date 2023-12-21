@@ -638,7 +638,7 @@ if(GETPOSTISSET('finished', 'none') && !GETPOSTISSET('button_removefilter_x')) {
 		$sql .= ' AND prod.finished = ' . GETPOST('finished', 'none');
 	}
 } elseif( getDolGlobalInt('SOFO_DEFAUT_FILTER') >= 0) {
-	$sql .= ' AND prod.finished = ' . getDolGlobalString('SOFO_DEFAUT_FILTER');
+	$sql .= ' AND prod.finished = ' . getDolGlobalInt('SOFO_DEFAUT_FILTER' );
 }
 
 if (!empty($canvas)) {
@@ -1612,71 +1612,74 @@ if ($resql || $resql2) {
 
 	//Lignes libre
 	if (!empty($resql2)) {
-		while ($j < min($num2, $limit)) {
-			$objp = $db->fetch_object($resql2);
-			//var_dump($sql2,$resql2, $objp);
-			if ($objp->product_type == 0)
-				$picto = img_object($langs->trans("ShowProduct"), 'product');
-			if ($objp->product_type == 1)
-				$picto = img_object($langs->trans("ShowService"), 'service');
+		if (isset($j)){
+			while ($j < min($num2, $limit)) {
+				$objp = $db->fetch_object($resql2);
+				//var_dump($sql2,$resql2, $objp);
+				if ($objp->product_type == 0)
+					$picto = img_object($langs->trans("ShowProduct"), 'product');
+				if ($objp->product_type == 1)
+					$picto = img_object($langs->trans("ShowService"), 'service');
 
-			print '<tr ' . $bc[$var] . '>' .
-				'<td><input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '></td>' .
-				'<td>' .
-				$picto . " " . $objp->description .
-				'</td>' .
-				'<td>' . $objp->description;
+				print '<tr ' . $bc[$var] . '>' .
+					'<td><input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '></td>' .
+					'<td>' .
+					$picto . " " . $objp->description .
+					'</td>' .
+					'<td>' . $objp->description;
 
-			$picto = img_picto('', './img/no', '', 1);
+				$picto = img_picto('', './img/no', '', 1);
 
-			//pre($conf->global,1);
-			//if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
-			//var_dump('toto');
-			print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" />';
-			print '<input type="hidden" name="product_type' . $i . '" value="' . $objp->product_type . '" >';
-			//	}
+				//pre($conf->global,1);
+				//if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
+				//var_dump('toto');
+				print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" />';
+				print '<input type="hidden" name="product_type' . $i . '" value="' . $objp->product_type . '" >';
+				//	}
 
-			print '</td>';
+				print '</td>';
 
-			print '<td></td>'; // Nature
-			if (!empty($conf->categorie->enabled))
-				print '<td></td>'; // Categories
+				print '<td></td>'; // Nature
+				if (!empty($conf->categorie->enabled))
+					print '<td></td>'; // Categories
 
-			if (!empty($conf->service->enabled) && $type == 1) {
-				if (preg_match('/([0-9]+)y/i', $objp->duration, $regs)) {
-					$duration = $regs[1] . ' ' . $langs->trans('DurationYear');
-				} elseif (preg_match('/([0-9]+)m/i', $objp->duration, $regs)) {
-					$duration = $regs[1] . ' ' . $langs->trans('DurationMonth');
-				} elseif (preg_match('/([0-9]+)d/i', $objp->duration, $regs)) {
-					$duration = $regs[1] . ' ' . $langs->trans('DurationDay');
-				} else {
-					$duration = $objp->duration;
+				if (!empty($conf->service->enabled) && $type == 1) {
+					if (preg_match('/([0-9]+)y/i', $objp->duration, $regs)) {
+						$duration = $regs[1] . ' ' . $langs->trans('DurationYear');
+					} elseif (preg_match('/([0-9]+)m/i', $objp->duration, $regs)) {
+						$duration = $regs[1] . ' ' . $langs->trans('DurationMonth');
+					} elseif (preg_match('/([0-9]+)d/i', $objp->duration, $regs)) {
+						$duration = $regs[1] . ' ' . $langs->trans('DurationDay');
+					} else {
+						$duration = $objp->duration;
+					}
+					print '<td align="center">' .
+						$duration .
+						'</td>';
 				}
-				print '<td align="center">' .
-					$duration .
-					'</td>';
-			}
 
-			if ($dolibarr_version35)
-				print '<td align="right">' . $picto . '</td>'; // Desired stock
-			print '<td align="right">' . $picto . '</td>'; // Physical/virtual stock
-			if ($conf->of->enabled && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL'))
-				print '<td align="right">' . $picto . '</td>'; // Stock théorique OF
+				if ($dolibarr_version35)
+					print '<td align="right">' . $picto . '</td>'; // Desired stock
+				print '<td align="right">' . $picto . '</td>'; // Physical/virtual stock
+				if ($conf->of->enabled && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL'))
+					print '<td align="right">' . $picto . '</td>'; // Stock théorique OF
 
-			print '<td align="right">
+				print '<td align="right">
 						<input type="text" name="tobuy_free' . $i . '" value="' . $objp->qty . '">
 						<input type="hidden" name="lineid_free' . $i . '" value="' . $objp->rowid . '" >
 					</td>'; // Ordered
 
-			print '<td align="right">
+				print '<td align="right">
 						<input type="text" name="price_free' . $i . '" value="' . (!getDolGlobalString('SOFO_COST_PRICE_AS_BUYING') ? $objp->price : price($objp->buy_price_ht)) . '" size="5" style="text-align:right">€
 						' . $form->select_company((empty($socid) ? '' : $socid), 'fourn_free' . $i, 's.fournisseur = 1', 1, 0, 0, array(), 0, 'minwidth100 maxwidth300') . '
 				   </td>'; // Supplier
-			print '<td></td>'; // Action
-			print '</tr>';
-			$i++;
-			$j++;
+				print '<td></td>'; // Action
+				print '</tr>';
+				$i++;
+				$j++;
+			}
 		}
+
 	}
 
 	// Formatage du tableau
