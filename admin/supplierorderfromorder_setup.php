@@ -443,7 +443,7 @@ if(! empty($conf->categorie->enabled)) {
 	print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'" id="form_SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER">';
 	print '<input type="hidden" name="token" value="'.$newToken.'">';
 	print '<input type="hidden" name="action" value="set_SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER">';
-	print getCatMultiselect("SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER",  unserialize(getDolGlobalString('SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER',array(-1) ) ) );
+	print getCatMultiselect("SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER", getDolGlobalString('SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER') ? unserialize(getDolGlobalString('SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER')) : array(-1));
 	print '<a href="javascript:;" id="clearfilter">Supprimer le filtre</a>';
 	print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
 	print '</form>';
