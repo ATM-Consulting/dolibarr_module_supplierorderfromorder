@@ -311,7 +311,7 @@ function updateOrAddlineToSupplierOrder($CommandeFournisseur, $line, $productid,
 
 	// SEARCH in supplier order if same product exist
 	$supplierLineRowidExist = 0 ;
-	if(!empty($CommandeFournisseur->lines) && $conf->global->SOFO_ADD_QUANTITY_RATHER_THAN_CREATE_LINES)
+	if(!empty($CommandeFournisseur->lines) && getDolGlobalInt('SOFO_ADD_QUANTITY_RATHER_THAN_CREATE_LINES') )
 	{
 		foreach ($CommandeFournisseur->lines as $li => $fournLine)
 		{
@@ -618,7 +618,7 @@ function getUnitLabel($fk_unit, $return = 'code')
 function  sofo_nomenclatureProductDeepCrawl($fk_element, $element, $fk_product,$qty = 1, $deep = 0, $maxDeep = 0){
     global $db,$conf;
 
-    $maxDeepConf = !getDolGlobalString('NOMENCLATURE_MAX_NESTED_LEVEL') ? 50 : $conf->global->NOMENCLATURE_MAX_NESTED_LEVEL;
+    $maxDeepConf = floatval( getDolGlobalString('NOMENCLATURE_MAX_NESTED_LEVEL','50'));
     $maxDeep = !empty($maxDeep)?$maxDeep:$maxDeepConf ;
 
     if($deep>$maxDeep){ return array(); }
