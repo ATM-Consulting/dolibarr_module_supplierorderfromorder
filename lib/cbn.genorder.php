@@ -125,13 +125,13 @@ if ($action == 'order' && isset($_POST['valid'])) {
 			$commandeClient->fetch($_REQUEST['id']);
 
 			// Test recupération contact livraison
-			if($conf->global->SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY)
+			if( getDolGlobalString('SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY'))
 			{
 				$contact_ship = $commandeClient->getIdContact('external', 'SHIPPING');
 				$contact_ship=$contact_ship[0];
 			}else{$contact_ship=null;}
 			//Si une commande au statut brouillon existe déjà et que l'option SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME
-			if($obj && !$conf->global->SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME) {
+			if($obj && empty(getDolGlobalString('SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME')) ) {
 
 				$order = new CommandeFournisseur($db);
 				$order->fetch($obj->rowid);
@@ -149,7 +149,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 					$order->add_object_linked('commande', $_REQUEST['id']);
 
 				//}
-				if($conf->global->SOFO_GET_INFOS_FROM_ORDER){
+				if( getDolGlobalString('SOFO_GET_INFOS_FROM_ORDER')){
 					$order->mode_reglement_code = $commandeClient->mode_reglement_code;
 					$order->mode_reglement_id = $commandeClient->mode_reglement_id;
 					$order->cond_reglement_id = $commandeClient->cond_reglement_id;
@@ -167,7 +167,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				if(!empty($projectid)){
 					$order->fk_project = $projectid;
 				}
-				if($conf->global->SOFO_GET_INFOS_FROM_ORDER){
+				if( getDolGlobalString('SOFO_GET_INFOS_FROM_ORDER')){
 					$order->mode_reglement_code = $commandeClient->mode_reglement_code;
 					$order->mode_reglement_id = $commandeClient->mode_reglement_id;
 					$order->cond_reglement_id = $commandeClient->cond_reglement_id;
@@ -176,7 +176,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 				}
 
 				$id = $order->create($user);
-				if($contact_ship && $conf->global->SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY) $order->add_contact($contact_ship, 'SHIPPING');
+				if($contact_ship && getDolGlobalString('SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY')) $order->add_contact($contact_ship, 'SHIPPING');
 				$order->add_object_linked('commande', $_REQUEST['id']);
 				$newCommande = true;
 
@@ -266,7 +266,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
                 setEventMessage($msg, 'errors');
             }else{
             	// CODE de redirection s'il y a un seul fournisseur (évite de le laisser sur la page sans comprendre)
-            	if($conf->global->SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER)
+            	if(getDolGlobalString('SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER'))
 				{
 	            	if(count($suppliersid) == 1)
 					{

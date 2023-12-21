@@ -166,7 +166,7 @@ $sql .= ' AND p.tobuy = 1';
 
 $finished = GETPOST('finished', 'none');
 if($finished != '' && $finished != '-1') $sql .= ' AND p.finished = '.$finished;
-elseif(!isset($_REQUEST['button_search_x']) && isset($conf->global->SOFO_DEFAUT_FILTER) && getDolGlobalInt('SOFO_DEFAUT_FILTER') >= 0) $sql .= ' AND p.finished = ' . getDolGlobalString('SOFO_DEFAUT_FILTER');
+elseif(!isset($_REQUEST['button_search_x']) && getDolGlobalInt('SOFO_DEFAUT_FILTER') >= 0) $sql .= ' AND p.finished = ' . getDolGlobalString('SOFO_DEFAUT_FILTER');
 
 if (!empty($canvas)) {
     $sql .= ' AND p.canvas = "' . $db->escape($canvas) . '"';
@@ -189,7 +189,7 @@ if ($salert == 'on') {
 
 $sql2 = '';
 //On prend les lignes libre
-if($_REQUEST['id'] && $conf->global->SOFO_ADD_FREE_LINES){
+if($_REQUEST['id'] && getDolGlobalInt('SOFO_ADD_FREE_LINES')){
 	$sql2 .= 'SELECT cd.rowid, cd.description, cd.qty as qty, cd.product_type, cd.price, cd.buy_price_ht
 			 FROM '.MAIN_DB_PREFIX.'commandedet as cd
 			 	LEFT JOIN '.MAIN_DB_PREFIX.'commande as c ON (cd.fk_commande = c.rowid)
@@ -200,7 +200,7 @@ if($_REQUEST['id'] && $conf->global->SOFO_ADD_FREE_LINES){
 	//echo $sql2;
 }
 $sql .= $db->order($sortfield,$sortorder);
-if(!$conf->global->SOFO_USE_DELIVERY_TIME) $sql .= $db->plimit($limit + 1, $offset);
+if(!getDolGlobalInt('SOFO_USE_DELIVERY_TIME') ) $sql .= $db->plimit($limit + 1, $offset);
 $resql = $db->query($sql);
 
 if(isset($_REQUEST['DEBUG']) || $resql===false) {print $sql; var_dump($db);exit;}
@@ -239,7 +239,7 @@ if ($resql || $resql2) {
         $filters .= '&sall=' . $sall;
         $filters .= '&salert=' . $salert;
 
-		if(!$conf->global->SOFO_USE_DELIVERY_TIME ) {
+		if(!getDolGlobalInt('SOFO_USE_DELIVERY_TIME')) {
 
 			 print_barre_liste(
 	        		$texte,
@@ -260,7 +260,7 @@ if ($resql || $resql2) {
         $filters .= (isset($type)?'&type=' . $type:'');
         $filters .=  '&salert=' . $salert;
 
-        if(!$conf->global->SOFO_USE_DELIVERY_TIME ) {
+		if(!getDolGlobalInt('SOFO_USE_DELIVERY_TIME') ) {
 
         print_barre_liste(
         		$texte,
@@ -290,7 +290,7 @@ if ($resql || $resql2) {
          '<div style="text-align:right"><a href="'.$_SERVER["PHP_SELF"].'?'.$_SERVER["QUERY_STRING"].'&show_stock_no_need=yes">'.$langs->trans('ShowLineEvenIfStockIsSuffisant').'</a></div>'.
          '<table class="liste" width="100%">';
 
-    if($conf->global->SOFO_USE_DELIVERY_TIME) {
+	if(!getDolGlobalInt('SOFO_USE_DELIVERY_TIME') ){
             $week_to_replenish = (int)GETPOST('week_to_replenish','int');
 
             $colspan = !getDolGlobalString('FOURN_PRODUCT_AVAILABILITY') ? 7 : 8;
@@ -371,7 +371,7 @@ if ($resql || $resql2) {
 	    );
 	}
 
-    if ($conf->global->USE_VIRTUAL_STOCK)
+    if ( getDolGlobalInt('USE_VIRTUAL_STOCK'))
     {
         $stocklabel = $langs->trans('VirtualStock');
     }
@@ -459,7 +459,7 @@ if ($resql || $resql2) {
     }
 
 	$liste_titre = "";
-	$liste_titre.= '<td class="liste_titre">'.$form->selectarray('finished',$statutarray,(!isset($_REQUEST['button_search_x']) && $conf->global->SOFO_DEFAUT_FILTER != -1) ? $conf->global->SOFO_DEFAUT_FILTER : GETPOST('finished', 'none'),1).'</td>';
+	$liste_titre.= '<td class="liste_titre">'.$form->selectarray('finished',$statutarray,(!isset($_REQUEST['button_search_x']) && getDolGlobalString('SOFO_DEFAUT_FILTER') != -1) ? getDolGlobalString('SOFO_DEFAUT_FILTER') : GETPOST('finished', 'none'),1).'</td>';
     $liste_titre.= $dolibarr_version35 ? '<td class="liste_titre">&nbsp;</td>' : '';
     $liste_titre.= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>';
 
@@ -470,7 +470,7 @@ if ($resql || $resql2) {
 
     $liste_titre.= '<td class="liste_titre" align="right">&nbsp;</td>'.
          '<td class="liste_titre">&nbsp;</td>'.
-         '<td class="liste_titre" '.($conf->global->SOFO_USE_DELIVERY_TIME ? 'colspan="2"' : '').'>&nbsp;</td>'.
+         '<td class="liste_titre" '.(getDolGlobalInt('SOFO_USE_DELIVERY_TIME') ? 'colspan="2"' : '').'>&nbsp;</td>'.
          '<td class="liste_titre" align="right">'.
          '<input type="image" class="liste_titre" name="button_search"'.
          'src="' . DOL_URL_ROOT . '/theme/' . $conf->theme . '/img/search.png" alt="' . $langs->trans("Search") . '">'.
@@ -485,7 +485,7 @@ if ($resql || $resql2) {
 
     $var = True;
 
-	if($conf->global->SOFO_USE_DELIVERY_TIME) {
+	if(getDolGlobalInt('SOFO_USE_DELIVERY_TIME')) {
 		$form->load_cache_availability();
 		$limit = 999999;
 	}
@@ -494,7 +494,7 @@ if ($resql || $resql2) {
     	$objp = $db->fetch_object($resql);
 //if($objp->rowid == 4666) { var_dump($objp); }
 
-        if ($conf->global->STOCK_SUPPORTS_SERVICES
+        if ( getDolGlobalInt('STOCK_SUPPORTS_SERVICES')
            || $objp->fk_product_type == 0) {
             // Multilangs
             if (getDolGlobalString('MAIN_MULTILANGS')) {
@@ -542,10 +542,10 @@ if ($resql || $resql2) {
 
     				$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
                 }
-    			else if ($conf->global->USE_VIRTUAL_STOCK || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
+    			else if (getDolGlobalInt('USE_VIRTUAL_STOCK')  || getDolGlobalString('SOFO_USE_VIRTUAL_ORDER_STOCK') ) {
                     //compute virtual stockshow_stock_no_need
                     $prod->fetch($prod->id);
-    				if((!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK)
+    				if(( !(getDolGlobalString('STOCK_CALCULATE_ON_VALIDATE_ORDER')) || getDolGlobalInt('SOFO_USE_VIRTUAL_ORDER_STOCK'))
                             && !getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER')) {
     	                $result=$prod->load_stats_commande(0, '1,2');
     	                if ($result < 0) {
@@ -557,7 +557,7 @@ if ($resql || $resql2) {
     					$stock_commande_client = 0;
     				}
 
-    				if(!$conf->global->STOCK_CALCULATE_ON_SUPPLIER_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
+    				if(!getDolGlobalString('STOCK_CALCULATE_ON_SUPPLIER_VALIDATE_ORDER') || getDolGlobalInt('SOFO_USE_VIRTUAL_ORDER_STOCK') ) {
     	                $result=$prod->load_stats_commande_fournisseur(0, '3,4');
     	                if ($result < 0) {
     	                    dol_print_error($db,$prod->error);
@@ -776,7 +776,7 @@ if ($resql || $resql2) {
                  '" value="' . $stocktobuy . '" ' . $disabled . ' size="4">
                  <span class="stock_details" prod-id="'.$prod->id.'" week-to-replenish="'.$week_to_replenish.'">'.img_help(1, $help_stock).'</span></td>';
 
-				 if($conf->global->SOFO_USE_DELIVERY_TIME) {
+				 if(getDolUserInt('SOFO_USE_DELIVERY_TIME')) {
 
 					$nb_day = (int)getMinAvailability($objp->rowid,$stocktobuy);
 

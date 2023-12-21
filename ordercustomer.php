@@ -83,7 +83,7 @@ $sortorder = GETPOST('sortorder', 'alpha');
 $page = GETPOST('page', 'int');
 $page = intval($page);
 $selectedSupplier = GETPOST('useSameSupplier', 'int');
-$group_lines_by_product = GETPOSTISSET('group_lines_by_product', 'int') ? GETPOST('group_lines_by_product', 'int') : (isset($conf->global->SOFO_GROUP_LINES_BY_PRODUCT) ? $conf->global->SOFO_GROUP_LINES_BY_PRODUCT : 0);
+$group_lines_by_product = GETPOSTISSET('group_lines_by_product', 'int') ? GETPOST('group_lines_by_product', 'int') : ( getDolGlobalInt('SOFO_GROUP_LINES_BY_PRODUCT') );
 
 $id = GETPOST('id','int');
 $origin_page = 'ordercustomer';
@@ -106,7 +106,7 @@ $TCategories = array();
 if (!empty($conf->categorie->enabled)) {
 
 	if (!isset($_REQUEST['categorie']) && getDolGlobalString('SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER')) {
-		$TCategories = unserialize($conf->global->SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER);
+		$TCategories = unserialize(getDolGlobalString('SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER') );
 	} else {
 		$categories = GETPOST('categorie', 'none');
 
@@ -262,7 +262,7 @@ if(empty($reshook))
 					_appliCond($order, $commandeClient);
 
 					$id = $order->create($user);
-					if ($contact_ship && $conf->global->SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY)
+					if ($contact_ship && getDolGlobalString('SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY'))
 						$order->add_contact($contact_ship, 'SHIPPING');
 					$order->add_object_linked('commande', GETPOST('id','int'));
 					$newCommande = true;
@@ -637,7 +637,7 @@ if(GETPOSTISSET('finished', 'none') && !GETPOSTISSET('button_removefilter_x')) {
 	if(GETPOST('finished', 'none') >= 0) {
 		$sql .= ' AND prod.finished = ' . GETPOST('finished', 'none');
 	}
-} elseif(isset($conf->global->SOFO_DEFAUT_FILTER) && getDolGlobalInt('SOFO_DEFAUT_FILTER') >= 0) {
+} elseif( getDolGlobalInt('SOFO_DEFAUT_FILTER') >= 0) {
 	$sql .= ' AND prod.finished = ' . getDolGlobalString('SOFO_DEFAUT_FILTER');
 }
 
@@ -832,7 +832,7 @@ if ($resql || $resql2) {
 		$filters .= '&sall=' . $sall;
 		$filters .= '&salert=' . $salert;
 
-		if (!$conf->global->SOFO_USE_DELIVERY_TIME) {
+		if (!getDolGlobalInt('SOFO_USE_DELIVERY_TIME') ) {
 
 			print_barre_liste(
 				$title,
@@ -1141,7 +1141,7 @@ if ($resql || $resql2) {
 	}
 
 	$liste_titre = "";
-	$liste_titre .= '<td class="liste_titre">' . $form->selectarray('finished', $statutarray, (!GETPOSTISSET('button_removefilter_x') && GETPOSTISSET('finished', 'none')) ? GETPOST('finished', 'none') : (isset($conf->global->SOFO_DEFAUT_FILTER) ? $conf->global->SOFO_DEFAUT_FILTER : 0), 1) . '</td>';
+	$liste_titre .= '<td class="liste_titre">' . $form->selectarray('finished', $statutarray, (!GETPOSTISSET('button_removefilter_x') && GETPOSTISSET('finished', 'none')) ? GETPOST('finished', 'none') :  getDolGlobalInt('SOFO_DEFAUT_FILTER'), 1) . '</td>';
 
 	if (!empty($conf->categorie->enabled) && getDolGlobalString('SOFO_DISPLAY_CAT_COLUMN')) {
 		$liste_titre .= '<td class="liste_titre">';
@@ -1267,9 +1267,9 @@ if ($resql || $resql2) {
 						$stock_commande_client = 0;
 					}
 
-					if (!$conf->global->STOCK_CALCULATE_ON_SUPPLIER_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
+					if (!getDolGlobalString('STOCK_CALCULATE_ON_SUPPLIER_VALIDATE_ORDER' )  || getDolGlobalInt('SOFO_USE_VIRTUAL_ORDER_STOCK') ) {
 						if (getDolGlobalString('SUPPLIER_ORDER_STATUS_FOR_VIRTUAL_STOCK')){
-							$result=$prod->load_stats_commande_fournisseur(0, $conf->global->SUPPLIER_ORDER_STATUS_FOR_VIRTUAL_STOCK, 1);
+							$result=$prod->load_stats_commande_fournisseur(0, getDolGlobalInt('SUPPLIER_ORDER_STATUS_FOR_VIRTUAL_STOCK', 1) ) ;
 						} else {
 							$result=$prod->load_stats_commande_fournisseur(0, '1,2,3,4', 1);
 						}
@@ -1422,7 +1422,7 @@ if ($resql || $resql2) {
 
 				$stocktobuy += $stock_of_needed - $stock_of_tomake;
 
-				if (!$conf->global->STOCK_CALCULATE_ON_VALIDATE_ORDER || $conf->global->SOFO_USE_VIRTUAL_ORDER_STOCK) {
+				if (!getDolGlobalString('STOCK_CALCULATE_ON_VALIDATE_ORDER') || getDolGlobalInt('SOFO_USE_VIRTUAL_ORDER_STOCK' ) ) {
 					$stock -= $stock_of_needed - $stock_of_tomake;
 				}
 
@@ -1719,7 +1719,7 @@ if ($resql || $resql2) {
 	print ' <script type="text/javascript">';
 
 
-	if ($conf->global->SOFO_USE_DELIVERY_TIME) {
+	if (getDolGlobalInt('SOFO_USE_DELIVERY_TIME') ) {
 
 		print '
 	$( document ).ready(function() {

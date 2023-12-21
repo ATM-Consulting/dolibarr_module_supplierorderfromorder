@@ -85,7 +85,7 @@ if (empty($reshook))
 	{
 
 
-	    $saveconf_SUPPLIER_ORDER_WITH_NOPRICEDEFINED = getDolGlobalString('SUPPLIER_ORDER_WITH_NOPRICEDEFINED')?$conf->global->SUPPLIER_ORDER_WITH_NOPRICEDEFINED:0 ;
+	    $saveconf_SUPPLIER_ORDER_WITH_NOPRICEDEFINED = floatval(getDolGlobalString('SUPPLIER_ORDER_WITH_NOPRICEDEFINED','0')) ;
 	    $conf->global->SUPPLIER_ORDER_WITH_NOPRICEDEFINED = 1;
 	    $error = 0;
 
