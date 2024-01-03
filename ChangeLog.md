@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 2.7
+- NEW : It's now possible to import private and public notes from an order. 
 
 
 ## 2.6
