@@ -2,10 +2,6 @@
 
 ## [Unreleased]
 
-## 2.7
-- NEW : It's now possible to import private and public notes from an order. 
-
-
 ## 2.6
 - FIX : remove warning error display - *30/11/2023* - 2.6.7
 - FIX : remove overwritting initial orderline product in cmdfourn create - *05/10/2023* - 2.6.6  
