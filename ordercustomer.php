@@ -263,12 +263,12 @@ if(empty($reshook))
 
 					$id = $order->create($user);
 
-					if (getDolGlobalString('SUPPLIERORDER_FROM_ORDER_NOTES_PUBLIC')){
+					if (getDolGlobalInt('SUPPLIERORDER_FROM_ORDER_NOTES_PUBLIC')){
 						$publicNote = $commandeClient->note_public;
 						$order->update_note($publicNote,'_public');
 					}
 
-					if (getDolGlobalString('SUPPLIERORDER_FROM_ORDER_NOTES_PRIVATE')){
+					if (getDolGlobalInt('SUPPLIERORDER_FROM_ORDER_NOTES_PRIVATE')){
 						$privateNote = $commandeClient->note_private;
 						$order->update_note($privateNote,'_private');
 					}
