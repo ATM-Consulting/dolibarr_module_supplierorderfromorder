@@ -263,12 +263,15 @@ if(empty($reshook))
 
 					$id = $order->create($user);
 
-                    if (getDolGlobalString('SUPPLIERORDER_FROM_ORDER_NOTES')){
-                        $privateNote = $commandeClient->note_private;
-                        $publiNote = $commandeClient->note_public;
-                        $order->update_note($privateNote,'_private');
-                        $order->update_note($publiNote,'_public');
-                    }
+					if (getDolGlobalString('SUPPLIERORDER_FROM_ORDER_NOTES_PUBLIC')){
+						$publicNote = $commandeClient->note_public;
+						$order->update_note($publicNote,'_public');
+					}
+
+					if (getDolGlobalString('SUPPLIERORDER_FROM_ORDER_NOTES_PRIVATE')){
+						$privateNote = $commandeClient->note_private;
+						$order->update_note($privateNote,'_private');
+					}
 				
 
 					if ($contact_ship && getDolGlobalString('SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY'))
