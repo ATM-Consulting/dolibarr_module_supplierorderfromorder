@@ -204,6 +204,19 @@ print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">'
 print '</form>';
 print '</td></tr>';
 
+// Import Notes in supplier order
+$var=!$var;
+print '<tr '.$bc[$var].'>';
+print '<td>'.$langs->trans("SUPPLIERORDER_FROM_ORDER_NOTES").'</td>';
+print '<td align="center" width="20">&nbsp;</td>';
+print '<td align="right" width="300">';
+print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+print '<input type="hidden" name="token" value="'.$newToken.'">';
+print '<input type="hidden" name="action" value="set_SUPPLIERORDER_FROM_ORDER_NOTES">';
+print $form->selectyesno("SUPPLIERORDER_FROM_ORDER_NOTES",!empty($conf->global->SUPPLIERORDER_FROM_ORDER_NOTES)?$conf->global->SUPPLIERORDER_FROM_ORDER_NOTES:'',1);
+print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
+print '</form>';
+print '</td></tr>';
 
 // Header to supplier order if only one supplier reported
 $var=!$var;

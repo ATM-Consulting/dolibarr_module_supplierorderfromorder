@@ -262,6 +262,15 @@ if(empty($reshook))
 					_appliCond($order, $commandeClient);
 
 					$id = $order->create($user);
+
+                    if (getDolGlobalString('SUPPLIERORDER_FROM_ORDER_NOTES')){
+                        $privateNote = $commandeClient->note_private;
+                        $publiNote = $commandeClient->note_public;
+                        $order->update_note($privateNote,'_private');
+                        $order->update_note($publiNote,'_public');
+                    }
+				
+
 					if ($contact_ship && getDolGlobalString('SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY'))
 						$order->add_contact($contact_ship, 'SHIPPING');
 					$order->add_object_linked('commande', GETPOST('id','int'));
