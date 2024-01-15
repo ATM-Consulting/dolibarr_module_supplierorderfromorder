@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-
+- NEW : Options to import notes on orders - *15/01/2024* - 2.8.0
 
 ## RELEASES 2.7
 
