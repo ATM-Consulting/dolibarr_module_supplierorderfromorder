@@ -1358,7 +1358,7 @@ if ($resql || $resql2) {
 
 
 			$warning = '';
-			if ($objp->seuil_stock_alerte
+			if (!empty($objp->seuil_stock_alerte)
 				&& ($stock < $objp->seuil_stock_alerte)) {
 				$warning = img_warning($langs->trans('StockTooLow')) . ' ';
 			}
@@ -1476,8 +1476,8 @@ if ($resql || $resql2) {
             $checked = '';
             $disabled = '';
 			if(getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY')) {
-				$checked = ($objLineNewQty->qty > 0) ? ' checked' : '';
-				$disabled = ($objLineNewQty->qty == 0) ? 'disabled' : '';
+				$checked = (!empty($objLineNewQty->qty) && $objLineNewQty->qty > 0) ? ' checked' : '';
+				$disabled = (!empty($objLineNewQty->qty) && $objLineNewQty->qty == 0) ? 'disabled' : '';
 			}
 
 			print '<tr ' . $bc[$var] . ' data-productid="' . $objp->rowid . '"  data-i="' . $i . '"   >
@@ -1486,7 +1486,7 @@ if ($resql || $resql2) {
 
 			$lineid = '';
 
-			if (strpos($objp->lineid, '@') === false) { // Une seule ligne d'origine
+			if (!empty($objp->lineid) && strpos($objp->lineid, '@') === false) { // Une seule ligne d'origine
 				$lineid = $objp->lineid;
 			}
 
@@ -1514,7 +1514,7 @@ if ($resql || $resql2) {
 			print '</td>';
 
 			// on check si une cmd fourn existe pour ce produit et on affiche la ref avec link
-			$TcurrentCmdFourn =   TSOFO::getCmdFournFromCmdCustomer($objp->lineid, $objp->rowid);
+			$TcurrentCmdFourn =   TSOFO::getCmdFournFromCmdCustomer($objp->lineid ?? null, $objp->rowid);
 			$r = '';
 
 			if (!empty($TcurrentCmdFourn)) {
@@ -1573,17 +1573,17 @@ if ($resql || $resql2) {
 
 			// déjà present
 				$champs .= '<td align="right">' .
-					$objLineNewQty->oldQty .
+                    ($objLineNewQty->oldQty ?? '').
 					'</td>';
 				//Commandé
 			$champs .= '<td align="right">';
-			$champs .= (!getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $ordered : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty));
+			$champs .= (!getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $ordered : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty ?? 0));
 			$champs .= '</td>';
 
 			$champs .= '</td>' .
 				'<td align="right">' .
 				'<input type="text" name="tobuy' . $i .
-				'" value="' . (!getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $stocktobuy : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty)) . '" ' . $disabled . ' size="3"> <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
+				'" value="' . (!getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $stocktobuy : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty ?? 0)) . '" ' . $disabled . ' size="3"> <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
 
 			if (getDolGlobalString('SOFO_USE_DELIVERY_TIME')) {
 
@@ -1594,7 +1594,7 @@ if ($resql || $resql2) {
 			}
 
 
-			$selectedPrice = $objp->buy_price_ht > 0 ? $objp->buy_price_ht : 0;
+			$selectedPrice = !empty($objp->buy_price_ht) && $objp->buy_price_ht > 0 ? $objp->buy_price_ht : 0;
 
 			$champs .= '<td align="right" data-info="fourn-price" >' .
 				TSOFO::select_product_fourn_price($prod->id, 'fourn' . $i, $selectedSupplier, $selectedPrice) .

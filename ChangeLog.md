@@ -6,6 +6,7 @@
 
 ## RELEASES 2.7
 
+- FIX : warnings - *29/02/2024* - 2.7.1  
 - NEW : compatv19 - *04/12/2023* - 2.7.0  
 
 ## RELEASES 2.6
