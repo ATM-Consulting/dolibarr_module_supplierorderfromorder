@@ -637,7 +637,7 @@ if(GETPOSTISSET('finished', 'none') && !GETPOSTISSET('button_removefilter_x')) {
 	if(GETPOST('finished', 'none') >= 0) {
 		$sql .= ' AND prod.finished = ' . GETPOST('finished', 'none');
 	}
-} elseif( getDolGlobalInt('SOFO_DEFAUT_FILTER') >= 0 ) {
+} elseif(isset($conf->global->SOFO_DEFAUT_FILTER) && getDolGlobalInt('SOFO_DEFAUT_FILTER') >= 0 ) {
 	$sql .= ' AND prod.finished = ' . getDolGlobalInt('SOFO_DEFAUT_FILTER' );
 }
 
