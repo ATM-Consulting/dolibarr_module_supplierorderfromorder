@@ -1,8 +1,10 @@
 <?php
 
-if(is_file(__DIR__.'../main.inc.php')) $dir = '../';
-else  if(is_file(__DIR__.'../../../main.inc.php')) $dir = '../../../';
-else $dir = __DIR__.'../../';
+if(is_file('../main.inc.php'))$dir = '../';
+else  if(is_file('../../../main.inc.php'))$dir = '../../../';
+else  if(is_file('../../../../main.inc.php'))$dir = '../../../../';
+else  if(is_file('../../../../../main.inc.php'))$dir = '../../../../../';
+else $dir = '../../';
 
 if(!defined('INC_FROM_DOLIBARR') && defined('INC_FROM_CRON_SCRIPT')) {
 	include($dir."master.inc.php");
