@@ -27,7 +27,7 @@ class ActionsSupplierorderfromorder extends \supplierorderfromorder\RetroCompatC
 		  $langs->load( 'supplierorderfromorder@supplierorderfromorder' );
 
 
-		if ($action != 'presend') {
+		if ($action != 'presend' && isModEnabled('supplier_order')) {
         	?>
 
 			<a id="listeProd" class="butAction" href="<?php
