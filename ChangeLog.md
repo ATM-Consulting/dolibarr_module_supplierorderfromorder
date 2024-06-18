@@ -5,7 +5,7 @@
 - NEW : Options to import notes on orders - *15/01/2024* - 2.8.0
 
 ## RELEASES 2.7
-
+- FIX : DA025148 - Correction chemin vers main.inc et verif que les commandes fournisseurs soient activées - *29/05/2024* - 2.7.3
 - FIX : DA024990 - Suppression de isfile inutiles - *29/05/2024* - 2.7.2
 - FIX : warnings - *29/02/2024* - 2.7.1  
 - NEW : compatv19 - *04/12/2023* - 2.7.0  
