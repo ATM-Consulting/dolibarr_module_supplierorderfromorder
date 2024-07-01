@@ -518,7 +518,7 @@ if(empty($reshook))
 			}
 			$mess = "";
 			// FIXME: declare $ajoutes somewhere. It's unclear if it should be reinitialized or not in the interlocking loops.
-			if ($ajoutes) {
+			if (!empty($ajoutes)) {
 				foreach ($ajoutes as $nomFournisseur => $nomProd) {
 
 					if ($actionTarget == 'propal') {
@@ -1278,13 +1278,13 @@ if ($resql || $resql2) {
 						}
 
 						//Requête qui récupère la somme des qty ventilés pour les cmd reçu partiellement
-						$sqlQ = "SELECT SUM(cfd.qty) as qty";
-						$sqlQ .= " FROM " . MAIN_DB_PREFIX . "commande_fournisseur_dispatch as cfd";
-						$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = cfd.fk_commande) AND cf.entity IN (".getEntity('commande_fournisseur').")";
-						$sqlQ .= " LEFT JOIN " . MAIN_DB_PREFIX . 'entrepot as e ON cfd.fk_entrepot = e.rowid AND e.entity IN (' . $entityToTest . ')';
+						$sqlQ = "SELECT SUM(rec.qty) as qty";
+						$sqlQ .= " FROM " . MAIN_DB_PREFIX . "receptiondet_batch as rec";
+						$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = rec.fk_commande) AND cf.entity IN (".getEntity('commande_fournisseur').")";
+						$sqlQ .= " LEFT JOIN " . MAIN_DB_PREFIX . 'entrepot as e ON rec.fk_entrepot = e.rowid AND e.entity IN (' . $entityToTest . ')';
 						$sqlQ .= " WHERE cf.fk_statut = 4";
-						$sqlQ .= " AND cfd.fk_product = " . $prod->id;
-						$sqlQ .= " ORDER BY cfd.rowid ASC";
+						$sqlQ .= " AND rec.fk_product = " . $prod->id;
+						$sqlQ .= " ORDER BY rec.rowid ASC";
 						$resqlQ = $db->query($sqlQ);
 
 						$stock_commande_fournisseur = $prod->stats_commande_fournisseur['qty'];
@@ -1481,7 +1481,7 @@ if ($resql || $resql2) {
 			print '<input type="hidden" name="lineid' . $i . '" value="' . $lineid . '" />';
 
 			if (getDolGlobalString('SUPPORDERFROMORDER_USE_ORDER_DESC')) {
-				print '<input type="hidden" name="desc' . $i . '" value="' . htmlentities($objp->description, ENT_QUOTES) . '" >';
+				print '<input type="hidden" name="desc' . $i . '" value="' . htmlentities($objp->description ?? '', ENT_QUOTES) . '" >';
 			}
 			print '</td>';
 
