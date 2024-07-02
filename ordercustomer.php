@@ -41,7 +41,7 @@ dol_include_once('/supplierorderfromorder/lib/function.lib.php');
 dol_include_once("/commande/class/commande.class.php");
 dol_include_once("/supplier_proposal/class/supplier_proposal.class.php");
 dol_include_once('/suppplierorderfromorder/class/sofo.class.php');
-if (!empty($conf->categorie->enabled)) {
+if (isModEnabled('categorie')) {
 	dol_include_once('/categories/class/categorie.class.php');
 }
 global $bc, $conf, $db, $langs, $user;
@@ -103,7 +103,7 @@ $offset = $limit * $page;
 
 $TCategories = array();
 
-if (!empty($conf->categorie->enabled)) {
+if (isModEnabled('categorie')) {
 
 	if (!isset($_REQUEST['categorie']) && getDolGlobalString('SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER')) {
 		$TCategories = unserialize(getDolGlobalString('SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER') );
@@ -272,7 +272,7 @@ if(empty($reshook))
 						$privateNote = $commandeClient->note_private;
 						$order->update_note($privateNote,'_private');
 					}
-				
+
 
 					if ($contact_ship && getDolGlobalString('SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY'))
 						$order->add_contact($contact_ship, 'SHIPPING');
@@ -530,7 +530,7 @@ if(empty($reshook))
 			}
 			$mess = "";
 			// FIXME: declare $ajoutes somewhere. It's unclear if it should be reinitialized or not in the interlocking loops.
-			if ($ajoutes) {
+			if (!empty($ajoutes)) {
 				foreach ($ajoutes as $nomFournisseur => $nomProd) {
 
 					if ($actionTarget == 'propal') {
@@ -649,7 +649,7 @@ if(GETPOSTISSET('finished', 'none') && !GETPOSTISSET('button_removefilter_x')) {
 	if(GETPOST('finished', 'none') >= 0) {
 		$sql .= ' AND prod.finished = ' . GETPOST('finished', 'none');
 	}
-} elseif(isset($conf->global->SOFO_DEFAUT_FILTER) && getDolGlobalInt('SOFO_DEFAUT_FILTER') >= 0 ) {
+} elseif(getDolGlobalString('SOFO_DEFAUT_FILTER') && getDolGlobalInt('SOFO_DEFAUT_FILTER') >= 0 ) {
 	$sql .= ' AND prod.finished = ' . getDolGlobalInt('SOFO_DEFAUT_FILTER' );
 }
 
@@ -920,16 +920,16 @@ if ($resql || $resql2) {
 	$colspan = 9;
 	if (getDolGlobalString('FOURN_PRODUCT_AVAILABILITY'))
 		$colspan++;
-	if (!empty($conf->of->enabled) && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL')) {
+	if (isModEnabled('of') && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL')) {
 		$colspan++;
 	}
 	if (getDolGlobalString('SOFO_USE_DELIVERY_TIME')) {
 		$colspan++;
 	}
-	if (!empty($conf->categorie->enabled) && getDolGlobalString('SOFO_DISPLAY_CAT_COLUMN')) {
+	if (isModEnabled('categorie') && getDolGlobalString('SOFO_DISPLAY_CAT_COLUMN')) {
 		$colspan++;
 	}
-	if (!empty($conf->service->enabled) && $type == 1) {
+	if (isModEnabled('service') && $type == 1) {
 		$colspan++;
 	}
 	if ($dolibarr_version35) {
@@ -954,7 +954,7 @@ if ($resql || $resql2) {
 
 	}
 
-	if (!empty($conf->categorie->enabled)) {
+	if (isModEnabled('categorie')) {
 		print '<tr class="liste_titre_filter">';
 		print '<td colspan="2" >';
 		print $langs->trans("Categories");
@@ -1015,7 +1015,7 @@ if ($resql || $resql2) {
 		$sortfield,
 		$sortorder
 	);
-	if (!empty($conf->categorie->enabled) && getDolGlobalString('SOFO_DISPLAY_CAT_COLUMN')) {
+	if (isModEnabled('categorie') && getDolGlobalString('SOFO_DISPLAY_CAT_COLUMN')) {
 		print_liste_field_titre(
 			$langs->trans("Categories"),
 			'ordercustomer.php',
@@ -1027,7 +1027,7 @@ if ($resql || $resql2) {
 			$sortorder
 		);
 	}
-	if (!empty($conf->service->enabled) && $type == 1) {
+	if (isModEnabled('service') && $type == 1) {
 		print_liste_field_titre(
 			$langs->trans('Duration'),
 			'ordercustomer.php',
@@ -1073,7 +1073,7 @@ if ($resql || $resql2) {
 		$sortorder
 	);
 
-	if (!empty($conf->of->enabled) && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL')) {
+	if (isModEnabled('of') && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL')) {
 		dol_include_once('/of/lib/of.lib.php');
 		print_liste_field_titre(
 			'Stock théo - OF',
@@ -1146,7 +1146,7 @@ if ($resql || $resql2) {
 		'<input class="flat" type="text" name="snom" value="' . $snom . '">';
 		'</td>';
 
-	if (!empty($conf->service->enabled) && $type == 1) {
+	if (isModEnabled('service') && $type == 1) {
 		print '<td class="liste_titre">' .
 			'&nbsp;' .
 			'</td>';
@@ -1155,7 +1155,7 @@ if ($resql || $resql2) {
 	$liste_titre = "";
 	$liste_titre .= '<td class="liste_titre">' . $form->selectarray('finished', $statutarray, (!GETPOSTISSET('button_removefilter_x') && GETPOSTISSET('finished', 'none')) ? GETPOST('finished', 'none') :  getDolGlobalInt('SOFO_DEFAUT_FILTER'), 1) . '</td>';
 
-	if (!empty($conf->categorie->enabled) && getDolGlobalString('SOFO_DISPLAY_CAT_COLUMN')) {
+	if (isModEnabled('categorie') && getDolGlobalString('SOFO_DISPLAY_CAT_COLUMN')) {
 		$liste_titre .= '<td class="liste_titre">';
 		$liste_titre .= '</td>';
 	}
@@ -1164,7 +1164,7 @@ if ($resql || $resql2) {
     if(empty($alertchecked)) $alertchecked = '';
 	$liste_titre .= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>';
 
-	if (!empty($conf->of->enabled) && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL')) {
+	if (isModEnabled('of') && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL')) {
 		$liste_titre .= '<td class="liste_titre" align="right"></td>';
 	}
 
@@ -1290,13 +1290,14 @@ if ($resql || $resql2) {
 						}
 
 						//Requête qui récupère la somme des qty ventilés pour les cmd reçu partiellement
-						$sqlQ = "SELECT SUM(cfd.qty) as qty";
-						$sqlQ .= " FROM " . MAIN_DB_PREFIX . "commande_fournisseur_dispatch as cfd";
-						$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = cfd.fk_commande) AND cf.entity IN (".getEntity('commande_fournisseur').")";
-						$sqlQ .= " LEFT JOIN " . MAIN_DB_PREFIX . 'entrepot as e ON cfd.fk_entrepot = e.rowid AND e.entity IN (' . $entityToTest . ')';
+						$sqlQ = "SELECT SUM(rec.qty) as qty";
+						if ((float) DOL_VERSION < 20) $sqlQ.= " FROM ".MAIN_DB_PREFIX."commande_fournisseur_dispatch as rec";
+						else $sqlQ .= " FROM " . MAIN_DB_PREFIX . "receptiondet_batch as rec";
+						$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = rec.fk_commande) AND cf.entity IN (".getEntity('commande_fournisseur').")";
+						$sqlQ .= " LEFT JOIN " . MAIN_DB_PREFIX . 'entrepot as e ON rec.fk_entrepot = e.rowid AND e.entity IN (' . $entityToTest . ')';
 						$sqlQ .= " WHERE cf.fk_statut = 4";
-						$sqlQ .= " AND cfd.fk_product = " . $prod->id;
-						$sqlQ .= " ORDER BY cfd.rowid ASC";
+						$sqlQ .= " AND rec.fk_product = " . $prod->id;
+						$sqlQ .= " ORDER BY rec.rowid ASC";
 						$resqlQ = $db->query($sqlQ);
 
 						$stock_commande_fournisseur = $prod->stats_commande_fournisseur['qty'];
@@ -1308,7 +1309,7 @@ if ($resql || $resql2) {
 
 					}
 
-					if (! empty($conf->expedition->enabled)
+					if (isModEnabled('expedition')
 						&& (getDolGlobalString('STOCK_CALCULATE_ON_SHIPMENT') || getDolGlobalString('STOCK_CALCULATE_ON_SHIPMENT_CLOSE')))
 					{
 						require_once DOL_DOCUMENT_ROOT . '/expedition/class/expedition.class.php';
@@ -1368,7 +1369,7 @@ if ($resql || $resql2) {
 
 			if (DOL_VERSION >= 6) {
 
-				if (!empty($conf->supplier_proposal->enabled)) {
+				if (isModEnabled('supplier_proposal')) {
 
 					$q = 'SELECT a.ref
                                                 FROM ' . MAIN_DB_PREFIX . 'supplier_proposal a
@@ -1386,7 +1387,7 @@ if ($resql || $resql2) {
 
 			} else {
 
-				if (!empty($conf->askpricesupplier->enabled)) {
+				if (isModEnabled('askpricesupplier')) {
 
 					$q = 'SELECT a.ref
 						FROM ' . MAIN_DB_PREFIX . 'askpricesupplier a
@@ -1413,7 +1414,7 @@ if ($resql || $resql2) {
 							continue; // le stock est suffisant on passe
 							}*/
 
-			if (!empty($conf->of->enabled)) {
+			if (isModEnabled('of')) {
 
 				/* Si j'ai des OF je veux savoir combien cela me coûte */
 				if ( ! defined('INC_FROM_DOLIBARR')) define('INC_FROM_DOLIBARR', true);
@@ -1493,7 +1494,7 @@ if ($resql || $resql2) {
 			print '<input type="hidden" name="lineid' . $i . '" value="' . $lineid . '" />';
 
 			if (getDolGlobalString('SUPPORDERFROMORDER_USE_ORDER_DESC')) {
-				print '<input type="hidden" name="desc' . $i . '" value="' . htmlentities($objp->description, ENT_QUOTES) . '" >';
+				print '<input type="hidden" name="desc' . $i . '" value="' . htmlentities($objp->description ?? '', ENT_QUOTES) . '" >';
 			}
 			print '</td>';
 
@@ -1527,7 +1528,7 @@ if ($resql || $resql2) {
 			print '<td>' . (isset($statutarray[$objp->finished]) ? $statutarray[$objp->finished] : '') . '</td>';
 
 
-			if (!empty($conf->categorie->enabled) && getDolGlobalString('SOFO_DISPLAY_CAT_COLUMN')) {
+			if (isModEnabled('categorie') && getDolGlobalString('SOFO_DISPLAY_CAT_COLUMN')) {
 				print '<td >';
 				$categorie = new Categorie($db);
 				$Tcategories = $categorie->containing($objp->rowid, 'product', 'label');
@@ -1535,7 +1536,7 @@ if ($resql || $resql2) {
 				print '</td>';
 			}
 
-			if (!empty($conf->service->enabled) && $type == 1) {
+			if (isModEnabled('service') && $type == 1) {
 				if (preg_match('/([0-9]+)y/i', $objp->duration, $regs)) {
 					$duration = $regs[1] . ' ' . $langs->trans('DurationYear');
 				} elseif (preg_match('/([0-9]+)m/i', $objp->duration, $regs)) {
@@ -1560,7 +1561,7 @@ if ($resql || $resql2) {
 			$champs .= '<td align="right" >' .
 				$warning . (((getDolGlobalString('STOCK_SUPPORTS_SERVICES') && $prod->type == 1) || empty($prod->type)) ? $prod->stock_theorique : img_picto('', './img/no', '', 1)) . //$stocktobuy
 				'</td>';
-			if (!empty($conf->of->enabled) && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL')) {
+			if (isModEnabled('of') && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL')) {
 				/*					dol_include_once('/of/lib/of.lib.php');
 									$prod->load_stock();
 									list($qty_to_make, $qty_needed) = _calcQtyOfProductInOf($db, $conf, $prod);
@@ -1605,7 +1606,7 @@ if ($resql || $resql2) {
 				$TSupplier = $prod->list_suppliers();
 			else $TSupplier = array_intersect($prod->list_suppliers(), $TSupplier);
 
-			if (!empty($conf->of->enabled) && $user->hasRight('of', 'of', 'write') && !getDolGlobalString('SOFO_REMOVE_MAKE_BTN')) {
+			if (isModEnabled('of') && $user->hasRight('of', 'of', 'write') && !getDolGlobalString('SOFO_REMOVE_MAKE_BTN')) {
 				print '<td><a href="' . dol_buildpath('/of/fiche_of.php', 1) . '?action=new&fk_product=' . $prod->id . '&fk_commande=' . $id . '" class="butAction">'.$langs->trans("Fabriquer").'</a></td>';
 			} else {
 				print '<td>&nbsp</td>';
@@ -1651,10 +1652,10 @@ if ($resql || $resql2) {
 				print '</td>';
 
 				print '<td></td>'; // Nature
-				if (!empty($conf->categorie->enabled))
+				if (isModEnabled('categorie'))
 					print '<td></td>'; // Categories
 
-				if (!empty($conf->service->enabled) && $type == 1) {
+				if (isModEnabled('service') && $type == 1) {
 					if (preg_match('/([0-9]+)y/i', $objp->duration, $regs)) {
 						$duration = $regs[1] . ' ' . $langs->trans('DurationYear');
 					} elseif (preg_match('/([0-9]+)m/i', $objp->duration, $regs)) {
@@ -1672,7 +1673,7 @@ if ($resql || $resql2) {
 				if ($dolibarr_version35)
 					print '<td align="right">' . $picto . '</td>'; // Desired stock
 				print '<td align="right">' . $picto . '</td>'; // Physical/virtual stock
-				if ($conf->of->enabled && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL'))
+				if (isModEnabled('of') && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL'))
 					print '<td align="right">' . $picto . '</td>'; // Stock théorique OF
 
 				print '<td align="right">
@@ -2034,7 +2035,7 @@ function _appliCond($order, $commandeClient)
 	if ($fourn->fetch($order->socid) > 0) {
 
 		// Multidevise
-		if (!empty($conf->multicurrency->enabled)) {
+		if (isModEnabled('multicurrency')) {
 			require_once DOL_DOCUMENT_ROOT . '/multicurrency/class/multicurrency.class.php';
 
 			if (!empty($fourn->multicurrency_code)) {
