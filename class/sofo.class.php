@@ -127,7 +127,7 @@ class TSOFO {
 					}
 					$opt.= '>'.$objp->name.' - '.$objp->ref_fourn.' - ';
 
-					if (!empty($conf->dynamicprices->enabled) && !empty($objp->fk_supplier_price_expression)) {
+					if (!empty($conf->dynamicprices->isModEnabled) && !empty($objp->fk_supplier_price_expression)) {
 						$prod_supplier = new ProductFournisseur($db);
 						$prod_supplier->product_fourn_price_id = $objp->idprodfournprice;
 						$prod_supplier->id = $productid;

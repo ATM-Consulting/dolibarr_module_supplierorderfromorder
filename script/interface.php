@@ -155,7 +155,7 @@ function _stockDetails()
 
 
 
-	if(!empty($conf->of->enabled)) {
+	if(!empty($conf->of->isModEnabled)) {
 
 
 		define('INC_FROM_DOLIBARR', true);
@@ -221,7 +221,8 @@ function _stockDetails()
 	$sql = "SELECT DISTINCT e.rowid, ed.qty";
 	$sql.= " FROM ".MAIN_DB_PREFIX."expeditiondet as ed";
 	$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."expedition as e ON (e.rowid=ed.fk_expedition)";
-	$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."commandedet as cd ON (ed.fk_elementdet=cd.rowid)";
+	if ((float) DOL_VERSION < 20) $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."commandedet as cd ON (ed.fk_origin_line=cd.rowid)";
+	else $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."commandedet as cd ON (ed.fk_elementdet=cd.rowid)";
 	$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."commande as c ON (cd.fk_commande=c.rowid)";
 	$sql.= " WHERE 1";
 	$sql.= " AND e.entity = ".$conf->entity;

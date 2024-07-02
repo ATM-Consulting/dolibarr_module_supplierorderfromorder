@@ -74,7 +74,8 @@ function getExpedie($fk_product) {
     $sql = "SELECT SUM(ed.qty) as qty";
     $sql.= " FROM ".MAIN_DB_PREFIX."expeditiondet as ed";
     $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."expedition as e ON (e.rowid=ed.fk_expedition)";
-    $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."commandedet as cd ON (ed.fk_elementdet=cd.rowid)";
+	if ((float) DOL_VERSION < 20) $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."commandedet as cd ON (ed.fk_origin_line=cd.rowid)";
+    else $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."commandedet as cd ON (ed.fk_elementdet=cd.rowid)";
     $sql.= " WHERE 1";
     $sql.= " AND e.entity = ".$conf->entity;
     $sql.= " AND cd.fk_product = ".$fk_product;
@@ -721,7 +722,7 @@ function supplierorderfromorderAdminPrepareHead()
     $head[$h][2] = 'settings';
     $h++;
 
-    if (!empty($conf->nomenclature->enabled)){
+    if (!empty($conf->nomenclature->isModEnabled)){
         $head[$h][0] = dol_buildpath("/supplierorderfromorder/admin/dispatch_to_supplier_order_setup.php", 1);
         $head[$h][1] = $langs->trans("Nomenclature");
         $head[$h][2] = 'nomenclature';

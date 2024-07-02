@@ -421,7 +421,7 @@ if(getDolGlobalString('PRODUIT_SOUSPRODUITS')) {
 	print '</td></tr>';
 }
 
-if (!empty($conf->multicompany->enabled) && getDolGlobalString('MULTICOMPANY_STOCK_SHARING_ENABLED')) {
+if (!empty($conf->multicompany->isModEnabled) && getDolGlobalString('MULTICOMPANY_STOCK_SHARING_ENABLED')) {
 	$var = !$var;
 	print '<tr ' . $bc[$var] . '>';
 	print '<td>' . $langs->trans('SOFO_CHECK_STOCK_ON_SHARED_STOCK') . '</td>';
@@ -436,7 +436,7 @@ if (!empty($conf->multicompany->enabled) && getDolGlobalString('MULTICOMPANY_STO
 	print '</td></tr>';
 }
 
-if(! empty($conf->categorie->enabled)) {
+if(! empty($conf->categorie->isModEnabled)) {
 	$var=!$var;
 	print '<tr '.$bc[$var].'>';
 	print '<td>'.$langs->trans("SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER").'</td>';

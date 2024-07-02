@@ -629,7 +629,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
     print '   <tr class="liste_titre" >';
     print '       <th >' . $langs->trans('Description') . '</th>';
     print '       <th class="center" >' . $langs->trans('Commande client') . '</th>';
-    if (!empty($conf->stock->enabled)){
+    if (!empty($conf->stock->isModEnabled)){
         $totalNbCols++;
         print '       <th class="center" >' . $langs->trans('Stock_reel') . '</th>';
         $totalNbCols++;
@@ -787,7 +787,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                 // QTY
                 print '<td class="center col-qtyordered"  ><strong title="'.$langs->trans('clicToReplaceQty').'" class="addvalue2target classfortooltip" style="cursor:pointer" data-value="'.$line->qty.'" data-target="#qty-'.$line->id.'"  >'.$line->qty.'</strong></td>';
 
-                if (!empty($conf->stock->enabled)){
+                if (!empty($conf->stock->isModEnabled)){
                     // STOCK REEL
                     print '<td  class="center col-realstock">';
                     if(!empty($line->fk_product) && $line->product_type == Product::TYPE_PRODUCT)
@@ -819,7 +819,7 @@ if( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origi
                 if($line->product_type == Product::TYPE_PRODUCT)
                 {
 
-                    if (!empty($conf->stock->enabled)){
+                    if (!empty($conf->stock->isModEnabled)){
 
                         if( $stocktheoBeforeOrder - $line->qty >= 0){
                             $qty2Order = 0;
@@ -1242,7 +1242,7 @@ function _nomenclatureViewToHtml($line, $TNomenclatureLines, $nomI = 0, $overrid
 				}
 
 
-				if (!empty($conf->stock->enabled)) {
+				if (!empty($conf->stock->isModEnabled)) {
 
 					// STOCK REEL
 					$colspan--;

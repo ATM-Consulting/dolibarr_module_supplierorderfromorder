@@ -126,7 +126,7 @@ class modSupplierorderfromorder extends DolibarrModules
         // Minimum version of PHP required by module
         $this->phpmin = array(7, 0);
         // Minimum version of Dolibarr required by module
-        $this->need_dolibarr_version = array(15, 0);
+        $this->need_dolibarr_version = array(16, 0);
         $this->langfiles = array("supplierorderfromorder@supplierorderfromorder"); // langfiles@mymodule
         // Constants
         // List of particular constants to add when module is enabled
@@ -139,9 +139,9 @@ class modSupplierorderfromorder extends DolibarrModules
         $this->tabs = array();
 
         // Dictionnaries
-        if (! isset($conf->ordersupplierfromorder->enabled)) {
+        if (! isset($conf->ordersupplierfromorder->isModEnabled)) {
             $conf->ordersupplierfromorder=new stdClass();
-            $conf->ordersupplierfromorder->enabled = 0;
+            $conf->ordersupplierfromorder->isModEnabled = 0;
         }
         $this->dictionnaries = array();
 
