@@ -1,9 +1,8 @@
 # ChangeLog
 
 ## [Unreleased]
-
-## RELEASES 2.8
 - NEW : Compat V20 - *02/07/2024* - 2.8.0
+- NEW : Options to import notes on orders - *15/01/2024* - 2.8.0
 
 ## RELEASES 2.7
 - FIX : DA025148 - Correction chemin vers main.inc et verif que les commandes fournisseurs soient activées - *29/05/2024* - 2.7.3
