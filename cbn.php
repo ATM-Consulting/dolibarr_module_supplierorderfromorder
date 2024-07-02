@@ -299,7 +299,7 @@ if ($resql || $resql2) {
             '<td colspan="'.$colspan.'">'.$langs->trans('NbWeekToReplenish').'<input type="text" name="week_to_replenish" value="'.$week_to_replenish.'" size="2"> '
             .'<input type="submit" value="'.$langs->trans('ReCalculate').'" /></td><td></td>';
 
-        if ($conf->of->isModEnabled && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL')) print '<td></td>';
+        if (isModEnabled('of') && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL')) print '<td></td>';
 
 			print '</tr>';
 
@@ -344,7 +344,7 @@ if ($resql || $resql2) {
     		$sortfield,
     		$sortorder
     );
-    if (!empty($conf->service->isModEnabled) && $type == 1)
+    if (isModEnabled('service') && $type == 1)
     {
     	print_liste_field_titre(
     			$langs->trans('Duration'),
@@ -390,7 +390,7 @@ if ($resql || $resql2) {
     		$sortorder
     );
 
-	if ($conf->of->isModEnabled && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL'))
+	if (isModEnabled('of') && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL'))
 	{
 		dol_include_once('/of/lib/of.lib.php');
 		print_liste_field_titre(
@@ -451,7 +451,7 @@ if ($resql || $resql2) {
          '<td class="liste_titre">'.
          '<input class="flat" type="text" name="snom" value="' . $snom . '">'.
          '</td>';
-    if (!empty($conf->service->isModEnabled) && $type == 1)
+    if (isModEnabled('service') && $type == 1)
     {
         print '<td class="liste_titre">'.
              '&nbsp;'.
@@ -463,7 +463,7 @@ if ($resql || $resql2) {
     $liste_titre.= $dolibarr_version35 ? '<td class="liste_titre">&nbsp;</td>' : '';
     $liste_titre.= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>';
 
-	if ($conf->of->isModEnabled && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL'))
+	if (isModEnabled('of') && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL'))
 	{
 		$liste_titre.= '<td class="liste_titre" align="right"></td>';
 	}
@@ -631,7 +631,7 @@ if ($resql || $resql2) {
 
 			if(DOL_VERSION>=6) {
 
-				if(!empty($conf->supplier_proposal->isModEnabled)) {
+				if(isModEnabled('supplier_proposal')) {
 
                                 $q = 'SELECT a.ref
                                                 FROM '.MAIN_DB_PREFIX.'supplier_proposal a
@@ -649,7 +649,7 @@ if ($resql || $resql2) {
 			}
 			else {
 
-			if($conf->askpricesupplier->isModEnabled) {
+			if(isModEnabled('askpricesupplier')) {
 
 				$q = 'SELECT a.ref
 						FROM '.MAIN_DB_PREFIX.'askpricesupplier a
@@ -681,7 +681,7 @@ if ($resql || $resql2) {
     			continue; // le stock est suffisant on passe
 	    		}*/
 
-			if($conf->of->isModEnabled) {
+			if(isModEnabled('of')){
 
 				/* Si j'ai des OF je veux savoir combien cela me coûte */
 
@@ -729,7 +729,7 @@ if ($resql || $resql2) {
 					print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" >';
 				}
 
-            if (!empty($conf->service->isModEnabled) && $type == 1) {
+            if (isModEnabled('service') && $type == 1) {
                 if (preg_match('/([0-9]+)y/i', $objp->duration, $regs)) {
                     $duration =  $regs[1] . ' ' . $langs->trans('DurationYear');
                 } elseif (preg_match('/([0-9]+)m/i', $objp->duration, $regs)) {
@@ -756,7 +756,7 @@ if ($resql || $resql2) {
                 $champs.= '<td align="right">'.
                  $warning . $stock.
                  '</td>';
-				if ($conf->of->isModEnabled && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL'))
+				if (isModEnabled('of') && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL'))
 				{
 /*					dol_include_once('/of/lib/of.lib.php');
 					$prod->load_stock();
@@ -792,7 +792,7 @@ if ($resql || $resql2) {
                  '</td>';
 				print $champs;
 
-       if($conf->of->isModEnabled && $user->hasRight('of', 'of', 'write')) {
+       if(isModEnabled('of') && $user->hasRight('of', 'of', 'write')) {
 		print '<td><a href="'.dol_buildpath('/of/fiche_of.php',1).'?action=new&fk_product='.$prod->id.'" class="butAction">'.$langs->trans("Fabriquer").'</a></td>';
 	   }
 	   else {
@@ -832,7 +832,7 @@ if ($resql || $resql2) {
 				print '<input type="hidden" name="product_type' . $i . '" value="' . $objp->product_type . '" >';
 		//	}
 
-            if (!empty($conf->service->isModEnabled) && $type == 1) {
+            if (isModEnabled('service') && $type == 1) {
                 if (preg_match('/([0-9]+)y/i', $objp->duration, $regs)) {
                     $duration =  $regs[1] . ' ' . $langs->trans('DurationYear');
                 } elseif (preg_match('/([0-9]+)m/i', $objp->duration, $regs)) {

@@ -722,7 +722,7 @@ function supplierorderfromorderAdminPrepareHead()
     $head[$h][2] = 'settings';
     $h++;
 
-    if (!empty($conf->nomenclature->isModEnabled)){
+    if (isModEnabled('nomenclature')){
         $head[$h][0] = dol_buildpath("/supplierorderfromorder/admin/dispatch_to_supplier_order_setup.php", 1);
         $head[$h][1] = $langs->trans("Nomenclature");
         $head[$h][2] = 'nomenclature';

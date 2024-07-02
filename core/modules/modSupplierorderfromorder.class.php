@@ -139,9 +139,9 @@ class modSupplierorderfromorder extends DolibarrModules
         $this->tabs = array();
 
         // Dictionnaries
-        if (! isset($conf->ordersupplierfromorder->isModEnabled)) {
+        if (isModEnabled('ordersupplierfromorder')) {
             $conf->ordersupplierfromorder=new stdClass();
-            $conf->ordersupplierfromorder->isModEnabled = 0;
+            $conf->ordersupplierfromorder->enabled = 0;
         }
         $this->dictionnaries = array();
 

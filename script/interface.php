@@ -155,7 +155,7 @@ function _stockDetails()
 
 
 
-	if(!empty($conf->of->isModEnabled)) {
+	if(isModEnabled('of')) {
 
 
 		define('INC_FROM_DOLIBARR', true);
