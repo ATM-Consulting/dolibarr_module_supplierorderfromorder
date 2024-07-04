@@ -16,7 +16,7 @@ SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY = Import the shipment contact from the
 SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER = Redirect to the supplier order when there is only one supplier to order (from v.3.8)
 UseDeliveryTimeToReplenish = Use a time period (in weeks) for the supply need
 UseVirtualStockOfOrdersSkipDoliConfig = Use the virtual stock for the orders, independently from the global configuration
-SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT = Use only the products required for manufacturing for the calculation
+
 SOFO_DO_NOT_USE_CUSTOMER_ORDER = Do not take the existing supplier orders in consideration
 SOFO_DEFAUT_FILTER = Filter by default on the nature of the product
 ShowLineEvenIfStockIsSuffisant = Include lines with sufficient stock 

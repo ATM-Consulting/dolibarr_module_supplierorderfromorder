@@ -223,7 +223,7 @@ if(empty($reshook))
 				// Test recupération contact livraison
 				if (getDolGlobalString('SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY')) {
 					$contact_ship = $commandeClient->getIdContact('external', 'SHIPPING');
-					$contact_ship = $contact_ship[0];
+					$contact_ship = $contact_ship[0] ?? '';
 				} else {
 					$contact_ship = null;
 				}
@@ -257,7 +257,6 @@ if(empty($reshook))
 					if (!empty($projectid)) {
 						$order->fk_project = GETPOST('projectid', 'int');
 					}
-
 					// cond reglement, mode reglement, delivery date
 					_appliCond($order, $commandeClient);
 
@@ -707,7 +706,7 @@ if ($sql2 && $fk_commande > 0) {
 	$resql2 = $db->query($sql2);
 }
 //print $sql ;
-$justOFforNeededProduct = getDolGlobalString('SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT') && empty($fk_commande);
+$justOFforNeededProduct =  empty($fk_commande);
 $statutarray = array('1' => $langs->trans("Finished"), '0' => $langs->trans("RowMaterial"));
 $form = new Form($db);
 
@@ -1291,9 +1290,13 @@ if ($resql || $resql2) {
 
 						//Requête qui récupère la somme des qty ventilés pour les cmd reçu partiellement
 						$sqlQ = "SELECT SUM(rec.qty) as qty";
-						if ((float) DOL_VERSION < 20) $sqlQ.= " FROM ".MAIN_DB_PREFIX."commande_fournisseur_dispatch as rec";
-						else $sqlQ .= " FROM " . MAIN_DB_PREFIX . "receptiondet_batch as rec";
-						$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = rec.fk_commande) AND cf.entity IN (".getEntity('commande_fournisseur').")";
+						if ((float) DOL_VERSION < 20) {
+							$sqlQ.= " FROM ".MAIN_DB_PREFIX."commande_fournisseur_dispatch as rec";
+							$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = rec.fk_commande) AND cf.entity IN (".getEntity('commande_fournisseur').")";
+						} else {
+							$sqlQ .= " FROM " . MAIN_DB_PREFIX . "receptiondet_batch as rec";
+							$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = rec.fk_elementdet) AND cf.entity IN (".getEntity('commande_fournisseur').")";
+						}
 						$sqlQ .= " LEFT JOIN " . MAIN_DB_PREFIX . 'entrepot as e ON rec.fk_entrepot = e.rowid AND e.entity IN (' . $entityToTest . ')';
 						$sqlQ .= " WHERE cf.fk_statut = 4";
 						$sqlQ .= " AND rec.fk_product = " . $prod->id;
@@ -1301,8 +1304,10 @@ if ($resql || $resql2) {
 						$resqlQ = $db->query($sqlQ);
 
 						$stock_commande_fournisseur = $prod->stats_commande_fournisseur['qty'];
-						if ($row = $db->fetch_object($resqlQ))
+						if ($resqlQ) {
+							$row = $db->fetch_object($resqlQ);
 							$stock_commande_fournisseur -= $row->qty;
+						}
 
 					} else {
 						$stock_commande_fournisseur = 0;
@@ -1492,9 +1497,8 @@ if ($resql || $resql2) {
 			}
 
 			print '<input type="hidden" name="lineid' . $i . '" value="' . $lineid . '" />';
-
 			if (getDolGlobalString('SUPPORDERFROMORDER_USE_ORDER_DESC')) {
-				print '<input type="hidden" name="desc' . $i . '" value="' . htmlentities($objp->description ?? '', ENT_QUOTES) . '" >';
+				print '<input type="hidden" name="desc' . $i . '" value="' . htmlentities(($objp->description ?? ''), ENT_QUOTES) . '" >';
 			}
 			print '</td>';
 
@@ -1580,12 +1584,10 @@ if ($resql || $resql2) {
 			$champs .= '<td align="right">';
 			$champs .= (!getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $ordered : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty ?? 0));
 			$champs .= '</td>';
-
 			$champs .= '</td>' .
 				'<td align="right">' .
 				'<input type="text" name="tobuy' . $i .
 				'" value="' . (!getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $stocktobuy : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty ?? 0)) . '" ' . $disabled . ' size="3"> <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
-
 			if (getDolGlobalString('SOFO_USE_DELIVERY_TIME')) {
 
 				$nb_day = (int)getMinAvailability($objp->rowid, $stocktobuy);
@@ -1623,23 +1625,21 @@ if ($resql || $resql2) {
 	}
 
 	//Lignes libre
+	$j = $j ?? 0;
 	if (!empty($resql2)) {
-		if (isset($j)){
-			while ($j < min($num2, $limit)) {
+		while ($j < min($num2, $limit)) {
 				$objp = $db->fetch_object($resql2);
-				//var_dump($sql2,$resql2, $objp);
 				if ($objp->product_type == 0)
 					$picto = img_object($langs->trans("ShowProduct"), 'product');
 				if ($objp->product_type == 1)
 					$picto = img_object($langs->trans("ShowService"), 'service');
 
 				print '<tr ' . $bc[$var] . '>' .
-					'<td><input type="checkbox" class="check" name="check' . $i . '"' . $disabled . '></td>' .
+					'<td><input type="checkbox" class="check" name="check' . $i . '"' . ($disabled ?? '' ). '></td>' .
 					'<td>' .
 					$picto . " " . $objp->description .
 					'</td>' .
 					'<td>' . $objp->description;
-
 				$picto = img_picto('', './img/no', '', 1);
 
 				//pre($conf->global,1);
@@ -1680,7 +1680,6 @@ if ($resql || $resql2) {
 						<input type="text" name="tobuy_free' . $i . '" value="' . $objp->qty . '">
 						<input type="hidden" name="lineid_free' . $i . '" value="' . $objp->rowid . '" >
 					</td>'; // Ordered
-
 				print '<td align="right">
 						<input type="text" name="price_free' . $i . '" value="' . (!getDolGlobalString('SOFO_COST_PRICE_AS_BUYING') ? $objp->price : price($objp->buy_price_ht)) . '" size="5" style="text-align:right">€
 						' . $form->select_company((empty($socid) ? '' : $socid), 'fourn_free' . $i, 's.fournisseur = 1', 1, 0, 0, array(), 0, 'minwidth100 maxwidth300') . '
@@ -1689,9 +1688,7 @@ if ($resql || $resql2) {
 				print '</tr>';
 				$i++;
 				$j++;
-			}
 		}
-
 	}
 
 	// Formatage du tableau
@@ -2045,7 +2042,6 @@ function _appliCond($order, $commandeClient)
 				$order->multicurrency_tx = $tmparray[1];
 			}
 		}
-
 		if (getDolGlobalString('SOFO_GET_INFOS_FROM_FOURN')) {
 			$order->mode_reglement_id = $fourn->mode_reglement_supplier_id;
 			$order->mode_reglement_code = getPaiementCode($order->mode_reglement_id);

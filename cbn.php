@@ -176,7 +176,6 @@ $sql .= ', p.price_ttc, p.price_base_type,p.fk_product_type, p.tms';
 $sql .= ', p.duration, p.tobuy, p.seuil_stock_alerte';
 //$sql .= ', p.desiredstock';
 //$sql .= ', s.fk_product';
-
 if(getDolGlobalString('SUPPORDERFROMORDER_USE_ORDER_DESC')) {
 	$sql.= ', cd.description';
 }
@@ -189,6 +188,7 @@ if ($salert == 'on') {
 
 $sql2 = '';
 //On prend les lignes libre
+var_dump(getDolGlobalInt('SOFO_ADD_FREE_LINES'));
 if($_REQUEST['id'] && getDolGlobalInt('SOFO_ADD_FREE_LINES')){
 	$sql2 .= 'SELECT cd.rowid, cd.description, cd.qty as qty, cd.product_type, cd.price, cd.buy_price_ht
 			 FROM '.MAIN_DB_PREFIX.'commandedet as cd
@@ -197,7 +197,7 @@ if($_REQUEST['id'] && getDolGlobalInt('SOFO_ADD_FREE_LINES')){
 	if(getDolGlobalString('SUPPORDERFROMORDER_USE_ORDER_DESC')) {
 		$sql2 .= ' GROUP BY cd.description';
 	}
-	//echo $sql2;
+	echo $sql2;
 }
 $sql .= $db->order($sortfield,$sortorder);
 if(!getDolGlobalInt('SOFO_USE_DELIVERY_TIME') ) $sql .= $db->plimit($limit + 1, $offset);
@@ -211,7 +211,7 @@ if($sql2 && $fk_commande > 0){
 	$resql2 = $db->query($sql2);
 }
 
-$justOFforNeededProduct = getDolGlobalString('SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT') && empty($fk_commande);
+$justOFforNeededProduct = empty($fk_commande);
 $statutarray=array('1' => $langs->trans("Finished"), '0' => $langs->trans("RowMaterial"));
 $form = new Form($db);
 
@@ -724,7 +724,6 @@ if ($resql || $resql2) {
                  '<td>' . $objp->label . '</td>';
 
 	        print '<td>'.$statutarray[$objp->finished].'</td>';
-
 				if(getDolGlobalString('SUPPORDERFROMORDER_USE_ORDER_DESC')) {
 					print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" >';
 				}
@@ -855,7 +854,7 @@ if ($resql || $resql2) {
                  '</td>';
 
 			print '<input type="hidden" name="lineid_free' . $i . '" value="' . $objp->rowid . '" >';
-
+			var_dump((!getDolGlobalString('SOFO_COST_PRICE_AS_BUYING')?'objp->price':'price($objp->buy_price_ht)'));exit;
 			print '<td align="right">
 						<input type="text" name="price_free'.$i.'" value="'.(!getDolGlobalString('SOFO_COST_PRICE_AS_BUYING')?$objp->price:price($objp->buy_price_ht)).'" size="5" style="text-align:right">€
 						'.$form->select_company((empty($socid)?'':$socid),'fourn_free'.$i,'s.fournisseur = 1',1, 0, 0, array(), 0, 'minwidth100 maxwidth300').'
