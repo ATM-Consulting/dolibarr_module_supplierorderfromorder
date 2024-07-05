@@ -7,6 +7,7 @@ OrderToSuppliers = Lieferantenbestellung erstellen
 GenerateSupplierOrder = Lieferantenbestellungen generieren
 SupplierOrderFromOrder = Lieferantenbestellung aus Kundenauftrag
 CreateNewSupplierOrderAnyTime = Erstellen Sie für jeden Kundenauftrag einen Entwurf der Lieferantenbestellung
+InfoCreateNewSupplierOrderAnyTime = Falls nicht, addieren Sie die Mengen der Produkte in den entsprechenden Zeilen auf der letzten vorhandenen Bestellung beim Lieferanten.
 UseOrderLineDescInSupplierOrder = In der Lieferantenbestellung eine Zeile für jede vom Kundenauftrag abweichende Beschreibung erstellen
 NbWeekToReplenish = Anzahl der Wochen der Prouktvorlaufzeit berücksichtigen
 ReCalculate = Neu berechnen

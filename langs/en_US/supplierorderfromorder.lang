@@ -7,6 +7,7 @@ OrderToSuppliers = Create supplier order
 GenerateSupplierOrder = Generate supplier orders
 SupplierOrderFromOrder = Supplier order from customer order
 CreateNewSupplierOrderAnyTime = Create a new supplier order draft for each customer order
+InfoCreateNewSupplierOrderAnyTime  = If not, add up the quantities of the products in the corresponding lines on the latest existing supplier order.
 UseOrderLineDescInSupplierOrder = Create a line in the supplier order for each different description in the customer order
 NbWeekToReplenish = Take in consideration the number of weeks of the product leadtime
 ReCalculate = Recalculate

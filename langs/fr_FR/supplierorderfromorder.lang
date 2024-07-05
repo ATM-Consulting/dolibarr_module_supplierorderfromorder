@@ -77,7 +77,7 @@ SOFO_VIRTUAL_PRODUCTS=Gestion des produits virtuels par le module
 SOFO_VIEW_SUBNOMENCLATURE8LINES=Afficher les sous nomenclatures dans les composants à commander
 SOFO_GET_INFOS_FROM_ORDER=Lors de la génération d'une commande fournisseur, mettre à jour les conditions de règlement, modes de règlement depuis la commande
 SOFO_GET_EXTRAFIELDS_FROM_ORDER=Lors de la génération d'une commande fournisseur, mettre à jour les attributs complémentaire (si ils ont la même définition) depuis la commande client
-SOFO_GET_INFOS_FROM_FOURN=Lors de la génération d'une commande fournisseur, mettre à jour les conditions de règlement, modes de règlement depuis le tier/fournisseur
+SOFO_GET_INFOS_FROM_FOURN=Lors de la génération d'une commande fournisseur, mettre à jour les conditions de règlement, modes de règlement depuis le tiers/fournisseur
 SOFO_USE_MAX_DELIVERY_DATE=Utiliser la date de livraison la plus grande (date de création + dispo la plus grande parmi celles disponibles)
 
 DispatchAndOrders = Passer les commandes

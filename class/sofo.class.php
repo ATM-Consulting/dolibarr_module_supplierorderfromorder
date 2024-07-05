@@ -52,7 +52,7 @@ class TSOFO {
                     $nb_day = self::getDayFromAvailabilityCode($av_code['code']);
                 }
 			}
-			if(!empty($nb_day) &&  ($min === false || $nb_day <$min )
+			if( ($min === false || $nb_day <$min && !empty($nb_day))
 				&& (!$only_with_delai || $nb_day>0)) $min = $nb_day;
 
 		}

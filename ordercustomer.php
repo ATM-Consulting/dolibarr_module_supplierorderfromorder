@@ -648,7 +648,7 @@ if(GETPOSTISSET('finished', 'none') && !GETPOSTISSET('button_removefilter_x')) {
 	if(GETPOST('finished', 'none') >= 0) {
 		$sql .= ' AND prod.finished = ' . GETPOST('finished', 'none');
 	}
-} elseif(getDolGlobalString('SOFO_DEFAUT_FILTER') && getDolGlobalInt('SOFO_DEFAUT_FILTER') >= 0 ) {
+} elseif(isset($conf->global->SOFO_DEFAUT_FILTER) && getDolGlobalInt('SOFO_DEFAUT_FILTER') >= 0 ) {
 	$sql .= ' AND prod.finished = ' . getDolGlobalInt('SOFO_DEFAUT_FILTER' );
 }
 
@@ -706,7 +706,6 @@ if ($sql2 && $fk_commande > 0) {
 	$resql2 = $db->query($sql2);
 }
 //print $sql ;
-$justOFforNeededProduct =  empty($fk_commande);
 $statutarray = array('1' => $langs->trans("Finished"), '0' => $langs->trans("RowMaterial"));
 $form = new Form($db);
 
@@ -919,9 +918,6 @@ if ($resql || $resql2) {
 	$colspan = 9;
 	if (getDolGlobalString('FOURN_PRODUCT_AVAILABILITY'))
 		$colspan++;
-	if (isModEnabled('of') && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL')) {
-		$colspan++;
-	}
 	if (getDolGlobalString('SOFO_USE_DELIVERY_TIME')) {
 		$colspan++;
 	}
@@ -1056,7 +1052,7 @@ if ($resql || $resql2) {
 	 * - Si on est dans le cas d'un OF avec les produits nécessaires
 	 * - Si on utilise les stocks virtuels (soit avec la conf globale Dolibarr, soit celle du module) ou qu'on utilise une plage de temps pour le besoin ou qu'on ne prend pas en compte les commandes clients
 	 */
-	if (empty($justOFforNeededProduct) && ($week_to_replenish > 0 || getDolGlobalString('USE_VIRTUAL_STOCK') || getDolGlobalString('SOFO_USE_VIRTUAL_ORDER_STOCK') || !getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER'))) {
+	if (($week_to_replenish > 0 || getDolGlobalString('USE_VIRTUAL_STOCK') || getDolGlobalString('SOFO_USE_VIRTUAL_ORDER_STOCK') || !getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER'))) {
 		$stocklabel = $langs->trans('VirtualStock');
 	} else {
 		$stocklabel = $langs->trans('PhysicalStock');
@@ -1071,20 +1067,6 @@ if ($resql || $resql2) {
 		$sortfield,
 		$sortorder
 	);
-
-	if (isModEnabled('of') && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL')) {
-		dol_include_once('/of/lib/of.lib.php');
-		print_liste_field_titre(
-			'Stock théo - OF',
-			'ordercustomer.php',
-			'stock_theo_of',
-			$param,
-			'id=' . GETPOST('id','int'),
-			'align="right"',
-			$sortfield,
-			$sortorder
-		);
-	}
 
 		print_liste_field_titre(
 			$langs->trans('Diff'),
@@ -1162,10 +1144,6 @@ if ($resql || $resql2) {
 	$liste_titre .= $dolibarr_version35 ? '<td class="liste_titre">&nbsp;</td>' : '';
     if(empty($alertchecked)) $alertchecked = '';
 	$liste_titre .= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>';
-
-	if (isModEnabled('of') && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL')) {
-		$liste_titre .= '<td class="liste_titre" align="right"></td>';
-	}
 
 		$liste_titre .= '<td class="liste_titre" align="right"></td>';
 
@@ -1247,111 +1225,100 @@ if ($resql || $resql2) {
 			$stock_commande_client = 0;
 			$stock_commande_fournisseur = 0;
 
-			if (!$justOFforNeededProduct) {
-
-				if ($week_to_replenish > 0) {
-					/* là ça déconne pas, on s'en fout, on dépote ! */
-					if (!getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER')) {
-						$stock_commande_client = _load_stats_commande_date($prod->id, date('Y-m-d', strtotime('+' . $week_to_replenish . 'week')));
-						$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float)$stock_commande_client;
-					}
-
-					$stock_commande_fournisseur = _load_stats_commande_fournisseur($prod->id, date('Y-m-d', strtotime('+' . $week_to_replenish . 'week')), $objp->stock_physique - $stock_commande_client);
-					$help_stock .= ', ' . $langs->trans('SupplierOrders') . ' : ' . (float)$stock_commande_fournisseur;
-
-
-					$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
-				} else if (getDolGlobalString('USE_VIRTUAL_STOCK') || getDolGlobalString('SOFO_USE_VIRTUAL_ORDER_STOCK')) {
-					//compute virtual stockshow_stock_no_need
-					$prod->fetch($prod->id);
-					if ((!getDolGlobalString('STOCK_CALCULATE_ON_VALIDATE_ORDER') || getDolGlobalString('SOFO_USE_VIRTUAL_ORDER_STOCK'))
-						&& !getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER')) {
-						$result = $prod->load_stats_commande(0, '1,2');
-						if ($result < 0) {
-							dol_print_error($db, $prod->error);
-						}
-						$stock_commande_client = $prod->stats_commande['qty'];
-
-						//si c'est un sous-produit, on ajoute la quantité à commander calculée plus tôt en plus
-						if(!empty($objp->level)) $stock_commande_client = $stock_commande_client + $objp->qty;
-					} else {
-						$stock_commande_client = 0;
-					}
-
-					if (!getDolGlobalString('STOCK_CALCULATE_ON_SUPPLIER_VALIDATE_ORDER' )  || getDolGlobalInt('SOFO_USE_VIRTUAL_ORDER_STOCK') ) {
-						if (getDolGlobalString('SUPPLIER_ORDER_STATUS_FOR_VIRTUAL_STOCK')){
-							$result=$prod->load_stats_commande_fournisseur(0, getDolGlobalInt('SUPPLIER_ORDER_STATUS_FOR_VIRTUAL_STOCK', 1) ) ;
-						} else {
-							$result=$prod->load_stats_commande_fournisseur(0, '1,2,3,4', 1);
-						}
-						if ($result < 0) {
-							dol_print_error($db, $prod->error);
-						}
-
-						//Requête qui récupère la somme des qty ventilés pour les cmd reçu partiellement
-						$sqlQ = "SELECT SUM(rec.qty) as qty";
-						if ((float) DOL_VERSION < 20) {
-							$sqlQ.= " FROM ".MAIN_DB_PREFIX."commande_fournisseur_dispatch as rec";
-							$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = rec.fk_commande) AND cf.entity IN (".getEntity('commande_fournisseur').")";
-						} else {
-							$sqlQ .= " FROM " . MAIN_DB_PREFIX . "receptiondet_batch as rec";
-							$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = rec.fk_elementdet) AND cf.entity IN (".getEntity('commande_fournisseur').")";
-						}
-						$sqlQ .= " LEFT JOIN " . MAIN_DB_PREFIX . 'entrepot as e ON rec.fk_entrepot = e.rowid AND e.entity IN (' . $entityToTest . ')';
-						$sqlQ .= " WHERE cf.fk_statut = 4";
-						$sqlQ .= " AND rec.fk_product = " . $prod->id;
-						$sqlQ .= " ORDER BY rec.rowid ASC";
-						$resqlQ = $db->query($sqlQ);
-
-						$stock_commande_fournisseur = $prod->stats_commande_fournisseur['qty'];
-						if ($resqlQ) {
-							$row = $db->fetch_object($resqlQ);
-							$stock_commande_fournisseur -= $row->qty;
-						}
-
-					} else {
-						$stock_commande_fournisseur = 0;
-
-					}
-
-					if (isModEnabled('expedition')
-						&& (getDolGlobalString('STOCK_CALCULATE_ON_SHIPMENT') || getDolGlobalString('STOCK_CALCULATE_ON_SHIPMENT_CLOSE')))
-					{
-						require_once DOL_DOCUMENT_ROOT . '/expedition/class/expedition.class.php';
-						$filterShipmentStatus = '';
-						if (getDolGlobalString('STOCK_CALCULATE_ON_SHIPMENT')) {
-							$filterShipmentStatus = Expedition::STATUS_VALIDATED  . ',' . Expedition::STATUS_CLOSED;
-						} elseif (getDolGlobalString('STOCK_CALCULATE_ON_SHIPMENT_CLOSE')) {
-							$filterShipmentStatus = Expedition::STATUS_CLOSED;
-						}
-						$result = $prod->load_stats_sending(0, '1,2', 1, $filterShipmentStatus);
-						if ($result < 0) dol_print_error($this->db, $this->error);
-						$stock_sending_client=$prod->stats_expedition['qty'];
-						$help_stock .= ', '.$langs->trans('Expeditions').' : '.(float) $stock_sending_client;
-					} else $stock_sending_client = 0;
-
-					if ($stock_commande_client > 0) {
-						$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float)$stock_commande_client;
-					}
-
-					$help_stock .= ', ' . $langs->trans('SupplierOrders') . ' : ' . (float)$stock_commande_fournisseur;
-
-					$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur + $stock_sending_client;
-				} else {
-
-					if (!getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER')) {
-						$stock_commande_client = $objp->qty;
-						$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float)$stock_commande_client;
-					}
-
-					$stock = $objp->stock_physique - $stock_commande_client;
-
-
+			if ($week_to_replenish > 0) {
+				/* là ça déconne pas, on s'en fout, on dépote ! */
+				if (! getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER')) {
+					$stock_commande_client = _load_stats_commande_date($prod->id, date('Y-m-d', strtotime('+' . $week_to_replenish . 'week')));
+					$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float) $stock_commande_client;
 				}
+
+				$stock_commande_fournisseur = _load_stats_commande_fournisseur($prod->id, date('Y-m-d', strtotime('+' . $week_to_replenish . 'week')), $objp->stock_physique - $stock_commande_client);
+				$help_stock .= ', ' . $langs->trans('SupplierOrders') . ' : ' . (float) $stock_commande_fournisseur;
+
+				$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
+			} else if (getDolGlobalString('USE_VIRTUAL_STOCK') || getDolGlobalString('SOFO_USE_VIRTUAL_ORDER_STOCK')) {
+				//compute virtual stockshow_stock_no_need
+				$prod->fetch($prod->id);
+				if ((! getDolGlobalString('STOCK_CALCULATE_ON_VALIDATE_ORDER') || getDolGlobalString('SOFO_USE_VIRTUAL_ORDER_STOCK'))
+					&& ! getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER')) {
+					$result = $prod->load_stats_commande(0, '1,2');
+					if ($result < 0) {
+						dol_print_error($db, $prod->error);
+					}
+					$stock_commande_client = $prod->stats_commande['qty'];
+
+					//si c'est un sous-produit, on ajoute la quantité à commander calculée plus tôt en plus
+					if (! empty($objp->level)) $stock_commande_client = $stock_commande_client + $objp->qty;
+				} else {
+					$stock_commande_client = 0;
+				}
+
+				if (! getDolGlobalString('STOCK_CALCULATE_ON_SUPPLIER_VALIDATE_ORDER') || getDolGlobalInt('SOFO_USE_VIRTUAL_ORDER_STOCK')) {
+					if (getDolGlobalString('SUPPLIER_ORDER_STATUS_FOR_VIRTUAL_STOCK')) {
+						$result = $prod->load_stats_commande_fournisseur(0, getDolGlobalInt('SUPPLIER_ORDER_STATUS_FOR_VIRTUAL_STOCK', 1));
+					} else {
+						$result = $prod->load_stats_commande_fournisseur(0, '1,2,3,4', 1);
+					}
+					if ($result < 0) {
+						dol_print_error($db, $prod->error);
+					}
+
+					//Requête qui récupère la somme des qty ventilés pour les cmd reçu partiellement
+					$sqlQ = "SELECT SUM(rec.qty) as qty";
+					if ((float) DOL_VERSION < 20) {
+						$sqlQ .= " FROM " . MAIN_DB_PREFIX . "commande_fournisseur_dispatch as rec";
+						$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = rec.fk_commande) AND cf.entity IN (" . getEntity('commande_fournisseur') . ")";
+					} else {
+						$sqlQ .= " FROM " . MAIN_DB_PREFIX . "receptiondet_batch as rec";
+						$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = rec.fk_elementdet) AND cf.entity IN (" . getEntity('commande_fournisseur') . ")";
+					}
+					$sqlQ .= " LEFT JOIN " . MAIN_DB_PREFIX . 'entrepot as e ON rec.fk_entrepot = e.rowid AND e.entity IN (' . $entityToTest . ')';
+					$sqlQ .= " WHERE cf.fk_statut = 4";
+					$sqlQ .= " AND rec.fk_product = " . $prod->id;
+					$sqlQ .= " ORDER BY rec.rowid ASC";
+					$resqlQ = $db->query($sqlQ);
+
+					$stock_commande_fournisseur = $prod->stats_commande_fournisseur['qty'];
+					if ($resqlQ) {
+						$row = $db->fetch_object($resqlQ);
+						$stock_commande_fournisseur -= $row->qty;
+					}
+				} else {
+					$stock_commande_fournisseur = 0;
+				}
+
+				if (isModEnabled('expedition')
+					&& (getDolGlobalString('STOCK_CALCULATE_ON_SHIPMENT') || getDolGlobalString('STOCK_CALCULATE_ON_SHIPMENT_CLOSE'))) {
+					require_once DOL_DOCUMENT_ROOT . '/expedition/class/expedition.class.php';
+					$filterShipmentStatus = '';
+					if (getDolGlobalString('STOCK_CALCULATE_ON_SHIPMENT')) {
+						$filterShipmentStatus = Expedition::STATUS_VALIDATED . ',' . Expedition::STATUS_CLOSED;
+					} elseif (getDolGlobalString('STOCK_CALCULATE_ON_SHIPMENT_CLOSE')) {
+						$filterShipmentStatus = Expedition::STATUS_CLOSED;
+					}
+					$result = $prod->load_stats_sending(0, '1,2', 1, $filterShipmentStatus);
+					if ($result < 0) dol_print_error($this->db, $this->error);
+					$stock_sending_client = $prod->stats_expedition['qty'];
+					$help_stock .= ', ' . $langs->trans('Expeditions') . ' : ' . (float) $stock_sending_client;
+				} else $stock_sending_client = 0;
+
+				if ($stock_commande_client > 0) {
+					$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float) $stock_commande_client;
+				}
+
+				$help_stock .= ', ' . $langs->trans('SupplierOrders') . ' : ' . (float) $stock_commande_fournisseur;
+
+				$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur + $stock_sending_client;
 			} else {
-				$stock = $objp->stock_physique;
-				$help_stock .= '(Juste OF) ';
+
+				if (! getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER')) {
+					$stock_commande_client = $objp->qty;
+					$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float) $stock_commande_client;
+				}
+
+				$stock = $objp->stock_physique - $stock_commande_client;
 			}
+
 
 			$ordered = $stock_commande_client;
 
@@ -1418,33 +1385,6 @@ if ($resql || $resql2) {
 							$i++;
 							continue; // le stock est suffisant on passe
 							}*/
-
-			if (isModEnabled('of')) {
-
-				/* Si j'ai des OF je veux savoir combien cela me coûte */
-				if ( ! defined('INC_FROM_DOLIBARR')) define('INC_FROM_DOLIBARR', true);
-				dol_include_once('/of/config.php');
-				dol_include_once('/of/class/ordre_fabrication_asset.class.php');
-
-				//$_REQUEST['DEBUG']=true;
-				if ($week_to_replenish > 0) {
-					$stock_of_needed = TAssetOF::getProductNeededQty($prod->id, false, true, date('Y-m-d', strtotime('+' . $week_to_replenish . 'week')));
-					$stock_of_tomake = TAssetOF::getProductNeededQty($prod->id, false, true, date('Y-m-d', strtotime('+' . $week_to_replenish . 'week')), 'TO_MAKE');
-
-				} else {
-					$stock_of_needed = TAssetOF::getProductNeededQty($prod->id, false, true, '');
-					$stock_of_tomake = TAssetOF::getProductNeededQty($prod->id, false, true, '', 'TO_MAKE');
-
-				}
-
-				$stocktobuy += $stock_of_needed - $stock_of_tomake;
-
-				if (!getDolGlobalString('STOCK_CALCULATE_ON_VALIDATE_ORDER') || getDolGlobalInt('SOFO_USE_VIRTUAL_ORDER_STOCK' ) ) {
-					$stock -= $stock_of_needed - $stock_of_tomake;
-				}
-
-				$help_stock .= ', ' . $langs->trans('OF') . ' : ' . (float)($stock_of_needed - $stock_of_tomake);
-			}
 
 			$help_stock .= ', ' . $langs->trans('DesiredStock') . ' : ' . (float)$objp->desiredstock;
 
@@ -1565,16 +1505,6 @@ if ($resql || $resql2) {
 			$champs .= '<td align="right" >' .
 				$warning . (((getDolGlobalString('STOCK_SUPPORTS_SERVICES') && $prod->type == 1) || empty($prod->type)) ? $prod->stock_theorique : img_picto('', './img/no', '', 1)) . //$stocktobuy
 				'</td>';
-			if (isModEnabled('of') && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL')) {
-				/*					dol_include_once('/of/lib/of.lib.php');
-									$prod->load_stock();
-									list($qty_to_make, $qty_needed) = _calcQtyOfProductInOf($db, $conf, $prod);
-									$qty = $prod->stock_theorique + $qty_to_make - $qty_needed;
-				*/
-				$qty_of = $stock_of_needed - $stock_of_tomake;
-				$qty = $prod->stock_theorique - $qty_of;
-				$champs .= '<td align="right">' . $qty . '</td>';
-			}
 
 			// déjà present
 				$champs .= '<td align="right">' .
@@ -1673,8 +1603,6 @@ if ($resql || $resql2) {
 				if ($dolibarr_version35)
 					print '<td align="right">' . $picto . '</td>'; // Desired stock
 				print '<td align="right">' . $picto . '</td>'; // Physical/virtual stock
-				if (isModEnabled('of') && getDolGlobalString('OF_USE_DESTOCKAGE_PARTIEL'))
-					print '<td align="right">' . $picto . '</td>'; // Stock théorique OF
 
 				print '<td align="right">
 						<input type="text" name="tobuy_free' . $i . '" value="' . $objp->qty . '">
