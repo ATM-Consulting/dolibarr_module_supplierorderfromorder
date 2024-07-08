@@ -1271,6 +1271,7 @@ if ($resql || $resql2) {
 					} else {
 						$sqlQ .= " FROM " . MAIN_DB_PREFIX . "receptiondet_batch as rec";
 						$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = rec.fk_elementdet) AND cf.entity IN (" . getEntity('commande_fournisseur') . ")";
+						$sqlQ .= " AND rec.element_type = supplier_order ";
 					}
 					$sqlQ .= " LEFT JOIN " . MAIN_DB_PREFIX . 'entrepot as e ON rec.fk_entrepot = e.rowid AND e.entity IN (' . $entityToTest . ')';
 					$sqlQ .= " WHERE cf.fk_statut = 4";
@@ -1538,11 +1539,8 @@ if ($resql || $resql2) {
 				$TSupplier = $prod->list_suppliers();
 			else $TSupplier = array_intersect($prod->list_suppliers(), $TSupplier);
 
-			if (isModEnabled('of') && $user->hasRight('of', 'of', 'write') && !getDolGlobalString('SOFO_REMOVE_MAKE_BTN')) {
-				print '<td><a href="' . dol_buildpath('/of/fiche_of.php', 1) . '?action=new&fk_product=' . $prod->id . '&fk_commande=' . $id . '" class="butAction">'.$langs->trans("Fabriquer").'</a></td>';
-			} else {
-				print '<td>&nbsp</td>';
-			}
+			print '<td>&nbsp</td>';
+
 			print '</tr>';
 
 			if (empty($fk_commande))
