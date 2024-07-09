@@ -1048,15 +1048,7 @@ if ($resql || $resql2) {
 		);
 	}
 
-	/* On n'affiche "Stock Physique" que lorsque c'est effectivement le cas :
-	 * - Si on est dans le cas d'un OF avec les produits nécessaires
-	 * - Si on utilise les stocks virtuels (soit avec la conf globale Dolibarr, soit celle du module) ou qu'on utilise une plage de temps pour le besoin ou qu'on ne prend pas en compte les commandes clients
-	 */
-	if (($week_to_replenish > 0 || getDolGlobalString('USE_VIRTUAL_STOCK') || getDolGlobalString('SOFO_USE_VIRTUAL_ORDER_STOCK') || !getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER'))) {
-		$stocklabel = $langs->trans('VirtualStock');
-	} else {
-		$stocklabel = $langs->trans('PhysicalStock');
-	}
+	$stocklabel = $langs->trans('VirtualStock');
 	print_liste_field_titre(
 		$stocklabel,
 		'ordercustomer.php',
