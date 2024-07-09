@@ -1263,7 +1263,7 @@ if ($resql || $resql2) {
 					} else {
 						$sqlQ .= " FROM " . MAIN_DB_PREFIX . "receptiondet_batch as rec";
 						$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = rec.fk_elementdet) AND cf.entity IN (" . getEntity('commande_fournisseur') . ")";
-						$sqlQ .= " AND rec.element_type = supplier_order ";
+						$sqlQ .= " AND rec.element_type = 'supplier_order' ";
 					}
 					$sqlQ .= " LEFT JOIN " . MAIN_DB_PREFIX . 'entrepot as e ON rec.fk_entrepot = e.rowid AND e.entity IN (' . $entityToTest . ')';
 					$sqlQ .= " WHERE cf.fk_statut = 4";
