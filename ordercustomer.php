@@ -1048,7 +1048,11 @@ if ($resql || $resql2) {
 		);
 	}
 
-	$stocklabel = $langs->trans('VirtualStock');
+	if ( ($week_to_replenish > 0 || getDolGlobalString('USE_VIRTUAL_STOCK') || getDolGlobalString('SOFO_USE_VIRTUAL_ORDER_STOCK') || !getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER'))) {
+		$stocklabel = $langs->trans('VirtualStock');
+	} else {
+		$stocklabel = $langs->trans('PhysicalStock');
+	}
 	print_liste_field_titre(
 		$stocklabel,
 		'ordercustomer.php',
