@@ -120,7 +120,9 @@ print '<td align="center" width="100">'.$langs->trans("Value").'</td>'."\n";
 // Add shipment as titles in invoice
 $var=!$var;
 print '<tr '.$bc[$var].'>';
-print '<td>'.$langs->trans("CreateNewSupplierOrderAnyTime").'</td>';
+print '<td>'.$langs->trans("CreateNewSupplierOrderAnyTime");
+print '<span class="fas fa-info-circle  em088 opacityhigh" style=" vertical-align: middle; cursor: help" title="'.$langs->trans('InfoCreateNewSupplierOrderAnyTime').'"></span>';
+print '</td>';
 print '<td align="center" width="20">&nbsp;</td>';
 print '<td align="right" width="300">';
 print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
@@ -269,19 +271,6 @@ print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
 print '<input type="hidden" name="token" value="'.$newToken.'">';
 print '<input type="hidden" name="action" value="set_SOFO_USE_VIRTUAL_ORDER_STOCK">';
 print $form->selectyesno("SOFO_USE_VIRTUAL_ORDER_STOCK",getDolGlobalString('SOFO_USE_VIRTUAL_ORDER_STOCK'),1);
-print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
-print '</form>';
-print '</td></tr>';
-
-$var=!$var;
-print '<tr '.$bc[$var].'>';
-print '<td>'.$langs->trans("SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT").'</td>';
-print '<td align="center" width="20">&nbsp;</td>';
-print '<td align="right" width="300">';
-print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
-print '<input type="hidden" name="token" value="'.$newToken.'">';
-print '<input type="hidden" name="action" value="set_SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT">';
-print $form->selectyesno("SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT",getDolGlobalString('SOFO_USE_ONLY_OF_FOR_NEEDED_PRODUCT'),1);
 print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
 print '</form>';
 print '</td></tr>';
@@ -449,7 +438,7 @@ if(getDolGlobalString('PRODUIT_SOUSPRODUITS')) {
 	print '</td></tr>';
 }
 
-if (!empty($conf->multicompany->enabled) && getDolGlobalString('MULTICOMPANY_STOCK_SHARING_ENABLED')) {
+if (isModEnabled('multicompany') && getDolGlobalString('MULTICOMPANY_STOCK_SHARING_ENABLED')) {
 	$var = !$var;
 	print '<tr ' . $bc[$var] . '>';
 	print '<td>' . $langs->trans('SOFO_CHECK_STOCK_ON_SHARED_STOCK') . '</td>';
@@ -464,7 +453,7 @@ if (!empty($conf->multicompany->enabled) && getDolGlobalString('MULTICOMPANY_STO
 	print '</td></tr>';
 }
 
-if(! empty($conf->categorie->enabled)) {
+if(isModEnabled('categorie')) {
 	$var=!$var;
 	print '<tr '.$bc[$var].'>';
 	print '<td>'.$langs->trans("SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER").'</td>';

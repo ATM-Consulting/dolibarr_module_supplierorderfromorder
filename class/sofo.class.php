@@ -52,7 +52,7 @@ class TSOFO {
                     $nb_day = self::getDayFromAvailabilityCode($av_code['code']);
                 }
 			}
-			if(($min === false || $nb_day<$min )
+			if( ($min === false ||  (!empty($nb_day) && $nb_day <$min))
 				&& (!$only_with_delai || $nb_day>0)) $min = $nb_day;
 
 		}
@@ -127,7 +127,7 @@ class TSOFO {
 					}
 					$opt.= '>'.$objp->name.' - '.$objp->ref_fourn.' - ';
 
-					if (!empty($conf->dynamicprices->enabled) && !empty($objp->fk_supplier_price_expression)) {
+					if (isModEnabled('dynamicprices') && !empty($objp->fk_supplier_price_expression)) {
 						$prod_supplier = new ProductFournisseur($db);
 						$prod_supplier->product_fourn_price_id = $objp->idprodfournprice;
 						$prod_supplier->id = $productid;
