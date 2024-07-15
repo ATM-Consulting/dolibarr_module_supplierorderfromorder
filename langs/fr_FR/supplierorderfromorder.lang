@@ -33,6 +33,7 @@ SOFO_DISPLAY_SERVICES = Autoriser la commande des services
 SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER = Filtre par défaut sur les catégories
 DeleteFilter = Supprimer le filtre
 NoFilter = Filtre vide
+CreateNewSupplierOrderWithProductDesc=Créer une commande fournisseur avec la description complète des produits
 
 # dispatch_dispatch_to_supplier_order
 FournDispatch=Passer commande(s) fournisseur(s)

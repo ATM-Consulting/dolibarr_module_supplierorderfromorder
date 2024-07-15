@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-
+- NEW : DA025170 - Ajout de la description des produits lors de la création d'une facture fournisseur (soumis a conf) - *15/07/2024* - 2.8
 
 ## RELEASES 2.7
 - FIX : DA025148 - Correction chemin vers main.inc et verif que les commandes fournisseurs soient activées - *29/05/2024* - 2.7.3
