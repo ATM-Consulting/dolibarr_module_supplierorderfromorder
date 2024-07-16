@@ -147,6 +147,20 @@ print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">'
 print '</form>';
 print '</td></tr>';
 
+// Description of all products on orders
+$var=!$var;
+print '<tr '.$bc[$var].'>';
+print '<td>'.$langs->trans("CreateNewSupplierOrderWithProductDesc").'</td>';
+print '<td align="center" width="20">&nbsp;</td>';
+print '<td align="right" width="300">';
+print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+print '<input type="hidden" name="token" value="'.$newToken.'">';
+print '<input type="hidden" name="action" value="set_SOFO_CREATE_NEW_SUPPLIER_ODER_WITH_PRODUCT_DESC">';
+print $form->selectyesno("SOFO_CREATE_NEW_SUPPLIER_ODER_WITH_PRODUCT_DESC",getDolGlobalString('SOFO_CREATE_NEW_SUPPLIER_ODER_WITH_PRODUCT_DESC'),1);
+print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
+print '</form>';
+print '</td></tr>';
+
 // Create identical supplier order to order
 $var=!$var;
 print '<tr '.$bc[$var].'>';
