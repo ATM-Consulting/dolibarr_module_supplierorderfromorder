@@ -1481,21 +1481,17 @@ if ($resql || $resql2) {
 			print '<input type="hidden" name="lineid' . $i . '" value="' . $lineid . '" />';
 
 			if (getDolGlobalString('SUPPORDERFROMORDER_USE_ORDER_DESC')) {
-				if (isset($objp->description)) {
-					$description = htmlentities($objp->description, ENT_QUOTES);
-				} else {
-					if (getDolGlobalString('SOFO_CREATE_NEW_SUPPLIER_ODER_WITH_PRODUCT_DESC') == 1){
-						$produit = new Product($db);
-						$produit->fetch($objp->rowid);
-
-						$description = $produit->description;
-					}else{
-						$description = '';
-					}
-
-				}
-				print '<input type="hidden" name="desc' . $i . '" value="' . $description . '" >';
+				print '<input type="hidden" name="desc' . $i . '" value="' . (isset($objp->description) ? htmlentities($objp->description, ENT_QUOTES) : '') . '" >';
 			}
+
+			if (getDolGlobalString('SOFO_CREATE_NEW_SUPPLIER_ODER_WITH_PRODUCT_DESC') == 1) {
+				$produit = new Product($db);
+				$produit->fetch($objp->rowid);
+
+				$description = $produit->description;
+				if ($description)  print '<input type="hidden" name="desc' . $i . '" value="' . $description . '" >';
+			}
+
 			print '</td>';
 
 			print '<td  style="height:35px;" class="nowrap">';
