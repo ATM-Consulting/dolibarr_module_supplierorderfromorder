@@ -1438,7 +1438,7 @@ if ($resql || $resql2) {
 				print '<input type="hidden" name="desc' . $i . '" value="' . (isset($objp->description) ? htmlentities($objp->description, ENT_QUOTES) : '') . '" >';
 			}
 
-			if (getDolGlobalString('SOFO_CREATE_NEW_SUPPLIER_ODER_WITH_PRODUCT_DESC') == 1) {
+			if (getDolGlobalString('SOFO_CREATE_NEW_SUPPLIER_ODER_WITH_PRODUCT_DESC')) {
 				$produit = new Product($db);
 				$produit->fetch($objp->rowid);
 
