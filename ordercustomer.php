@@ -1756,10 +1756,10 @@ if ($resql || $resql2) {
 //Debugbar is making page loading non stop
 if(!empty($user->rights->debugbar)) {
 	$saveRight = $user->hasRight('debugbar','read');
-	$user->rights->debugbar->read = 0;
+	$user->hasRight('debugbar', 'read') = 0;
 }
 llxFooter();
-if(!empty($user->rights->debugbar)) $user->rights->debugbar->read = $saveRight;
+if(!empty($user->rights->debugbar)) $user->hasRight('debugbar', 'read') = $saveRight;
 
 function _prepareLine($i, $actionTarget = 'order')
 {

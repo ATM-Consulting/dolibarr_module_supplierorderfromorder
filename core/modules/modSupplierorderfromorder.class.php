@@ -139,7 +139,7 @@ class modSupplierorderfromorder extends DolibarrModules
         $this->tabs = array();
 
         // Dictionnaries
-        if (!isset($conf->ordersupplierfromorder->enabled)) {
+        if (!isModEnabled('ordersupplierfromorder')) {
             $conf->ordersupplierfromorder=new stdClass();
             $conf->ordersupplierfromorder->enabled = 0;
         }
@@ -164,8 +164,8 @@ class modSupplierorderfromorder extends DolibarrModules
         $this->rights[$r][0] = $this->numero + $r;  // Permission id (must not be already used)
         $this->rights[$r][1] = 'Convertir les commandes clients en commandes fournisseurs';  // Permission label
         $this->rights[$r][3] = 0;                   // Permission by default for new user (0/1)
-        $this->rights[$r][4] = 'read';              // In php code, permission will be checked by test if ($user->rights->permkey->level1->level2)
-	$this->rights[$r][5] = '';		    // In php code, permission will be checked by test if ($user->rights->permkey->level1->level2)
+        $this->rights[$r][4] = 'read';              // In php code, permission will be checked by test if ($user->hasRight('permkey', 'level1', 'level2'))
+	$this->rights[$r][5] = '';		    // In php code, permission will be checked by test if ($user->hasRight('permkey', 'level1', 'level2'))
         $r++;
 
         // Main menu entries
