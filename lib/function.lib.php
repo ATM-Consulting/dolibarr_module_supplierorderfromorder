@@ -251,7 +251,7 @@ function getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, $su
 		$searchSupplierOrder = getSupplierOrderAvailable($supplierSocId,$shippingContactId,$array_options,$restrictToCustomerOrder);
 	}
 
-	if(!empty($searchSupplierOrder))
+	if(!empty($searchSupplierOrder) && !getDolGlobalString('SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME'))
 	{
 		$CommandeFournisseur->fetch($searchSupplierOrder[0]);
 	}
