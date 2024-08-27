@@ -5,6 +5,7 @@
 
 ## RELEASES 2.8
 
+- NEW : DA025395 - Ajout de la conf "Créer une commande fournisseur brouillon pour chaque commande client" sur la page dispatch_to_supplier_order.php - *27/08/2024* - 2.8.1
 - NEW : DA025170 - Ajout de la description des produits lors de la création d'une facture fournisseur (soumis a conf) - *15/07/2024* - 2.8.0
 - NEW : Compat V20 - *02/07/2024* - 2.8.0
 - NEW : Options to import notes on orders - *15/01/2024* - 2.8.0
