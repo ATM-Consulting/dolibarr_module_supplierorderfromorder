@@ -240,6 +240,7 @@ function getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, $su
 
 	// search and get draft supplier order linked
 	$searchSupplierOrder = getLinkedSupplierOrderFromOrder($line->fk_commande,$supplierSocId,$shippingContactId,$supplierOrderStatus);
+
 	if(empty($searchSupplierOrder))
 	{
 		// search draft supplier order with same critera
@@ -254,6 +255,11 @@ function getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, $su
 	if(!empty($searchSupplierOrder) && !getDolGlobalString('SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME'))
 	{
 		$CommandeFournisseur->fetch($searchSupplierOrder[0]);
+	}elseif (!empty($searchSupplierOrder)){
+		$lastValue = end($searchSupplierOrder);
+		$CommandeFournisseur->fetch($lastValue);
+		$CommandeFournisseur->add_object_linked('commande', $line->fk_commande);
+
 	}
 	else
 	{
