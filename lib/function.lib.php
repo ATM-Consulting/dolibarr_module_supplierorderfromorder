@@ -261,7 +261,7 @@ function getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, $su
 		if($res){
 			$CommandeFournisseur->add_object_linked('commande', $line->fk_commande);
 		}else{
-			dol_syslog(__METHOD__." $line->id");
+			dol_syslog(get_class($line)."::getSupplierOrderToUpdate ".$line->error, LOG_ERR);
 		}
 	}
 	else
