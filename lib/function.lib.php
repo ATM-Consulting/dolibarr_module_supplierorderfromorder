@@ -257,9 +257,10 @@ function getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, $su
 		$CommandeFournisseur->fetch($searchSupplierOrder[0]);
 	}elseif (!empty($searchSupplierOrder)){
 		$lastValue = end($searchSupplierOrder);
-		$CommandeFournisseur->fetch($lastValue);
-		$CommandeFournisseur->add_object_linked('commande', $line->fk_commande);
-
+		$res = $CommandeFournisseur->fetch($lastValue);
+		if($res){
+			$CommandeFournisseur->add_object_linked('commande', $line->fk_commande);
+		}
 	}
 	else
 	{
