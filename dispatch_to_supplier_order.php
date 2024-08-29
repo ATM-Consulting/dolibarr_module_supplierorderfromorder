@@ -146,7 +146,6 @@ if (empty($reshook))
                     if(!empty($TShipping[$line->id])){
                         $shippingContactId = $TShipping[$line->id];
                     }
-
                     $CommandeFournisseur = getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, CommandeFournisseur::STATUS_DRAFT);
 		    if(empty($CommandeFournisseur->fk_project) && !empty($origin->fk_project)) $CommandeFournisseur->setProject($origin->fk_project);
                     // Vérification de la commande
@@ -301,7 +300,8 @@ if (empty($reshook))
                     {
 
 
-                        $shippingContactId = 0; // Les produits issue d'une nomenclature ne doivent pas partir dirrectement chez un client (pour l'instant en tout cas)
+                        $shippingContactId = 0;
+						// Les produits issue d'une nomenclature ne doivent pas partir dirrectement chez un client (pour l'instant en tout cas)
 						$CommandeFournisseur = getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, CommandeFournisseur::STATUS_DRAFT);
 
 						// Vérification de la commande
