@@ -88,6 +88,9 @@ if (empty($reshook))
 	    $saveconf_SUPPLIER_ORDER_WITH_NOPRICEDEFINED = floatval(getDolGlobalString('SUPPLIER_ORDER_WITH_NOPRICEDEFINED','0')) ;
 	    $conf->global->SUPPLIER_ORDER_WITH_NOPRICEDEFINED = 1;
 	    $error = 0;
+		$shippingContactId = 0;
+		$createCommande = false;
+		$fetchCommande = false;
 
 	    $TLinesToCreate = $TNomenclatureLinesToCreate = array();
 
@@ -141,8 +144,6 @@ if (empty($reshook))
 
                 if(empty($searchSupplierOrderLine))
                 {
-
-                    $shippingContactId = 0;
                     if(!empty($TShipping[$line->id])){
                         $shippingContactId = $TShipping[$line->id];
                     }

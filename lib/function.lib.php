@@ -223,11 +223,11 @@ function getSupplierOrderAvailable($supplierSocId,$shippingContactId=0,$array_op
  * @param int $supplierSocId
  * @param int $shippingContactId
  * @param int $supplierOrderStatus
- * @param $createCommande
- * @param $fetchCommande
+ * @param bool $createCommande
+ * @param bool $fetchCommande
  * @return CommandeFournisseur
  */
-function getSupplierOrderToUpdate(OrderLine $line, int $supplierSocId, int $shippingContactId, int $supplierOrderStatus, $createCommande = false, $fetchCommande = false) :CommandeFournisseur
+function getSupplierOrderToUpdate(OrderLine $line, int $supplierSocId, int $shippingContactId, int $supplierOrderStatus, bool $createCommande = false, bool $fetchCommande = false) :CommandeFournisseur
 {
 	dol_include_once('fourn/class/fournisseur.commande.class.php');
 
@@ -240,6 +240,7 @@ function getSupplierOrderToUpdate(OrderLine $line, int $supplierSocId, int $ship
 	$res = $societe->fetch($supplierSocId);
 
 	if ($res < 0){
+		setEventMessage('NoCreateSupplierOrderMissingSociete', 'errors');
 		return $CommandeFournisseur; // pas de société retourne la commande null
 	}
 
@@ -251,6 +252,10 @@ function getSupplierOrderToUpdate(OrderLine $line, int $supplierSocId, int $ship
 			$restrictToCustomerOrder = $line->fk_commande;
 		}
 		$TSearchSupplierOrder = getSupplierOrderAvailable($supplierSocId, $shippingContactId, $array_options, $restrictToCustomerOrder);
+	}
+	if (!is_array($TSearchSupplierOrder)) {
+		setEventMessage('NoCreateSupplierOrderErrorSearch', 'errors');
+		return $CommandeFournisseur; // pas de $TSearchSupplierOrder retourne la commande null
 	}
 	//======================================================================================================
 	// Section concernant la Conf "Créer une commande fournisseur brouillon pour chaque commande client"
