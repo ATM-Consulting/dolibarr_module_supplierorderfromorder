@@ -88,6 +88,9 @@ if (empty($reshook))
 	    $saveconf_SUPPLIER_ORDER_WITH_NOPRICEDEFINED = floatval(getDolGlobalString('SUPPLIER_ORDER_WITH_NOPRICEDEFINED','0')) ;
 	    $conf->global->SUPPLIER_ORDER_WITH_NOPRICEDEFINED = 1;
 	    $error = 0;
+		$shippingContactId = 0;
+		$createCommande = false;
+		$fetchCommande = false;
 
 	    $TLinesToCreate = $TNomenclatureLinesToCreate = array();
 
@@ -141,8 +144,6 @@ if (empty($reshook))
 
                 if(empty($searchSupplierOrderLine))
                 {
-
-                    $shippingContactId = 0;
                     if(!empty($TShipping[$line->id])){
                         $shippingContactId = $TShipping[$line->id];
                     }
@@ -299,10 +300,17 @@ if (empty($reshook))
                     if(empty($searchSupplierOrderLine))
                     {
 
-
-                        $shippingContactId = 0;
-						// Les produits issue d'une nomenclature ne doivent pas partir dirrectement chez un client (pour l'instant en tout cas)
-						$CommandeFournisseur = getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, CommandeFournisseur::STATUS_DRAFT);
+						$shippingContactId = 0;
+						if (getDolGlobalString('SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME')) {
+							// Si ma conf est activé, je me sert de $createCommande pour créer ma commande
+							$createCommande = true;
+						}
+						$CommandeFournisseur = getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, CommandeFournisseur::STATUS_DRAFT, $createCommande ?? false, $fetchCommande ?? false);
+						if (getDolGlobalString('SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME')){
+							// Une fois que la commande est créer j'initialise ma variable $fetchCommande à true pour fetch la commande qui a été créer grace $createCommande = true;
+							// L'objectif est de faire une seule fois la création de commande lors du passage dans le foreach
+							$fetchCommande = true;
+						}
 
 						// Vérification de la commande
                         if(empty($CommandeFournisseur->id))
@@ -466,7 +474,6 @@ if (empty($reshook))
 								$commandeFournisseurLigne = new CommandeFournisseurLigne($db);
 								$commandeFournisseurLigne->fetch($res);
 								$commandeFournisseurLigne->add_object_linked('commandedet', $lineId);
-
 								$commandeFournisseurLigne->add_object_linked('nomenclaturedet', $infos['nomenclaturedetId']);
 
 								// sauvegarde des infos pour l'affichage du resultat
