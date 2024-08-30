@@ -304,7 +304,7 @@ if (empty($reshook))
 							// Si ma conf est activé, je me sert de $createCommande pour créer ma commande
 							$createCommande = true;
 						}
-						$CommandeFournisseur = getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, CommandeFournisseur::STATUS_DRAFT, $createCommande ?? '', $fetchCommande ??'');
+						$CommandeFournisseur = getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, CommandeFournisseur::STATUS_DRAFT, $createCommande ?? false, $fetchCommande ?? false);
 						if (getDolGlobalString('SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME')){
 							// Une fois que la commande est créer j'initialise ma variable $fetchCommande à true pour fetch la commande qui a été créer grace $createCommande = true;
 							// L'objectif est de faire une seule fois la création de commande lors du passage dans le foreach

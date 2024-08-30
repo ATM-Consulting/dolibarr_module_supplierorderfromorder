@@ -82,6 +82,8 @@ SOFO_GET_INFOS_FROM_FOURN=Lors de la génération d'une commande fournisseur, me
 SOFO_USE_MAX_DELIVERY_DATE=Utiliser la date de livraison la plus grande (date de création + dispo la plus grande parmi celles disponibles)
 
 DispatchAndOrders = Passer les commandes
+supplierOrderCreated = Commande fournisseur référence '%s' créer
+supplierOrderNotCreated = Erreur lors de la création de la commande fournisseur, voir la ligne '%s'
 INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK=Inclure toutes les lignes de produit avec un stock suffisant par défault
 Diff=Qté dans CF
 ViewSupplierOrderGenerated=Voir cf liées
