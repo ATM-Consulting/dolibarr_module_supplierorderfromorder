@@ -224,11 +224,11 @@ function getSupplierOrderAvailable($supplierSocId,$shippingContactId=0,$array_op
  *
  * @return CommandeFournisseur
  */
-function getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, $supplierOrderStatus)
+function getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, $supplierOrderStatus, $createCommande = false, $fetchCommande = false)
 {
 	dol_include_once('fourn/class/fournisseur.commande.class.php');
 
-	global $db, $user, $conf;
+	global $db, $user;
 
 	$array_options = array();
 	$CommandeFournisseur = new CommandeFournisseur($db);
@@ -239,44 +239,45 @@ function getSupplierOrderToUpdate($line, $supplierSocId, $shippingContactId, $su
 	if ($res < 0) return $CommandeFournisseur; // pas de société retourne la commande null
 
 	// search and get draft supplier order linked
-	$searchSupplierOrder = getLinkedSupplierOrderFromOrder($line->fk_commande,$supplierSocId,$shippingContactId,$supplierOrderStatus);
+	$TSearchSupplierOrder = getLinkedSupplierOrderFromOrder($line->fk_commande,$supplierSocId,$shippingContactId,$supplierOrderStatus);
 
-	if(empty($searchSupplierOrder))
+	if(empty($TSearchSupplierOrder))
 	{
 		// search draft supplier order with same critera
-		$restrictToCustomerOrder=0;
+		$restrictToCustomerOrder = 0;
 		if(getDolGlobalString('SOFO_USE_RESTRICTION_TO_CUSTOMER_ORDER')){
 			$restrictToCustomerOrder = $line->fk_commande;
 		}
-
-		$searchSupplierOrder = getSupplierOrderAvailable($supplierSocId,$shippingContactId,$array_options,$restrictToCustomerOrder);
+		$TSearchSupplierOrder = getSupplierOrderAvailable($supplierSocId,$shippingContactId,$array_options,$restrictToCustomerOrder);
 	}
-
-	if(!empty($searchSupplierOrder) && !getDolGlobalString('SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME'))
-	{
-		$CommandeFournisseur->fetch($searchSupplierOrder[0]);
-	}elseif (!empty($searchSupplierOrder)){
-		$lastValue = end($searchSupplierOrder);
-		$res = $CommandeFournisseur->fetch($lastValue);
-		if($res){
-			$CommandeFournisseur->add_object_linked('commande', $line->fk_commande);
-		}else{
-			dol_syslog(get_class($line)."::getSupplierOrderToUpdate ".$line->error, LOG_ERR);
-		}
-	}
-	else
-	{
+	/**
+	 * Création de commande fournisseur si :
+	 * SI Aucune commande contenue dans $TSearchSupplierOrder
+	 * OU mon parametre de fonction $createCommande est à true et $fetchCommande à false
+	 * OU si ma conf de module SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME "Créer une commande fournisseur brouillon pour chaque commande client" est a TRUE
+	 */
+	if ((($createCommande && !$fetchCommande ) || empty($TSearchSupplierOrder))
+		|| getDolGlobalString('SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME')) {
 		$CommandeFournisseur->socid = $supplierSocId;
 		$CommandeFournisseur->mode_reglement_id = $societe->mode_reglement_supplier_id;
 		$CommandeFournisseur->cond_reglement_id = $societe->cond_reglement_supplier_id;
-		$id = $CommandeFournisseur->create($user);
-		if($id>0)
-		{
-			// add order in linked element
-			$CommandeFournisseur->add_object_linked('commande', $line->fk_commande);
-
-		}
+		$res = $CommandeFournisseur->create($user);
 	}
+	/**
+	 * On fetch la dernière commande fournisseur de mon tableau $TSearchSupplierOrder si :
+	 * Si ma conf de module SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME "Créer une commande fournisseur brouillon pour chaque commande client" est à FALSE
+	 * OU mon parametre de fonction $fetchCommande est à true ET SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME est true
+	 */
+	if (!getDolGlobalString('SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME') || ($fetchCommande && getDolGlobalString('SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME'))){
+		$lastValue = end($TSearchSupplierOrder);
+		$res = $CommandeFournisseur->fetch($lastValue);
+	}
+	if ($res) {
+		$CommandeFournisseur->add_object_linked('commande', $line->fk_commande);
+	}else{
+		dol_syslog(get_class($line)."::getSupplierOrderToUpdate ".$line->error, LOG_ERR);
+	}
+
 
 	return $CommandeFournisseur;
 
