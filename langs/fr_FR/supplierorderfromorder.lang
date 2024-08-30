@@ -88,6 +88,7 @@ ViewSupplierOrderGenerated=Voir cf liées
 InitialCommande=Commande initiale :
 listOrderSupplierForCustomerCommand=Liste des commandes fournisseurs liées à la commande
 SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY=Les quantités des colonnes "Commandé" et "À commander" proviennent uniquement de la commande d'origine
+InfoSOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY = Affiche la quantité du produit qu'il reste à commander. (Calcule la différence entre la quantité de produits commandés et la quantité de produits déjà expédiés)
 SOFO_GROUP_LINES_BY_PRODUCT=Grouper les lignes par produit
 SupplierProposalSuccessfullyCreated=Demandes de prix fournisseurs créées
 supplierorderfromorderAbout = A propos du module Commande Fournisseur depuis Commande Client
@@ -96,5 +97,5 @@ DontGroupByProduct=Ne pas grouper les lignes par produit
 GroupByProductHelp=La valeur par défaut peut être modifiée dans la configuration du module
 SUPPLIERORDER_FROM_ORDER_NOTES_PUBLIC = Importer les notes privées des commandes vers les commandes fournisseurs
 SUPPLIERORDER_FROM_ORDER_NOTES_PRIVATE = Importer les notes publiques des commandes vers les commandes fournisseurs
-
+alreadyShipped = Déjà expédié
 

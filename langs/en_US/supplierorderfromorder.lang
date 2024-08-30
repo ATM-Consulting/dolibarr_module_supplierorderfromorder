@@ -78,3 +78,4 @@ Fabriquer = Create
 SOFO_GROUP_LINES_BY_PRODUCT=Group lines by product
 DontGroupByProduct=Don't group lines by product
 GroupByProductHelp=Default value can be set in configuration page
+alreadyShipped = Already shipped

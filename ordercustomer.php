@@ -580,9 +580,9 @@ if (!getDolGlobalString('SOFO_CHECK_STOCK_ON_SHARED_STOCK')) {
 $title = $langs->trans('ProductsToOrder');
 $db->query("SET SQL_MODE=''");
 
-$sql = 'SELECT prod.rowid, prod.ref, prod.label, cd.description, prod.price, SUM(cd.qty) as qty, cd.buy_price_ht';
+$sql = 'SELECT prod.rowid, prod.ref, prod.label, cd.description, prod.price, SUM(cd.qty) as qty, COALESCE(SUM(ed.qty), 0) as qty_shipped, cd.buy_price_ht';
 $sql .= ', prod.price_ttc, prod.price_base_type,prod.fk_product_type';
-$sql .= ', prod.tms as datem, prod.duration, prod.tobuy, prod.seuil_stock_alerte, prod.finished, cd.rang,';
+$sql .= ', prod.tms as datem, prod.duration, prod.tobuy, prod.seuil_stock_alerte, cd.rang,';
 
 if (in_array($db->type, array('pgsql'))) {
 	$sql .= ' string_agg(DISTINCT cd.rowid::character varying, \'@\') as lineid,';
@@ -597,12 +597,12 @@ $sql .= ' ( SELECT SUM(s.reel) FROM ' . MAIN_DB_PREFIX . 'product_stock s
 $sql .= $dolibarr_version35 ? ', prod.desiredstock' : "";
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as prod';
 $sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd ON (prod.rowid = cd.fk_product)';
+$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'expeditiondet as ed ON (cd.rowid = ed.fk_origin_line)';
 
 if (!empty($TCategoriesQuery)) {
 	$sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'categorie_product as cp ON (prod.rowid = cp.fk_product)';
 }
 
-//$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s ON (prod.rowid = s.fk_product)';
 $sql .= ' WHERE prod.fk_product_type IN (0,1) AND prod.entity IN (' . getEntity("product", 1) . ')';
 
 $fk_commande = GETPOST('id', 'int');
@@ -644,21 +644,12 @@ if ($snom) {
 
 $sql .= ' AND prod.tobuy = 1';
 
-if(GETPOSTISSET('finished', 'none') && !GETPOSTISSET('button_removefilter_x')) {
-	if(GETPOST('finished', 'none') >= 0) {
-		$sql .= ' AND prod.finished = ' . GETPOST('finished', 'none');
-	}
-} elseif(isset($conf->global->SOFO_DEFAUT_FILTER) && getDolGlobalInt('SOFO_DEFAUT_FILTER') >= 0 ) {
-	$sql .= ' AND prod.finished = ' . getDolGlobalInt('SOFO_DEFAUT_FILTER' );
-}
-
 if (!empty($canvas)) {
 	$sql .= ' AND prod.canvas = "' . $db->escape($canvas) . '"';
 }
 
 if ($salert == 'on') {
 	$sql .= " AND prod.seuil_stock_alerte is not NULL ";
-
 }
 
 $sql .= ' GROUP BY prod.rowid, prod.ref, prod.label, prod.price';
@@ -668,11 +659,6 @@ $sql .= ', prod.duration, prod.tobuy, prod.seuil_stock_alerte';
 //$sql .= ', prod.desiredstock';
 //$sql .= ', s.fk_product';
 
-//if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
-$sql .= ', cd.description, cd.buy_price_ht, cd.rang';
-//}
-//$sql .= ' HAVING prod.desiredstock > SUM(COALESCE(s.reel, 0))';
-//$sql .= ' HAVING prod.desiredstock > 0';
 if ($salert == 'on') {
 	$sql .= ' HAVING stock_physique < prod.seuil_stock_alerte ';
 	$alertchecked = 'checked="checked"';
@@ -705,8 +691,6 @@ if ($sql2 && $fk_commande > 0) {
 	$sql2 .= $db->plimit($limit + 1, $offset);
 	$resql2 = $db->query($sql2);
 }
-//print $sql ;
-$statutarray = array('1' => $langs->trans("Finished"), '0' => $langs->trans("RowMaterial"));
 $form = new Form($db);
 
 if ($resql || $resql2) {
@@ -770,7 +754,6 @@ if ($resql || $resql2) {
 					$objsp->duration = $sousproduit->duration_value;
 					$objsp->tobuy = $sousproduit->status_buy;
 					$objsp->seuil_stock_alert = $sousproduit->seuil_stock_alerte;
-					$objsp->finished = $sousproduit->finished;
 					$objsp->stock_physique = $sousproduit->stock_reel;
 					$objsp->qty =  $qtyParentToHave * $value['nb'];			//qty du produit = quantité du produit parent commandé * nombre du sous-produit nécessaire pour le produit parent
 					$objsp->desiredstock = $sousproduit->desiredstock;
@@ -975,7 +958,6 @@ if ($resql || $resql2) {
 	$param .= '&fourn_id=' . $fourn_id . '&snom=' . $snom . '&salert=' . $salert;
 	$param .= '&sref=' . $sref;
 	$param .= '&group_lines_by_product='.$group_lines_by_product;
-	if(!GETPOSTISSET('button_removefilter_x') && GETPOSTISSET('finished', 'none')) $param .= '&finished=' . GETPOST('finished', 'none');
 
 	// Lignes des titres
 	print '<tr class="liste_titre_filter">' .
@@ -994,16 +976,6 @@ if ($resql || $resql2) {
 		$langs->trans('Label'),
 		'ordercustomer.php',
 		'prod.label',
-		$param,
-		'id=' . GETPOST('id','int'),
-		'',
-		$sortfield,
-		$sortorder
-	);
-	print_liste_field_titre(
-		$langs->trans('Nature'),
-		'ordercustomer.php',
-		'prod.finished',
 		$param,
 		'id=' . GETPOST('id','int'),
 		'',
@@ -1086,6 +1058,16 @@ if ($resql || $resql2) {
 		$sortorder
 	);
 	print_liste_field_titre(
+		$langs->trans('alreadyShipped'),
+		'ordercustomer.php',
+		'',
+		$param,
+		'id=' . GETPOST('id','int'),
+		'align="right"',
+		$sortfield,
+		$sortorder
+	);
+	print_liste_field_titre(
 		$langs->trans('StockToBuy'),
 		'ordercustomer.php',
 		'',
@@ -1130,8 +1112,6 @@ if ($resql || $resql2) {
 	}
 
 	$liste_titre = "";
-	$liste_titre .= '<td class="liste_titre">' . $form->selectarray('finished', $statutarray, (!GETPOSTISSET('button_removefilter_x') && GETPOSTISSET('finished', 'none')) ? GETPOST('finished', 'none') :  getDolGlobalInt('SOFO_DEFAUT_FILTER'), 1) . '</td>';
-
 	if (isModEnabled('categorie') && getDolGlobalString('SOFO_DISPLAY_CAT_COLUMN')) {
 		$liste_titre .= '<td class="liste_titre">';
 		$liste_titre .= '</td>';
@@ -1320,13 +1300,6 @@ if ($resql || $resql2) {
 			$ordered = $stock_commande_client;
 
 
-			//if($objp->rowid == 14978)	{print "$stock >= {$objp->qty} - $stock_expedie_client + {$objp->desiredstock}";exit;}
-			/*if($stock >= (float)$objp->qty - (float)$stock_expedie_client + (float)$objp->desiredstock) {
-				$i++;
-				continue; // le stock est suffisant on passe
-			}*/
-
-
 			$warning = '';
 			if (!empty($objp->seuil_stock_alerte)
 				&& ($stock < $objp->seuil_stock_alerte)) {
@@ -1474,7 +1447,6 @@ if ($resql || $resql2) {
 			}
 
 			print '<td>' . $objp->label . $r . '</td>';
-			print '<td>' . (isset($statutarray[$objp->finished]) ? $statutarray[$objp->finished] : '') . '</td>';
 
 
 			if (isModEnabled('categorie') && getDolGlobalString('SOFO_DISPLAY_CAT_COLUMN')) {
@@ -1502,7 +1474,6 @@ if ($resql || $resql2) {
 			}
 
 
-			//print $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : "".
 
 			$champs = "";
 			$champs .= $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : '';
@@ -1517,12 +1488,16 @@ if ($resql || $resql2) {
 					'</td>';
 				//Commandé
 			$champs .= '<td align="right">';
-			$champs .= (!getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $ordered : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty ?? 0));
+			$champs .=  $objp->qty;
 			$champs .= '</td>';
-			$champs .= '</td>' .
-				'<td align="right">' .
+			// Déja expédié
+			$qty_shipped_to_print = $objp->qty_shipped > 0 ? $objp->qty_shipped : '0';
+			$champs .= '<td align="right">' . $qty_shipped_to_print . '</td>';
+			// A commander
+			$stocktobuy = $objp->qty - $objp->qty_shipped;
+			$champs .='<td align="right">' .
 				'<input type="text" name="tobuy' . $i .
-				'" value="' . (!getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $stocktobuy : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty ?? 0)) . '" ' . $disabled . ' size="3"> <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
+				'" value="' . (getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $stocktobuy : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty ?? 0)) . '" ' . $disabled . ' size="3"> <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
 			if (getDolGlobalString('SOFO_USE_DELIVERY_TIME')) {
 
 				$nb_day = (int)getMinAvailability($objp->rowid, $stocktobuy);
@@ -1610,6 +1585,10 @@ if ($resql || $resql2) {
 						<input type="text" name="tobuy_free' . $i . '" value="' . $objp->qty . '">
 						<input type="hidden" name="lineid_free' . $i . '" value="' . $objp->rowid . '" >
 					</td>'; // Ordered
+				print '<td align="right" id="test">
+							<input type="text" name="tobuy_free' . $i . '" value="' . $objp->qty_shipped . '">
+							<input type="hidden" name="lineid_free' . $i . '" value="' . $objp->rowid . '" >
+						</td>'; // OrderShipped
 				print '<td align="right">
 						<input type="text" name="price_free' . $i . '" value="' . (!getDolGlobalString('SOFO_COST_PRICE_AS_BUYING') ? $objp->price : price($objp->buy_price_ht)) . '" size="5" style="text-align:right">€
 						' . $form->select_company((empty($socid) ? '' : $socid), 'fourn_free' . $i, 's.fournisseur = 1', 1, 0, 0, array(), 0, 'minwidth100 maxwidth300') . '
