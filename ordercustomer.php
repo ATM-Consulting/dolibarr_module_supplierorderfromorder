@@ -580,23 +580,30 @@ if (!getDolGlobalString('SOFO_CHECK_STOCK_ON_SHARED_STOCK')) {
 $title = $langs->trans('ProductsToOrder');
 $db->query("SET SQL_MODE=''");
 
-$sql = 'SELECT prod.rowid, prod.ref, prod.label, cd.description, prod.price, SUM(cd.qty) as qty, COALESCE(SUM(ed.qty), 0) as qty_shipped, cd.buy_price_ht';
+$sql = 'SELECT prod.rowid, prod.ref, prod.label, cd.description, prod.price, cd.qty as qty, COALESCE(SUM(ed.qty), 0) as qty_shipped, cd.buy_price_ht';
 $sql .= ', prod.price_ttc, prod.price_base_type,prod.fk_product_type';
 $sql .= ', prod.tms as datem, prod.duration, prod.tobuy, prod.seuil_stock_alerte, cd.rang,';
 
 if (in_array($db->type, array('pgsql'))) {
 	$sql .= ' string_agg(DISTINCT cd.rowid::character varying, \'@\') as lineid,';
-}
-else{
+} else {
 	$sql .= ' GROUP_CONCAT(cd.rowid SEPARATOR "@") as lineid,';
 }
 
-$sql .= ' ( SELECT SUM(s.reel) FROM ' . MAIN_DB_PREFIX . 'product_stock s
-		INNER JOIN ' . MAIN_DB_PREFIX . 'entrepot as entre ON entre.rowid=s.fk_entrepot WHERE s.fk_product=prod.rowid
-		AND entre.entity IN (' . $entityToTest . ')) as stock_physique';
+$sql .= ' ( SELECT SUM(s.reel) FROM ' . MAIN_DB_PREFIX . 'product_stock s';
+$sql .= ' INNER JOIN ' . MAIN_DB_PREFIX . 'entrepot as entre ON entre.rowid=s.fk_entrepot';
+$sql .= ' WHERE s.fk_product=prod.rowid AND entre.entity IN (' . $entityToTest . ')) as stock_physique';
+
 $sql .= $dolibarr_version35 ? ', prod.desiredstock' : "";
 $sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as prod';
-$sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd ON (prod.rowid = cd.fk_product)';
+
+// Inclure fk_commande dans la sous-requête
+$sql .= ' LEFT OUTER JOIN (';
+$sql .= ' SELECT fk_product, fk_commande, SUM(qty) as qty, description, MAX(buy_price_ht) as buy_price_ht, MAX(rang) as rang, GROUP_CONCAT(rowid SEPARATOR "@") as rowid';
+$sql .= ' FROM ' . MAIN_DB_PREFIX . 'commandedet';
+$sql .= ' GROUP BY fk_product, fk_commande';
+$sql .= ') as cd ON prod.rowid = cd.fk_product';
+
 $sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'expeditiondet as ed ON (cd.rowid = ed.fk_origin_line)';
 
 if (!empty($TCategoriesQuery)) {
@@ -607,11 +614,14 @@ $sql .= ' WHERE prod.fk_product_type IN (0,1) AND prod.entity IN (' . getEntity(
 
 $fk_commande = GETPOST('id', 'int');
 
-if ($fk_commande > 0)
+if ($fk_commande > 0) {
+	// Appliquer le filtre sur fk_commande
 	$sql .= ' AND cd.fk_commande = ' . $fk_commande;
+}
 
-if (!empty($TCategoriesQuery))
+if (!empty($TCategoriesQuery)) {
 	$sql .= ' AND cp.fk_categorie IN ( ' . implode(',', $TCategoriesQuery) . ' ) ';
+}
 
 if ($sall) {
 	$sql .= ' AND (prod.ref LIKE "%' . $db->escape($sall) . '%" ';
