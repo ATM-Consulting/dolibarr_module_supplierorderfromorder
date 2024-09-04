@@ -1144,6 +1144,8 @@ if ($resql || $resql2) {
 		'<input type="image" class="liste_titre" name="button_removefilter"
           src="' . DOL_URL_ROOT . '/theme/' . $conf->theme . '/img/searchclear.png" value="' . dol_escape_htmltag($langs->trans("Search")) . '" title="' . dol_escape_htmltag($langs->trans("Search")) . '">' .
 		'</td>' .
+		'<td class="liste_titre" align="right">&nbsp;</td>' .
+		'<td class="liste_titre" align="right">&nbsp;</td>' .
 		'</tr>';
 
 	print $liste_titre;
@@ -1511,7 +1513,11 @@ if ($resql || $resql2) {
 			$stocktobuy = ($objp->qty - $objp->qty_shipped) > 0 ? ($objp->qty - $objp->qty_shipped) : 0;
 			$champs .='<td align="right">' .
 				'<input type="text" name="tobuy' . $i .
-				'" value="' . (getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $stocktobuy : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty ?? 0)) . '" ' . $disabled . ' size="3"> <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
+				'" value="' . (getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $stocktobuy : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty ?? 0)) . '" ' . $disabled . ' size="3"> </td>';
+			$champs .='<td align="center">' .
+				'<span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span>';
+			$champs .='</td>';
+
 			if (getDolGlobalString('SOFO_USE_DELIVERY_TIME')) {
 
 				$nb_day = (int)getMinAvailability($objp->rowid, $stocktobuy);
