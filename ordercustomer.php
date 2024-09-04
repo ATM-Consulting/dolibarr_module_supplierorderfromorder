@@ -1067,16 +1067,18 @@ if ($resql || $resql2) {
 		$sortfield,
 		$sortorder
 	);
-	print_liste_field_titre(
-		$langs->trans('alreadyShipped'),
-		'ordercustomer.php',
-		'',
-		$param,
-		'id=' . GETPOST('id','int'),
-		'align="right"',
-		$sortfield,
-		$sortorder
-	);
+	if ($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY) {
+		print_liste_field_titre(
+			$langs->trans('alreadyShipped'),
+			'ordercustomer.php',
+			'',
+			$param,
+			'id=' . GETPOST('id', 'int'),
+			'align="right"',
+			$sortfield,
+			$sortorder
+		);
+	}
 	print_liste_field_titre(
 		$langs->trans('StockToBuy'),
 		'ordercustomer.php',
@@ -1500,11 +1502,13 @@ if ($resql || $resql2) {
 			$champs .= '<td align="right">';
 			$champs .=  $objp->qty;
 			$champs .= '</td>';
-			// Déja expédié
-			$qty_shipped_to_print = $objp->qty_shipped > 0 ? $objp->qty_shipped : '0';
-			$champs .= '<td align="right">' . $qty_shipped_to_print . '</td>';
+			if ($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY) {
+				// Déja expédié
+				$qty_shipped_to_print = $objp->qty_shipped > 0 ? $objp->qty_shipped : '0';
+				$champs .= '<td align="right">' . $qty_shipped_to_print . '</td>';
+			}
 			// A commander
-			$stocktobuy = $objp->qty - $objp->qty_shipped;
+			$stocktobuy = ($objp->qty - $objp->qty_shipped) > 0 ? ($objp->qty - $objp->qty_shipped) : 0;
 			$champs .='<td align="right">' .
 				'<input type="text" name="tobuy' . $i .
 				'" value="' . (getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $stocktobuy : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty ?? 0)) . '" ' . $disabled . ' size="3"> <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
