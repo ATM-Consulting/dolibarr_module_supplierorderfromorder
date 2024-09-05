@@ -580,38 +580,48 @@ if (!getDolGlobalString('SOFO_CHECK_STOCK_ON_SHARED_STOCK')) {
 $title = $langs->trans('ProductsToOrder');
 $db->query("SET SQL_MODE=''");
 
-$sql = 'SELECT prod.rowid, prod.ref, prod.label, cd.description, prod.price, SUM(cd.qty) as qty, cd.buy_price_ht';
+$sql = 'SELECT prod.rowid, prod.ref, prod.label, cd.description, prod.price, cd.qty as qty, COALESCE(SUM(ed.qty), 0) as qty_shipped, cd.buy_price_ht';
 $sql .= ', prod.price_ttc, prod.price_base_type,prod.fk_product_type';
-$sql .= ', prod.tms as datem, prod.duration, prod.tobuy, prod.seuil_stock_alerte, prod.finished, cd.rang,';
+$sql .= ', prod.tms as datem, prod.duration, prod.tobuy, prod.seuil_stock_alerte, cd.rang,';
 
 if (in_array($db->type, array('pgsql'))) {
 	$sql .= ' string_agg(DISTINCT cd.rowid::character varying, \'@\') as lineid,';
-}
-else{
+} else {
 	$sql .= ' GROUP_CONCAT(cd.rowid SEPARATOR "@") as lineid,';
 }
 
-$sql .= ' ( SELECT SUM(s.reel) FROM ' . MAIN_DB_PREFIX . 'product_stock s
-		INNER JOIN ' . MAIN_DB_PREFIX . 'entrepot as entre ON entre.rowid=s.fk_entrepot WHERE s.fk_product=prod.rowid
-		AND entre.entity IN (' . $entityToTest . ')) as stock_physique';
+$sql .= ' ( SELECT SUM(s.reel) FROM ' . $db->prefix() . 'product_stock s';
+$sql .= ' INNER JOIN ' . $db->prefix() . 'entrepot as entre ON entre.rowid=s.fk_entrepot';
+$sql .= ' WHERE s.fk_product=prod.rowid AND entre.entity IN (' . $entityToTest . ')) as stock_physique';
+
 $sql .= $dolibarr_version35 ? ', prod.desiredstock' : "";
-$sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as prod';
-$sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'commandedet as cd ON (prod.rowid = cd.fk_product)';
+$sql .= ' FROM ' . $db->prefix() . 'product as prod';
+
+// Inclure fk_commande dans la sous-requête
+$sql .= ' LEFT OUTER JOIN (';
+$sql .= ' SELECT fk_product, fk_commande, SUM(qty) as qty, description, MAX(buy_price_ht) as buy_price_ht, MAX(rang) as rang, GROUP_CONCAT(rowid SEPARATOR "@") as rowid';
+$sql .= ' FROM ' . $db->prefix() . 'commandedet';
+$sql .= ' GROUP BY fk_product, fk_commande';
+$sql .= ') as cd ON prod.rowid = cd.fk_product';
+
+$sql .= ' LEFT JOIN ' . $db->prefix() . 'expeditiondet as ed ON (cd.rowid = ed.fk_origin_line)';
 
 if (!empty($TCategoriesQuery)) {
-	$sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'categorie_product as cp ON (prod.rowid = cp.fk_product)';
+	$sql .= ' LEFT OUTER JOIN ' . $db->prefix() . 'categorie_product as cp ON (prod.rowid = cp.fk_product)';
 }
 
-//$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'product_stock as s ON (prod.rowid = s.fk_product)';
 $sql .= ' WHERE prod.fk_product_type IN (0,1) AND prod.entity IN (' . getEntity("product", 1) . ')';
 
 $fk_commande = GETPOST('id', 'int');
 
-if ($fk_commande > 0)
+if (intval($fk_commande) > 0) {
+	// Appliquer le filtre sur fk_commande
 	$sql .= ' AND cd.fk_commande = ' . $fk_commande;
+}
 
-if (!empty($TCategoriesQuery))
+if (!empty($TCategoriesQuery)) {
 	$sql .= ' AND cp.fk_categorie IN ( ' . implode(',', $TCategoriesQuery) . ' ) ';
+}
 
 if ($sall) {
 	$sql .= ' AND (prod.ref LIKE "%' . $db->escape($sall) . '%" ';
@@ -644,21 +654,12 @@ if ($snom) {
 
 $sql .= ' AND prod.tobuy = 1';
 
-if(GETPOSTISSET('finished', 'none') && !GETPOSTISSET('button_removefilter_x')) {
-	if(GETPOST('finished', 'none') >= 0) {
-		$sql .= ' AND prod.finished = ' . GETPOST('finished', 'none');
-	}
-} elseif(isset($conf->global->SOFO_DEFAUT_FILTER) && getDolGlobalInt('SOFO_DEFAUT_FILTER') >= 0 ) {
-	$sql .= ' AND prod.finished = ' . getDolGlobalInt('SOFO_DEFAUT_FILTER' );
-}
-
 if (!empty($canvas)) {
 	$sql .= ' AND prod.canvas = "' . $db->escape($canvas) . '"';
 }
 
 if ($salert == 'on') {
 	$sql .= " AND prod.seuil_stock_alerte is not NULL ";
-
 }
 
 $sql .= ' GROUP BY prod.rowid, prod.ref, prod.label, prod.price';
@@ -668,11 +669,6 @@ $sql .= ', prod.duration, prod.tobuy, prod.seuil_stock_alerte';
 //$sql .= ', prod.desiredstock';
 //$sql .= ', s.fk_product';
 
-//if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
-$sql .= ', cd.description, cd.buy_price_ht, cd.rang';
-//}
-//$sql .= ' HAVING prod.desiredstock > SUM(COALESCE(s.reel, 0))';
-//$sql .= ' HAVING prod.desiredstock > 0';
 if ($salert == 'on') {
 	$sql .= ' HAVING stock_physique < prod.seuil_stock_alerte ';
 	$alertchecked = 'checked="checked"';
@@ -682,8 +678,8 @@ $sql2 = '';
 //On prend les lignes libre
 if (GETPOST('id','int') && getDolGlobalString('SOFO_ADD_FREE_LINES')) {
 	$sql2 .= 'SELECT cd.rowid, cd.description, cd.qty as qty, cd.product_type, cd.price, cd.buy_price_ht
-			 FROM ' . MAIN_DB_PREFIX . 'commandedet as cd
-			 	LEFT JOIN ' . MAIN_DB_PREFIX . 'commande as c ON (cd.fk_commande = c.rowid)
+			 FROM ' . $db->prefix() . 'commandedet as cd
+			 	LEFT JOIN ' . $db->prefix() . 'commande as c ON (cd.fk_commande = c.rowid)
 			 WHERE c.rowid = ' . GETPOST('id','int') . ' AND cd.product_type IN(0,1) AND fk_product IS NULL';
 	if (getDolGlobalString('SUPPORDERFROMORDER_USE_ORDER_DESC')) {
 		$sql2 .= ' GROUP BY cd.description';
@@ -705,8 +701,6 @@ if ($sql2 && $fk_commande > 0) {
 	$sql2 .= $db->plimit($limit + 1, $offset);
 	$resql2 = $db->query($sql2);
 }
-//print $sql ;
-$statutarray = array('1' => $langs->trans("Finished"), '0' => $langs->trans("RowMaterial"));
 $form = new Form($db);
 
 if ($resql || $resql2) {
@@ -770,7 +764,6 @@ if ($resql || $resql2) {
 					$objsp->duration = $sousproduit->duration_value;
 					$objsp->tobuy = $sousproduit->status_buy;
 					$objsp->seuil_stock_alert = $sousproduit->seuil_stock_alerte;
-					$objsp->finished = $sousproduit->finished;
 					$objsp->stock_physique = $sousproduit->stock_reel;
 					$objsp->qty =  $qtyParentToHave * $value['nb'];			//qty du produit = quantité du produit parent commandé * nombre du sous-produit nécessaire pour le produit parent
 					$objsp->desiredstock = $sousproduit->desiredstock;
@@ -975,7 +968,6 @@ if ($resql || $resql2) {
 	$param .= '&fourn_id=' . $fourn_id . '&snom=' . $snom . '&salert=' . $salert;
 	$param .= '&sref=' . $sref;
 	$param .= '&group_lines_by_product='.$group_lines_by_product;
-	if(!GETPOSTISSET('button_removefilter_x') && GETPOSTISSET('finished', 'none')) $param .= '&finished=' . GETPOST('finished', 'none');
 
 	// Lignes des titres
 	print '<tr class="liste_titre_filter">' .
@@ -994,16 +986,6 @@ if ($resql || $resql2) {
 		$langs->trans('Label'),
 		'ordercustomer.php',
 		'prod.label',
-		$param,
-		'id=' . GETPOST('id','int'),
-		'',
-		$sortfield,
-		$sortorder
-	);
-	print_liste_field_titre(
-		$langs->trans('Nature'),
-		'ordercustomer.php',
-		'prod.finished',
 		$param,
 		'id=' . GETPOST('id','int'),
 		'',
@@ -1085,6 +1067,18 @@ if ($resql || $resql2) {
 		$sortfield,
 		$sortorder
 	);
+	if ($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY) {
+		print_liste_field_titre(
+			$langs->trans('AlreadyShipped'),
+			'ordercustomer.php',
+			'',
+			$param,
+			'id=' . GETPOST('id', 'int'),
+			'align="right"',
+			$sortfield,
+			$sortorder
+		);
+	}
 	print_liste_field_titre(
 		$langs->trans('StockToBuy'),
 		'ordercustomer.php',
@@ -1130,8 +1124,6 @@ if ($resql || $resql2) {
 	}
 
 	$liste_titre = "";
-	$liste_titre .= '<td class="liste_titre">' . $form->selectarray('finished', $statutarray, (!GETPOSTISSET('button_removefilter_x') && GETPOSTISSET('finished', 'none')) ? GETPOST('finished', 'none') :  getDolGlobalInt('SOFO_DEFAUT_FILTER'), 1) . '</td>';
-
 	if (isModEnabled('categorie') && getDolGlobalString('SOFO_DISPLAY_CAT_COLUMN')) {
 		$liste_titre .= '<td class="liste_titre">';
 		$liste_titre .= '</td>';
@@ -1152,6 +1144,8 @@ if ($resql || $resql2) {
 		'<input type="image" class="liste_titre" name="button_removefilter"
           src="' . DOL_URL_ROOT . '/theme/' . $conf->theme . '/img/searchclear.png" value="' . dol_escape_htmltag($langs->trans("Search")) . '" title="' . dol_escape_htmltag($langs->trans("Search")) . '">' .
 		'</td>' .
+		'<td class="liste_titre" align="right">&nbsp;</td>' .
+		'<td class="liste_titre" align="right">&nbsp;</td>' .
 		'</tr>';
 
 	print $liste_titre;
@@ -1196,7 +1190,7 @@ if ($resql || $resql2) {
 			// Multilangs
 			if (getDolGlobalString('MAIN_MULTILANGS')) {
 				$sql = 'SELECT label';
-				$sql .= ' FROM ' . MAIN_DB_PREFIX . 'product_lang';
+				$sql .= ' FROM ' . $db->prefix() . 'product_lang';
 				$sql .= ' WHERE fk_product = ' . $objp->rowid;
 				$sql .= ' AND lang = "' . $langs->getDefaultLang() . '"';
 				$sql .= ' LIMIT 1';
@@ -1262,14 +1256,14 @@ if ($resql || $resql2) {
 					//Requête qui récupère la somme des qty ventilés pour les cmd reçu partiellement
 					$sqlQ = "SELECT SUM(rec.qty) as qty";
 					if ((float) DOL_VERSION < 20) {
-						$sqlQ .= " FROM " . MAIN_DB_PREFIX . "commande_fournisseur_dispatch as rec";
-						$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = rec.fk_commande) AND cf.entity IN (" . getEntity('commande_fournisseur') . ")";
+						$sqlQ .= " FROM " . $db->prefix() . "commande_fournisseur_dispatch as rec";
+						$sqlQ .= " INNER JOIN " . $db->prefix() . "commande_fournisseur cf ON (cf.rowid = rec.fk_commande) AND cf.entity IN (" . getEntity('commande_fournisseur') . ")";
 					} else {
-						$sqlQ .= " FROM " . MAIN_DB_PREFIX . "receptiondet_batch as rec";
-						$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = rec.fk_elementdet) AND cf.entity IN (" . getEntity('commande_fournisseur') . ")";
+						$sqlQ .= " FROM " . $db->prefix() . "receptiondet_batch as rec";
+						$sqlQ .= " INNER JOIN " . $db->prefix() . "commande_fournisseur cf ON (cf.rowid = rec.fk_elementdet) AND cf.entity IN (" . getEntity('commande_fournisseur') . ")";
 						$sqlQ .= " AND rec.element_type = 'supplier_order' ";
 					}
-					$sqlQ .= " LEFT JOIN " . MAIN_DB_PREFIX . 'entrepot as e ON rec.fk_entrepot = e.rowid AND e.entity IN (' . $entityToTest . ')';
+					$sqlQ .= " LEFT JOIN " . $db->prefix() . 'entrepot as e ON rec.fk_entrepot = e.rowid AND e.entity IN (' . $entityToTest . ')';
 					$sqlQ .= " WHERE cf.fk_statut = 4";
 					$sqlQ .= " AND rec.fk_product = " . $prod->id;
 					$sqlQ .= " ORDER BY rec.rowid ASC";
@@ -1320,13 +1314,6 @@ if ($resql || $resql2) {
 			$ordered = $stock_commande_client;
 
 
-			//if($objp->rowid == 14978)	{print "$stock >= {$objp->qty} - $stock_expedie_client + {$objp->desiredstock}";exit;}
-			/*if($stock >= (float)$objp->qty - (float)$stock_expedie_client + (float)$objp->desiredstock) {
-				$i++;
-				continue; // le stock est suffisant on passe
-			}*/
-
-
 			$warning = '';
 			if (!empty($objp->seuil_stock_alerte)
 				&& ($stock < $objp->seuil_stock_alerte)) {
@@ -1341,8 +1328,8 @@ if ($resql || $resql2) {
 				if (isModEnabled('supplier_proposal')) {
 
 					$q = 'SELECT a.ref
-                                                FROM ' . MAIN_DB_PREFIX . 'supplier_proposal a
-                                                INNER JOIN ' . MAIN_DB_PREFIX . 'supplier_proposaldet d on (d.fk_supplier_proposal=a.rowid)
+                                                FROM ' . $db->prefix() . 'supplier_proposal a
+                                                INNER JOIN ' . $db->prefix() . 'supplier_proposaldet d on (d.fk_supplier_proposal=a.rowid)
                                                 WHERE a.fk_statut = 1
                                                 AND d.fk_product = ' . $prod->id;
 
@@ -1359,8 +1346,8 @@ if ($resql || $resql2) {
 				if (isModEnabled('askpricesupplier')) {
 
 					$q = 'SELECT a.ref
-						FROM ' . MAIN_DB_PREFIX . 'askpricesupplier a
-						INNER JOIN ' . MAIN_DB_PREFIX . 'askpricesupplierdet d on (d.fk_askpricesupplier = a.rowid)
+						FROM ' . $db->prefix() . 'askpricesupplier a
+						INNER JOIN ' . $db->prefix() . 'askpricesupplierdet d on (d.fk_askpricesupplier = a.rowid)
 						WHERE a.fk_statut = 1
 						AND fk_product = ' . $prod->id;
 
@@ -1474,7 +1461,6 @@ if ($resql || $resql2) {
 			}
 
 			print '<td>' . $objp->label . $r . '</td>';
-			print '<td>' . (isset($statutarray[$objp->finished]) ? $statutarray[$objp->finished] : '') . '</td>';
 
 
 			if (isModEnabled('categorie') && getDolGlobalString('SOFO_DISPLAY_CAT_COLUMN')) {
@@ -1502,7 +1488,6 @@ if ($resql || $resql2) {
 			}
 
 
-			//print $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : "".
 
 			$champs = "";
 			$champs .= $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : '';
@@ -1517,12 +1502,22 @@ if ($resql || $resql2) {
 					'</td>';
 				//Commandé
 			$champs .= '<td align="right">';
-			$champs .= (!getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $ordered : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty ?? 0));
+			$champs .=  $objp->qty;
 			$champs .= '</td>';
-			$champs .= '</td>' .
-				'<td align="right">' .
+			if (getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY')) {
+				// Déja expédié
+				$qty_shipped_to_print = $objp->qty_shipped > 0 ? $objp->qty_shipped : '0';
+				$champs .= '<td align="right">' . $qty_shipped_to_print . '</td>';
+			}
+			// A commander
+			$stocktobuy = ($objp->qty - $objp->qty_shipped) > 0 ? ($objp->qty - $objp->qty_shipped) : 0;
+			$champs .='<td align="right">' .
 				'<input type="text" name="tobuy' . $i .
-				'" value="' . (!getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $stocktobuy : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty ?? 0)) . '" ' . $disabled . ' size="3"> <span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span></td>';
+				'" value="' . (getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $stocktobuy : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty ?? 0)) . '" ' . $disabled . ' size="3"> </td>';
+			$champs .='<td align="center">' .
+				'<span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span>';
+			$champs .='</td>';
+
 			if (getDolGlobalString('SOFO_USE_DELIVERY_TIME')) {
 
 				$nb_day = (int)getMinAvailability($objp->rowid, $stocktobuy);
@@ -1610,6 +1605,10 @@ if ($resql || $resql2) {
 						<input type="text" name="tobuy_free' . $i . '" value="' . $objp->qty . '">
 						<input type="hidden" name="lineid_free' . $i . '" value="' . $objp->rowid . '" >
 					</td>'; // Ordered
+				print '<td align="right" id="test">
+							<input type="text" name="tobuy_free' . $i . '" value="' . $objp->qty_shipped . '">
+							<input type="hidden" name="lineid_free' . $i . '" value="' . $objp->rowid . '" >
+						</td>'; // OrderShipped
 				print '<td align="right">
 						<input type="text" name="price_free' . $i . '" value="' . (!getDolGlobalString('SOFO_COST_PRICE_AS_BUYING') ? $objp->price : price($objp->buy_price_ht)) . '" size="5" style="text-align:right">€
 						' . $form->select_company((empty($socid) ? '' : $socid), 'fourn_free' . $i, 's.fournisseur = 1', 1, 0, 0, array(), 0, 'minwidth100 maxwidth300') . '
@@ -1885,8 +1884,8 @@ function _getSupplierPriceInfos($supplierpriceid)
 	global $db;
     $sql = 'SELECT pfp.fk_product, pfp.fk_soc, pfp.ref_fourn';
     $sql .= ', pfp.tva_tx, pfp.unitprice, pfp.remise_percent, soc.remise_supplier FROM ';
-    $sql .= MAIN_DB_PREFIX.'product_fournisseur_price pfp';
-    $sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'societe soc ON (soc.rowid = pfp.fk_soc)';
+    $sql .= $db->prefix().'product_fournisseur_price pfp';
+    $sql .= ' LEFT JOIN '.$db->prefix().'societe soc ON (soc.rowid = pfp.fk_soc)';
     $sql .= ' WHERE pfp.rowid = '.$supplierpriceid;
 	$resql = $db->query($sql);
 
@@ -1904,7 +1903,7 @@ function _getSupplierOrderInfos($idsupplier, $projectid = '')
 	global $db, $conf;
 
 	$sql = 'SELECT rowid, ref';
-	$sql .= ' FROM ' . MAIN_DB_PREFIX . 'commande_fournisseur';
+	$sql .= ' FROM ' . $db->prefix() . 'commande_fournisseur';
 	$sql .= ' WHERE fk_soc = ' . $idsupplier;
 	$sql .= ' AND fk_statut = 0'; // 0 = DRAFT (Brouillon)
 
@@ -1932,7 +1931,7 @@ function _getSupplierProposalInfos($idsupplier, $projectid = '')
 	global $db, $conf;
 
 	$sql = 'SELECT rowid, ref';
-	$sql .= ' FROM ' . MAIN_DB_PREFIX . 'supplier_proposal';
+	$sql .= ' FROM ' . $db->prefix() . 'supplier_proposal';
 	$sql .= ' WHERE fk_soc = ' . $idsupplier;
 	$sql .= ' AND fk_statut = 0'; // 0 = DRAFT (Brouillon)
 
