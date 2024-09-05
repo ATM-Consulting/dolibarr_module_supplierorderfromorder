@@ -590,31 +590,31 @@ if (in_array($db->type, array('pgsql'))) {
 	$sql .= ' GROUP_CONCAT(cd.rowid SEPARATOR "@") as lineid,';
 }
 
-$sql .= ' ( SELECT SUM(s.reel) FROM ' . MAIN_DB_PREFIX . 'product_stock s';
-$sql .= ' INNER JOIN ' . MAIN_DB_PREFIX . 'entrepot as entre ON entre.rowid=s.fk_entrepot';
+$sql .= ' ( SELECT SUM(s.reel) FROM ' . $db->prefix() . 'product_stock s';
+$sql .= ' INNER JOIN ' . $db->prefix() . 'entrepot as entre ON entre.rowid=s.fk_entrepot';
 $sql .= ' WHERE s.fk_product=prod.rowid AND entre.entity IN (' . $entityToTest . ')) as stock_physique';
 
 $sql .= $dolibarr_version35 ? ', prod.desiredstock' : "";
-$sql .= ' FROM ' . MAIN_DB_PREFIX . 'product as prod';
+$sql .= ' FROM ' . $db->prefix() . 'product as prod';
 
 // Inclure fk_commande dans la sous-requête
 $sql .= ' LEFT OUTER JOIN (';
 $sql .= ' SELECT fk_product, fk_commande, SUM(qty) as qty, description, MAX(buy_price_ht) as buy_price_ht, MAX(rang) as rang, GROUP_CONCAT(rowid SEPARATOR "@") as rowid';
-$sql .= ' FROM ' . MAIN_DB_PREFIX . 'commandedet';
+$sql .= ' FROM ' . $db->prefix() . 'commandedet';
 $sql .= ' GROUP BY fk_product, fk_commande';
 $sql .= ') as cd ON prod.rowid = cd.fk_product';
 
-$sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'expeditiondet as ed ON (cd.rowid = ed.fk_origin_line)';
+$sql .= ' LEFT JOIN ' . $db->prefix() . 'expeditiondet as ed ON (cd.rowid = ed.fk_origin_line)';
 
 if (!empty($TCategoriesQuery)) {
-	$sql .= ' LEFT OUTER JOIN ' . MAIN_DB_PREFIX . 'categorie_product as cp ON (prod.rowid = cp.fk_product)';
+	$sql .= ' LEFT OUTER JOIN ' . $db->prefix() . 'categorie_product as cp ON (prod.rowid = cp.fk_product)';
 }
 
 $sql .= ' WHERE prod.fk_product_type IN (0,1) AND prod.entity IN (' . getEntity("product", 1) . ')';
 
 $fk_commande = GETPOST('id', 'int');
 
-if ($fk_commande > 0) {
+if (intval($fk_commande) > 0) {
 	// Appliquer le filtre sur fk_commande
 	$sql .= ' AND cd.fk_commande = ' . $fk_commande;
 }
@@ -678,8 +678,8 @@ $sql2 = '';
 //On prend les lignes libre
 if (GETPOST('id','int') && getDolGlobalString('SOFO_ADD_FREE_LINES')) {
 	$sql2 .= 'SELECT cd.rowid, cd.description, cd.qty as qty, cd.product_type, cd.price, cd.buy_price_ht
-			 FROM ' . MAIN_DB_PREFIX . 'commandedet as cd
-			 	LEFT JOIN ' . MAIN_DB_PREFIX . 'commande as c ON (cd.fk_commande = c.rowid)
+			 FROM ' . $db->prefix() . 'commandedet as cd
+			 	LEFT JOIN ' . $db->prefix() . 'commande as c ON (cd.fk_commande = c.rowid)
 			 WHERE c.rowid = ' . GETPOST('id','int') . ' AND cd.product_type IN(0,1) AND fk_product IS NULL';
 	if (getDolGlobalString('SUPPORDERFROMORDER_USE_ORDER_DESC')) {
 		$sql2 .= ' GROUP BY cd.description';
@@ -1069,7 +1069,7 @@ if ($resql || $resql2) {
 	);
 	if ($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY) {
 		print_liste_field_titre(
-			$langs->trans('alreadyShipped'),
+			$langs->trans('AlreadyShipped'),
 			'ordercustomer.php',
 			'',
 			$param,
@@ -1190,7 +1190,7 @@ if ($resql || $resql2) {
 			// Multilangs
 			if (getDolGlobalString('MAIN_MULTILANGS')) {
 				$sql = 'SELECT label';
-				$sql .= ' FROM ' . MAIN_DB_PREFIX . 'product_lang';
+				$sql .= ' FROM ' . $db->prefix() . 'product_lang';
 				$sql .= ' WHERE fk_product = ' . $objp->rowid;
 				$sql .= ' AND lang = "' . $langs->getDefaultLang() . '"';
 				$sql .= ' LIMIT 1';
@@ -1256,14 +1256,14 @@ if ($resql || $resql2) {
 					//Requête qui récupère la somme des qty ventilés pour les cmd reçu partiellement
 					$sqlQ = "SELECT SUM(rec.qty) as qty";
 					if ((float) DOL_VERSION < 20) {
-						$sqlQ .= " FROM " . MAIN_DB_PREFIX . "commande_fournisseur_dispatch as rec";
-						$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = rec.fk_commande) AND cf.entity IN (" . getEntity('commande_fournisseur') . ")";
+						$sqlQ .= " FROM " . $db->prefix() . "commande_fournisseur_dispatch as rec";
+						$sqlQ .= " INNER JOIN " . $db->prefix() . "commande_fournisseur cf ON (cf.rowid = rec.fk_commande) AND cf.entity IN (" . getEntity('commande_fournisseur') . ")";
 					} else {
-						$sqlQ .= " FROM " . MAIN_DB_PREFIX . "receptiondet_batch as rec";
-						$sqlQ .= " INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur cf ON (cf.rowid = rec.fk_elementdet) AND cf.entity IN (" . getEntity('commande_fournisseur') . ")";
+						$sqlQ .= " FROM " . $db->prefix() . "receptiondet_batch as rec";
+						$sqlQ .= " INNER JOIN " . $db->prefix() . "commande_fournisseur cf ON (cf.rowid = rec.fk_elementdet) AND cf.entity IN (" . getEntity('commande_fournisseur') . ")";
 						$sqlQ .= " AND rec.element_type = 'supplier_order' ";
 					}
-					$sqlQ .= " LEFT JOIN " . MAIN_DB_PREFIX . 'entrepot as e ON rec.fk_entrepot = e.rowid AND e.entity IN (' . $entityToTest . ')';
+					$sqlQ .= " LEFT JOIN " . $db->prefix() . 'entrepot as e ON rec.fk_entrepot = e.rowid AND e.entity IN (' . $entityToTest . ')';
 					$sqlQ .= " WHERE cf.fk_statut = 4";
 					$sqlQ .= " AND rec.fk_product = " . $prod->id;
 					$sqlQ .= " ORDER BY rec.rowid ASC";
@@ -1328,8 +1328,8 @@ if ($resql || $resql2) {
 				if (isModEnabled('supplier_proposal')) {
 
 					$q = 'SELECT a.ref
-                                                FROM ' . MAIN_DB_PREFIX . 'supplier_proposal a
-                                                INNER JOIN ' . MAIN_DB_PREFIX . 'supplier_proposaldet d on (d.fk_supplier_proposal=a.rowid)
+                                                FROM ' . $db->prefix() . 'supplier_proposal a
+                                                INNER JOIN ' . $db->prefix() . 'supplier_proposaldet d on (d.fk_supplier_proposal=a.rowid)
                                                 WHERE a.fk_statut = 1
                                                 AND d.fk_product = ' . $prod->id;
 
@@ -1346,8 +1346,8 @@ if ($resql || $resql2) {
 				if (isModEnabled('askpricesupplier')) {
 
 					$q = 'SELECT a.ref
-						FROM ' . MAIN_DB_PREFIX . 'askpricesupplier a
-						INNER JOIN ' . MAIN_DB_PREFIX . 'askpricesupplierdet d on (d.fk_askpricesupplier = a.rowid)
+						FROM ' . $db->prefix() . 'askpricesupplier a
+						INNER JOIN ' . $db->prefix() . 'askpricesupplierdet d on (d.fk_askpricesupplier = a.rowid)
 						WHERE a.fk_statut = 1
 						AND fk_product = ' . $prod->id;
 
@@ -1884,8 +1884,8 @@ function _getSupplierPriceInfos($supplierpriceid)
 	global $db;
     $sql = 'SELECT pfp.fk_product, pfp.fk_soc, pfp.ref_fourn';
     $sql .= ', pfp.tva_tx, pfp.unitprice, pfp.remise_percent, soc.remise_supplier FROM ';
-    $sql .= MAIN_DB_PREFIX.'product_fournisseur_price pfp';
-    $sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'societe soc ON (soc.rowid = pfp.fk_soc)';
+    $sql .= $db->prefix().'product_fournisseur_price pfp';
+    $sql .= ' LEFT JOIN '.$db->prefix().'societe soc ON (soc.rowid = pfp.fk_soc)';
     $sql .= ' WHERE pfp.rowid = '.$supplierpriceid;
 	$resql = $db->query($sql);
 
@@ -1903,7 +1903,7 @@ function _getSupplierOrderInfos($idsupplier, $projectid = '')
 	global $db, $conf;
 
 	$sql = 'SELECT rowid, ref';
-	$sql .= ' FROM ' . MAIN_DB_PREFIX . 'commande_fournisseur';
+	$sql .= ' FROM ' . $db->prefix() . 'commande_fournisseur';
 	$sql .= ' WHERE fk_soc = ' . $idsupplier;
 	$sql .= ' AND fk_statut = 0'; // 0 = DRAFT (Brouillon)
 
@@ -1931,7 +1931,7 @@ function _getSupplierProposalInfos($idsupplier, $projectid = '')
 	global $db, $conf;
 
 	$sql = 'SELECT rowid, ref';
-	$sql .= ' FROM ' . MAIN_DB_PREFIX . 'supplier_proposal';
+	$sql .= ' FROM ' . $db->prefix() . 'supplier_proposal';
 	$sql .= ' WHERE fk_soc = ' . $idsupplier;
 	$sql .= ' AND fk_statut = 0'; // 0 = DRAFT (Brouillon)
 

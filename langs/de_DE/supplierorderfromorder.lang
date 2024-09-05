@@ -91,4 +91,4 @@ SOFO_GROUP_LINES_BY_PRODUCT=Zeilen nach Produkt gruppieren
 SupplierProposalSuccessfullyCreated=Erstellte Lieferantenpreisanfragen
 supplierorderfromorderAbout = Über das Modul Lieferantenbestellung aus Kundenauftrag
 Fabriquer = Erstellen
-alreadyShipped = Bereits versendet
+AlreadyShipped = Bereits versendet
