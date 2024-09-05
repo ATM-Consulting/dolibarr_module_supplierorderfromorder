@@ -1504,7 +1504,7 @@ if ($resql || $resql2) {
 			$champs .= '<td align="right">';
 			$champs .=  $objp->qty;
 			$champs .= '</td>';
-			if ($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY) {
+			if (getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY')) {
 				// Déja expédié
 				$qty_shipped_to_print = $objp->qty_shipped > 0 ? $objp->qty_shipped : '0';
 				$champs .= '<td align="right">' . $qty_shipped_to_print . '</td>';
