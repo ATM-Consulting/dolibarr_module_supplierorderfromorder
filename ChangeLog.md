@@ -2,8 +2,11 @@
 
 ## [Unreleased]
 
+
+
+
 ## RELEASES 2.9
-- NEW : Evolution of the supplier order module from customer order so that it takes into account the quantities already shipped - *03/09/2024* - 2.9.0
+- NEW : new coloumn on supplier order creation form : quantities already shipped - *03/09/2024* - 2.9.0
 
 ## RELEASES 2.8
 
