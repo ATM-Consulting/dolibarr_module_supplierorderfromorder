@@ -1072,7 +1072,7 @@ if ($resql || $resql2) {
 		$sortfield,
 		$sortorder
 	);
-	if (isset($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY)) {
+	if (getDolGlobalInt('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY')) {
 		print_liste_field_titre(
 			$langs->trans('AlreadyShipped'),
 			'ordercustomer.php',
