@@ -604,7 +604,12 @@ $sql .= ' FROM ' . $db->prefix() . 'commandedet';
 $sql .= ' GROUP BY fk_product, fk_commande';
 $sql .= ') as cd ON prod.rowid = cd.fk_product';
 
-$sql .= ' LEFT JOIN ' . $db->prefix() . 'expeditiondet as ed ON (cd.rowid = ed.fk_origin_line)';
+
+if ((float)DOL_VERSION >= 20.0) {
+	$sql .= ' LEFT JOIN ' . $db->prefix() . 'expeditiondet as ed ON (cd.rowid = ed.fk_elementdet)';
+}else{
+	$sql .= ' LEFT JOIN ' . $db->prefix() . 'expeditiondet as ed ON (cd.rowid = ed.fk_origin_line)';
+}
 
 if (!empty($TCategoriesQuery)) {
 	$sql .= ' LEFT OUTER JOIN ' . $db->prefix() . 'categorie_product as cp ON (prod.rowid = cp.fk_product)';
@@ -1067,7 +1072,7 @@ if ($resql || $resql2) {
 		$sortfield,
 		$sortorder
 	);
-	if ($conf->global->SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY) {
+	if (getDolGlobalInt('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY')) {
 		print_liste_field_titre(
 			$langs->trans('AlreadyShipped'),
 			'ordercustomer.php',
