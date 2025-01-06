@@ -73,7 +73,7 @@ $result = restrictedArea($user, 'produit|service&supplierorderfromorder');
 $action = GETPOST('action', 'alpha');
 $sref = GETPOST('sref', 'alpha');
 $snom = GETPOST('snom', 'alpha');
-$sall = GETPOST('sall', 'alpha');
+$search_all = GETPOST('search_all', 'alpha');
 $type = GETPOST('type', 'int');
 $tobuy = GETPOST('tobuy', 'int');
 $salert = GETPOST('salert', 'alpha');
@@ -628,11 +628,11 @@ if (!empty($TCategoriesQuery)) {
 	$sql .= ' AND cp.fk_categorie IN ( ' . implode(',', $TCategoriesQuery) . ' ) ';
 }
 
-if ($sall) {
-	$sql .= ' AND (prod.ref LIKE "%' . $db->escape($sall) . '%" ';
-	$sql .= 'OR prod.label LIKE "%' . $db->escape($sall) . '%" ';
-	$sql .= 'OR prod.description LIKE "%' . $db->escape($sall) . '%" ';
-	$sql .= 'OR prod.note LIKE "%' . $db->escape($sall) . '%")';
+if ($search_all) {
+	$sql .= ' AND (prod.ref LIKE "%' . $db->escape($search_all) . '%" ';
+	$sql .= 'OR prod.label LIKE "%' . $db->escape($search_all) . '%" ';
+	$sql .= 'OR prod.description LIKE "%' . $db->escape($search_all) . '%" ';
+	$sql .= 'OR prod.note LIKE "%' . $db->escape($search_all) . '%")';
 }
 // if the type is not 1, we show all products (type = 0,2,3)
 if (dol_strlen($type)) {
@@ -835,9 +835,9 @@ if ($resql || $resql2) {
 
 
 
-	if ($sref || $snom || $sall || $salert || GETPOST('search', 'alpha')) {
+	if ($sref || $snom || $search_all || $salert || GETPOST('search', 'alpha')) {
 		$filters = '&sref=' . $sref . '&snom=' . $snom;
-		$filters .= '&sall=' . $sall;
+		$filters .= '&search_all=' . $search_all;
 		$filters .= '&salert=' . $salert;
 
 		if (!getDolGlobalInt('SOFO_USE_DELIVERY_TIME') ) {
@@ -1575,7 +1575,7 @@ if ($resql || $resql2) {
 				$picto = img_picto('', './img/no', '', 1);
 
 				//pre($conf->global,1);
-				//if(!empty($conf->global->SUPPORDERFROMORDER_USE_ORDER_DESC)) {
+				//if(!empty(getDolGlobalString('SUPPORDERFROMORDER_USE_ORDER_DESC'))) {
 				//var_dump('toto');
 				print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" />';
 				print '<input type="hidden" name="product_type' . $i . '" value="' . $objp->product_type . '" >';
