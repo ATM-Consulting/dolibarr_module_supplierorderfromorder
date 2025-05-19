@@ -7,6 +7,7 @@
  */
 class ActionsSupplierorderfromorder
 {
+	public $resprints;
 
 	/**
 	 * Add options to the order form
@@ -212,7 +213,7 @@ class ActionsSupplierorderfromorder
 	 * 		@param $hookmanager
 	 */
 	function printFieldListWhere($parameters, &$object, &$action, $hookmanager) {
-
+		$this->resprints = '';
 		dol_include_once('/supplierorderfromorder/class/sofo.class.php');
 		$TContext = explode(':', $parameters['context']);
 		if(in_array('supplierorderlist', $TContext)) {
@@ -221,10 +222,12 @@ class ActionsSupplierorderfromorder
                 if(!empty($hookmanager->resPrint) && strpos(strtolower($hookmanager->resPrint), 'group by')) {
                     $hookmanager->resPrint = ' AND e.fk_source = '.GETPOST('id', 'int'). ' ' .  $hookmanager->resPrint;
 				}
-				else $this->resprints = ' AND e.fk_source = '.GETPOST('id', 'int');
+				else {
+					$this->resprints = ' AND e.fk_source = '.GETPOST('id', 'int');
+				}
 			}
 		}
-
+		return 0;
 	}
 
 	/**
@@ -247,6 +250,7 @@ class ActionsSupplierorderfromorder
 				$this->resprints = " LEFT JOIN ".MAIN_DB_PREFIX."element_element as e ON (cf.rowid = e.fk_target AND targettype = 'order_supplier' AND sourcetype = 'commande')";
 			}
 		}
+		return 0;
 	}
 
 	/**
