@@ -250,6 +250,7 @@ class ActionsSupplierorderfromorder
 				$this->resprints = " LEFT JOIN ".MAIN_DB_PREFIX."element_element as e ON (cf.rowid = e.fk_target AND targettype = 'order_supplier' AND sourcetype = 'commande')";
 			}
 		}
+		return 0;
 	}
 
 	/**
