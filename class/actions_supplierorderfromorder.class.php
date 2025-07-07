@@ -219,8 +219,8 @@ class ActionsSupplierorderfromorder extends \supplierorderfromorder\RetroCompatC
 		if(in_array('supplierorderlist', $TContext)) {
 			$origin_page = GETPOST('origin_page');
 			if($origin_page === 'ordercustomer') {
-                if(!empty($hookmanager->resPrint) && strpos(strtolower($hookmanager->resPrint), 'group by')) {
-                    $hookmanager->resPrint = ' AND e.fk_source = '.GETPOST('id', 'int'). ' ' .  $hookmanager->resPrint;
+                if(!empty($this->resprints) && strpos(strtolower($this->resprints), 'group by')) {
+                    $this->resprints = ' AND e.fk_source = '.GETPOST('id', 'int'). ' ' .  $this->resprints;
 				}
 				else $this->resprints = ' AND e.fk_source = '.GETPOST('id', 'int');
 			}
@@ -239,13 +239,14 @@ class ActionsSupplierorderfromorder extends \supplierorderfromorder\RetroCompatC
 	function printFieldListFrom($parameters, &$object, &$action, $hookmanager)
 	{
 
+		global $db;
 		dol_include_once('/supplierorderfromorder/class/sofo.class.php');
 
 		$TContext = explode(':', $parameters['context']);
 		if(in_array('supplierorderlist', $TContext)) {
 			$origin_page = GETPOST('origin_page');
 			if($origin_page === 'ordercustomer') {
-				$this->resprints = " LEFT JOIN ".MAIN_DB_PREFIX."element_element as e ON (cf.rowid = e.fk_target AND targettype = 'order_supplier' AND sourcetype = 'commande')";
+				$this->resprints = " LEFT JOIN ".$db->prefix()."element_element as e ON (cf.rowid = e.fk_target AND targettype = 'order_supplier' AND sourcetype = 'commande')";
 			}
 		}
 	}
