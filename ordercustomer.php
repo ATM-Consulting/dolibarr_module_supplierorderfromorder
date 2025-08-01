@@ -441,9 +441,8 @@ if(empty($reshook))
 
 				if (getDolGlobalString('SOFO_USE_MAX_DELIVERY_DATE')) {
 					$order->delivery_date = dol_now() + $MaxAvailability * 86400;
-					if (version_compare(DOL_VERSION, '14', '>=')) {
-						$order->setDeliveryDate($user, $order->delivery_date);
-					}
+					$order->setDeliveryDate($user, $order->delivery_date);
+
 				}
 
 				$order->cond_reglement_id = 0;
@@ -1326,23 +1325,19 @@ if ($resql || $resql2) {
 			// On regarde s'il existe une demande de prix en cours pour ce produit
 			$TDemandes = array();
 
-			if (DOL_VERSION >= 6) {
 
-				if (isModEnabled('supplier_proposal')) {
+			if (isModEnabled('supplier_proposal')) {
 
-					$q = 'SELECT a.ref
-                                                FROM ' . $db->prefix() . 'supplier_proposal a
-                                                INNER JOIN ' . $db->prefix() . 'supplier_proposaldet d on (d.fk_supplier_proposal=a.rowid)
-                                                WHERE a.fk_statut = 1
-                                                AND d.fk_product = ' . $prod->id;
+				$q = 'SELECT a.ref
+											FROM ' . $db->prefix() . 'supplier_proposal a
+											INNER JOIN ' . $db->prefix() . 'supplier_proposaldet d on (d.fk_supplier_proposal=a.rowid)
+											WHERE a.fk_statut = 1
+											AND d.fk_product = ' . $prod->id;
 
-					$qres = $db->query($q);
+				$qres = $db->query($q);
 
-					while ($res = $db->fetch_object($qres))
-						$TDemandes[] = $res->ref;
-
-				}
-
+				while ($res = $db->fetch_object($qres))
+					$TDemandes[] = $res->ref;
 
 			}
 
