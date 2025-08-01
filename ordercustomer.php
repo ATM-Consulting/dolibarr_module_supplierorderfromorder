@@ -299,7 +299,7 @@ if(empty($reshook))
 
 
 						$q = 'SELECT ee.rowid
-						 		FROM '.MAIN_DB_PREFIX.'element_element ee
+						 		FROM '.$db->prefix().'element_element ee
 								WHERE ee.sourcetype="commandedet"
 								AND ee.targettype = "commande_fournisseurdet"
 								AND ee.fk_source = '.((int)$line->id).'
@@ -441,11 +441,8 @@ if(empty($reshook))
 
 				if (getDolGlobalString('SOFO_USE_MAX_DELIVERY_DATE')) {
 					$order->delivery_date = dol_now() + $MaxAvailability * 86400;
-					if (version_compare(DOL_VERSION, '14', '>=')) {
-						$order->setDeliveryDate($user, $order->delivery_date);
-					} else {
-						$order->set_date_livraison($user, $order->delivery_date);
-					}
+					$order->setDeliveryDate($user, $order->delivery_date);
+
 				}
 
 				$order->cond_reglement_id = 0;
@@ -492,7 +489,7 @@ if(empty($reshook))
 				$j = 0;
 				foreach ($lines as $line) {
 					$sql = "SELECT quantity";
-					$sql .= " FROM " . MAIN_DB_PREFIX . "product_fournisseur_price";
+					$sql .= " FROM " . $db->prefix() . "product_fournisseur_price";
 					$sql .= " WHERE fk_soc = " . $idSupplier;
 					$sql .= " AND fk_product = " . $line[$j]->fk_product;
 					$sql .= " ORDER BY quantity ASC";
@@ -1328,40 +1325,20 @@ if ($resql || $resql2) {
 			// On regarde s'il existe une demande de prix en cours pour ce produit
 			$TDemandes = array();
 
-			if (DOL_VERSION >= 6) {
 
-				if (isModEnabled('supplier_proposal')) {
+			if (isModEnabled('supplier_proposal')) {
 
-					$q = 'SELECT a.ref
-                                                FROM ' . $db->prefix() . 'supplier_proposal a
-                                                INNER JOIN ' . $db->prefix() . 'supplier_proposaldet d on (d.fk_supplier_proposal=a.rowid)
-                                                WHERE a.fk_statut = 1
-                                                AND d.fk_product = ' . $prod->id;
+				$q = 'SELECT a.ref
+											FROM ' . $db->prefix() . 'supplier_proposal a
+											INNER JOIN ' . $db->prefix() . 'supplier_proposaldet d on (d.fk_supplier_proposal=a.rowid)
+											WHERE a.fk_statut = 1
+											AND d.fk_product = ' . $prod->id;
 
-					$qres = $db->query($q);
+				$qres = $db->query($q);
 
-					while ($res = $db->fetch_object($qres))
-						$TDemandes[] = $res->ref;
+				while ($res = $db->fetch_object($qres))
+					$TDemandes[] = $res->ref;
 
-				}
-
-
-			} else {
-
-				if (isModEnabled('askpricesupplier')) {
-
-					$q = 'SELECT a.ref
-						FROM ' . $db->prefix() . 'askpricesupplier a
-						INNER JOIN ' . $db->prefix() . 'askpricesupplierdet d on (d.fk_askpricesupplier = a.rowid)
-						WHERE a.fk_statut = 1
-						AND fk_product = ' . $prod->id;
-
-					$qres = $db->query($q);
-
-					while ($res = $db->fetch_object($qres))
-						$TDemandes[] = $res->ref;
-
-				}
 			}
 
 			// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :

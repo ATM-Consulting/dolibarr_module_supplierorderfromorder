@@ -18,9 +18,9 @@ function _load_stats_commande_fournisseur($fk_product, $date,$stocktobuy=1,$filt
     $date = date('Y-m-d', strtotime('-'.$nb_day.'day',  strtotime($date)));
 
     $sql = "SELECT SUM(cd.qty) as qty";
-    $sql.= " FROM ".MAIN_DB_PREFIX."commande_fournisseurdet as cd";
-    $sql.= ", ".MAIN_DB_PREFIX."commande_fournisseur as c";
-    $sql.= ", ".MAIN_DB_PREFIX."societe as s";
+    $sql.= " FROM ".$db->prefix()."commande_fournisseurdet as cd";
+    $sql.= ", ".$db->prefix()."commande_fournisseur as c";
+    $sql.= ", ".$db->prefix()."societe as s";
     $sql.= " WHERE c.rowid = cd.fk_commande";
     $sql.= " AND c.fk_soc = s.rowid";
     $sql.= " AND c.entity = ".$conf->entity;
@@ -45,9 +45,9 @@ function _load_stats_commande_date($fk_product, $date,$filtrestatut='1,2') {
         global $conf,$user,$db;
 
         $sql = "SELECT SUM(cd.qty) as qty";
-        $sql.= " FROM ".MAIN_DB_PREFIX."commandedet as cd";
-        $sql.= ", ".MAIN_DB_PREFIX."commande as c";
-        $sql.= ", ".MAIN_DB_PREFIX."societe as s";
+        $sql.= " FROM ".$db->prefix()."commandedet as cd";
+        $sql.= ", ".$db->prefix()."commande as c";
+        $sql.= ", ".$db->prefix()."societe as s";
         $sql.= " WHERE c.rowid = cd.fk_commande";
         $sql.= " AND c.fk_soc = s.rowid";
         $sql.= " AND c.entity = ".$conf->entity;
@@ -72,10 +72,10 @@ function getExpedie($fk_product) {
     global $conf, $db;
 
     $sql = "SELECT SUM(ed.qty) as qty";
-    $sql.= " FROM ".MAIN_DB_PREFIX."expeditiondet as ed";
-    $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."expedition as e ON (e.rowid=ed.fk_expedition)";
-	if ((float) DOL_VERSION < 20) $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."commandedet as cd ON (ed.fk_origin_line=cd.rowid)";
-    else $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."commandedet as cd ON (ed.fk_elementdet=cd.rowid)";
+    $sql.= " FROM ".$db->prefix()."expeditiondet as ed";
+    $sql.= " LEFT JOIN ".$db->prefix()."expedition as e ON (e.rowid=ed.fk_expedition)";
+	if ((float) DOL_VERSION < 20) $sql.= " LEFT JOIN ".$db->prefix()."commandedet as cd ON (ed.fk_origin_line=cd.rowid)";
+    else $sql.= " LEFT JOIN ".$db->prefix()."commandedet as cd ON (ed.fk_elementdet=cd.rowid)";
     $sql.= " WHERE 1";
     $sql.= " AND e.entity = ".$conf->entity;
     $sql.= " AND cd.fk_product = ".$fk_product;
@@ -101,7 +101,7 @@ function getPaiementCode($id) {
 
 	if(empty($id)) return '';
 
-	$sql = 'SELECT code FROM '.MAIN_DB_PREFIX.'c_paiement WHERE id = '.$id;
+	$sql = 'SELECT code FROM '.$db->prefix().'c_paiement WHERE id = '.$id;
 	$resql = $db->query($sql);
 	$res = $db->fetch_object($resql);
 
@@ -115,7 +115,7 @@ function getPaymentTermCode($id) {
 
 	if(empty($id)) return '';
 
-	$sql = 'SELECT code FROM '.MAIN_DB_PREFIX.'c_payment_term WHERE rowid = '.$id;
+	$sql = 'SELECT code FROM '.$db->prefix().'c_payment_term WHERE rowid = '.$id;
 	$resql = $db->query($sql);
 	$res = $db->fetch_object($resql);
 
@@ -155,12 +155,12 @@ function getSupplierOrderAvailable($supplierSocId,$shippingContactId=0,$array_op
     $Torder = array();
 
     $sql = 'SELECT cf.rowid ';
-    $sql .= ' FROM ' . MAIN_DB_PREFIX . 'commande_fournisseur cf ';
-    $sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'commande_fournisseur_extrafields cfext ON (cfext.fk_object = cf.rowid) ';
+    $sql .= ' FROM ' . $db->prefix() . 'commande_fournisseur cf ';
+    $sql .= ' LEFT JOIN ' . $db->prefix() . 'commande_fournisseur_extrafields cfext ON (cfext.fk_object = cf.rowid) ';
 
     if(!empty($shippingContactId))
     {
-        $sql .= ' JOIN  ' . MAIN_DB_PREFIX . 'element_contact ec ON (ec.element_id = fk_target AND ec.fk_socpeople = '.$shippingContactId.') ';
+        $sql .= ' JOIN  ' . $db->prefix() . 'element_contact ec ON (ec.element_id = fk_target AND ec.fk_socpeople = '.$shippingContactId.') ';
     }
 
     $sql .= ' WHERE cf.fk_soc = '.intval($supplierSocId).' ';
@@ -441,13 +441,13 @@ function getLinkedSupplierOrderFromOrder($sourceCommandeId,$supplierSocId,$shipp
     $Torder = array();
 
     $sql = 'SELECT ee.fk_target ';
-    $sql .= ' FROM ' . MAIN_DB_PREFIX . 'element_element ee';
-    $sql .= ' JOIN ' . MAIN_DB_PREFIX . 'commande_fournisseur cf ON (ee.fk_target = cf.rowid) ';
-    $sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'commande_fournisseur_extrafields cfext ON (cfext.fk_object = cf.rowid) ';
+    $sql .= ' FROM ' . $db->prefix() . 'element_element ee';
+    $sql .= ' JOIN ' . $db->prefix() . 'commande_fournisseur cf ON (ee.fk_target = cf.rowid) ';
+    $sql .= ' LEFT JOIN ' . $db->prefix() . 'commande_fournisseur_extrafields cfext ON (cfext.fk_object = cf.rowid) ';
 
     if(!empty($shippingContactId))
     {
-        $sql .= ' JOIN  ' . MAIN_DB_PREFIX . 'element_contact ec ON (ec.element_id = fk_target AND ec.fk_socpeople = '.$shippingContactId.') ';
+        $sql .= ' JOIN  ' . $db->prefix() . 'element_contact ec ON (ec.element_id = fk_target AND ec.fk_socpeople = '.$shippingContactId.') ';
     }
 
     $sql .= ' WHERE ee.fk_source = '.intval($sourceCommandeId).' ';
@@ -495,7 +495,7 @@ function getLinkedObject($sourceid=null,$sourcetype='',$targettype='')
     $TElement=array();
 
     $sql = 'SELECT fk_target ';
-    $sql .= ' FROM ' . MAIN_DB_PREFIX . 'element_element ee';
+    $sql .= ' FROM ' . $db->prefix() . 'element_element ee';
     $sql .= ' WHERE ee.fk_source = '.intval($sourceid).' ';
     $sql .= ' AND ee.sourcetype = \''.$db->escape($sourcetype).'\' ';
     if(!empty($targettype)){
@@ -514,7 +514,7 @@ function getLinkedObject($sourceid=null,$sourcetype='',$targettype='')
     // search for opposite
 
     $sql = 'SELECT fk_target ';
-    $sql .= ' FROM ' . MAIN_DB_PREFIX . 'element_element ee';
+    $sql .= ' FROM ' . $db->prefix() . 'element_element ee';
     $sql .= ' WHERE ee.fk_target = '.intval($sourceid).' ';
     $sql .= ' AND ee.targettype = \''.$db->escape($sourcetype).'\' ';
     if(!empty($targettype)){
@@ -560,7 +560,7 @@ function getLinkedSupplierOrdersLinesFromElementLine($sourceCommandeLineId, $sou
     global $db;
 
     $sql = 'SELECT fk_target ';
-    $sql .= ' FROM ' . MAIN_DB_PREFIX . 'element_element ee';
+    $sql .= ' FROM ' . $db->prefix() . 'element_element ee';
     $sql .= ' WHERE ee.fk_source = '.intval($sourceCommandeLineId).' ';
     $sql .= ' AND ee.sourcetype = \''.$db->escape($sourcetype).'\' ';
     $sql .= ' AND ee.targettype = \'commande_fournisseurdet\' ';
@@ -591,7 +591,7 @@ function getLinkedOrderLineFromSupplierOrderLine($sourceCommandeLineId)
     global $db;
 
     $sql = 'SELECT fk_source ';
-    $sql .= ' FROM ' . MAIN_DB_PREFIX . 'element_element ee';
+    $sql .= ' FROM ' . $db->prefix() . 'element_element ee';
     $sql .= ' WHERE ee.fk_target = '.intval($sourceCommandeLineId).' ';
     $sql .= ' AND ee.sourcetype = \'commandedet\' ';
     $sql .= ' AND ee.targettype = \'commande_fournisseurdet\' ';
@@ -614,7 +614,7 @@ function getUnitLabel($fk_unit, $return = 'code')
 {
     global $db, $langs;
 
-    $sql = 'SELECT label, code from '.MAIN_DB_PREFIX.'c_units';
+    $sql = 'SELECT label, code from '.$db->prefix().'c_units';
     $sql.= ' WHERE rowid = '.intval($fk_unit);
 
     $resql=$db->query($sql);

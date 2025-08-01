@@ -25,7 +25,7 @@ class TSOFO {
 	global $db,$form;
 
 		$sql = "SELECT fk_availability".((float)DOL_VERSION>5 ? ',delivery_time_days' : '')."
-				FROM ".MAIN_DB_PREFIX."product_fournisseur_price
+				FROM ".$db->prefix()."product_fournisseur_price
 				WHERE fk_product=". intval($fk_product) ." AND quantity <= ".$qty;
 
 
@@ -79,9 +79,9 @@ class TSOFO {
 		$sql = "SELECT p.rowid, p.label, p.ref, p.price, p.duration, pfp.fk_soc,";
 		$sql.= " pfp.ref_fourn, pfp.rowid as idprodfournprice, pfp.price as fprice, pfp.remise_percent, pfp.quantity, pfp.unitprice,";
 		$sql.= " pfp.fk_supplier_price_expression, pfp.fk_product, pfp.tva_tx, s.nom as name";
-		$sql.= " FROM ".MAIN_DB_PREFIX."product as p";
-		$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."product_fournisseur_price as pfp ON p.rowid = pfp.fk_product";
-		$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."societe as s ON pfp.fk_soc = s.rowid";
+		$sql.= " FROM ".$db->prefix()."product as p";
+		$sql.= " LEFT JOIN ".$db->prefix()."product_fournisseur_price as pfp ON p.rowid = pfp.fk_product";
+		$sql.= " LEFT JOIN ".$db->prefix()."societe as s ON pfp.fk_soc = s.rowid";
 		$sql.= " WHERE pfp.entity IN (".getEntity('productsupplierprice').")";
 		$sql.= " AND p.tobuy = 1";
 		$sql.= " AND s.fournisseur = 1";
@@ -191,9 +191,9 @@ class TSOFO {
 		$Tfourn = array();
 		$TfournProduct = array();
 
-		$sqlCmdFour = " SELECT cf.rowid FROM ".MAIN_DB_PREFIX."commande_fournisseur cf
-						INNER JOIN ".MAIN_DB_PREFIX."commande_fournisseurdet AS cfd ON cfd.fk_commande = cf.rowid
-		 				INNER JOIN ".MAIN_DB_PREFIX."element_element AS e ON (cfd.rowid = e.fk_target)
+		$sqlCmdFour = " SELECT cf.rowid FROM ".$db->prefix()."commande_fournisseur cf
+						INNER JOIN ".$db->prefix()."commande_fournisseurdet AS cfd ON cfd.fk_commande = cf.rowid
+		 				INNER JOIN ".$db->prefix()."element_element AS e ON (cfd.rowid = e.fk_target)
 						WHERE sourcetype = 'commandedet'
 						AND targettype = 'commande_fournisseurdet'
 						AND cf.entity IN(1) AND e.fk_source = ".((int)$cmd_line_id);
@@ -243,8 +243,8 @@ class TSOFO {
 		 $obj = new stdClass();
 
 		$q = 'SELECT cfd.qty
-				FROM '.MAIN_DB_PREFIX.'commande_fournisseurdet cfd
-				INNER JOIN '.MAIN_DB_PREFIX.'element_element ee ON (ee.fk_target = cfd.rowid)
+				FROM '.$db->prefix().'commande_fournisseurdet cfd
+				INNER JOIN '.$db->prefix().'element_element ee ON (ee.fk_target = cfd.rowid)
 				WHERE ee.sourcetype="commandedet"
 				AND ee.targettype = "commande_fournisseurdet"
 				AND ee.fk_source = '.((int)$orderlineid);
