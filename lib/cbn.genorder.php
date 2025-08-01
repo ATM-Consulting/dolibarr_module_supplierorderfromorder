@@ -3,6 +3,7 @@
 //orders creation
 //FIXME: could go in the lib
 if ($action == 'order' && isset($_POST['valid'])) {
+	global $db;
     $linecount = GETPOST('linecount', 'int');
     $box = false;
     unset($_POST['linecount']);
@@ -25,7 +26,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
 
 	                $sql = 'SELECT fk_product, fk_soc, ref_fourn';
 	                $sql .= ', tva_tx, unitprice, remise_percent FROM ';
-	                $sql .= MAIN_DB_PREFIX . 'product_fournisseur_price';
+	                $sql .= $db->prefix() . 'product_fournisseur_price';
 	                $sql .= ' WHERE rowid = ' . $supplierpriceid;
 
 	                $resql = $db->query($sql);
@@ -107,7 +108,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
         foreach ($suppliers as $idsupplier => $supplier) {
 
         	$sql2 = 'SELECT rowid, ref';
-			$sql2 .= ' FROM ' . MAIN_DB_PREFIX . 'commande_fournisseur';
+			$sql2 .= ' FROM ' . $db->prefix(). 'commande_fournisseur';
 			$sql2 .= ' WHERE fk_soc = '.$idsupplier;
 			$sql2 .= ' AND fk_statut = 0'; // 0 = DRAFT (Brouillon)
 			if(getDolGlobalString('SOFO_DISTINCT_ORDER_BY_PROJECT') && !empty($projectid)){
@@ -309,7 +310,7 @@ if ($action == 'order' && isset($_POST['valid'])) {
     		$j = 0;
     		foreach($lines as $line) {
 		    	$sql = "SELECT quantity";
-				$sql.= " FROM ".MAIN_DB_PREFIX."product_fournisseur_price";
+				$sql.= " FROM ".$db->prefix()."product_fournisseur_price";
 				$sql.= " WHERE fk_soc = ".$idSupplier;
 				$sql.= " AND fk_product = ".$line[$j]->fk_product;
 				$sql.= " ORDER BY quantity ASC";

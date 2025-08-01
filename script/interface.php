@@ -95,11 +95,11 @@ function _stockDetails()
     }
 
 	$sql = "SELECT DISTINCT e.rowid, ed.qty";
-	$sql.= " FROM ".MAIN_DB_PREFIX."expeditiondet as ed";
-	$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."expedition as e ON (e.rowid=ed.fk_expedition)";
-	if ((float) DOL_VERSION < 20) $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."commandedet as cd ON (ed.fk_origin_line=cd.rowid)";
-	else $sql.= " LEFT JOIN ".MAIN_DB_PREFIX."commandedet as cd ON (ed.fk_elementdet=cd.rowid)";
-	$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."commande as c ON (cd.fk_commande=c.rowid)";
+	$sql.= " FROM ".$db->prefix()."expeditiondet as ed";
+	$sql.= " LEFT JOIN ".$db->prefix()."expedition as e ON (e.rowid=ed.fk_expedition)";
+	if ((float) DOL_VERSION < 20) $sql.= " LEFT JOIN ".$db->prefix()."commandedet as cd ON (ed.fk_origin_line=cd.rowid)";
+	else $sql.= " LEFT JOIN ".$db->prefix()."commandedet as cd ON (ed.fk_elementdet=cd.rowid)";
+	$sql.= " LEFT JOIN ".$db->prefix()."commande as c ON (cd.fk_commande=c.rowid)";
 	$sql.= " WHERE 1";
 	$sql.= " AND e.entity = ".$conf->entity;
 	$sql.= " AND cd.fk_product = ".$prod->id;
