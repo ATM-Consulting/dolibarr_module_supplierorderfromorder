@@ -6,6 +6,7 @@
 
 
 ## RELEASES 2.9
+- FIX : Warning activation module- **07/07/2025* - 2.9.5
 - FIX : COMPAT V22 - **07/07/2025* - 2.9.4
 - FIX : COMPAT V21 - **11/12/2024** - 2.9.2
 - FIX : Depuis la V20, le champ "fk_origin_line" dans la table llx_expeditiondet a été renommé "fk_elementdet" ce qui causait des erreurs - *22/10/2024* - 2.9.1
