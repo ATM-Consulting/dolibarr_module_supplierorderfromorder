@@ -785,7 +785,7 @@ function supplierorderfromorderAdminPrepareHead()
  * @param string $salert
  * @return string
  */
-function sofoBuildGroupedQuery($db, $entityToTest, $TCategoriesQuery, $fk_commande, $search_all, $type, $sref, $snom, $canvas, $salert)
+function sofoBuildGroupedQuery($db, $entityToTest, $TCategoriesQuery, $fk_commande, $search_all, $type, $sref, $snom, $canvas, $salert) : string
 {
 	$sql = 'SELECT prod.rowid, prod.ref, prod.label, cd.description, prod.price, cd.qty as qty, COALESCE(SUM(ed.qty), 0) as qty_shipped, cd.buy_price_ht';
 	$sql .= ', prod.price_ttc, prod.price_base_type,prod.fk_product_type';
@@ -822,8 +822,8 @@ function sofoBuildGroupedQuery($db, $entityToTest, $TCategoriesQuery, $fk_comman
 
 	$sql .= ' WHERE prod.fk_product_type IN (0,1) AND prod.entity IN (' . getEntity("product", 1) . ')';
 
-	if ((int)$fk_commande > 0) {
-		$sql .= ' AND cd.fk_commande = ' . ((int)$fk_commande);
+	if (intval($fk_commande) > 0) {
+		$sql .= ' AND cd.fk_commande = ' . intval($fk_commande);
 	}
 
 	if (!empty($TCategoriesQuery)) {
@@ -895,7 +895,7 @@ function sofoBuildGroupedQuery($db, $entityToTest, $TCategoriesQuery, $fk_comman
  * @param string $salert
  * @return string
  */
-function sofoBuildUngroupedQuery($db, $entityToTest, $TCategoriesQuery, $fk_commande, $search_all, $type, $sref, $snom, $canvas, $salert)
+function sofoBuildUngroupedQuery($db, $entityToTest, $TCategoriesQuery, $fk_commande, $search_all, $type, $sref, $snom, $canvas, $salert) : string
 {
 	$sql = 'SELECT prod.rowid, prod.ref, prod.label, cd.description, prod.price, cd.qty as qty, COALESCE(SUM(ed.qty), 0) as qty_shipped, cd.buy_price_ht';
 	$sql .= ', prod.price_ttc, prod.price_base_type,prod.fk_product_type';
@@ -921,8 +921,8 @@ function sofoBuildUngroupedQuery($db, $entityToTest, $TCategoriesQuery, $fk_comm
 
 	$sql .= ' WHERE prod.fk_product_type IN (0,1) AND prod.entity IN (' . getEntity("product", 1) . ')';
 
-	if ((int)$fk_commande > 0) {
-		$sql .= ' AND cd.fk_commande = ' . ((int)$fk_commande);
+	if (intval($fk_commande) > 0) {
+		$sql .= ' AND cd.fk_commande = ' . intval($fk_commande);
 	}
 
 	if (!empty($TCategoriesQuery)) {
