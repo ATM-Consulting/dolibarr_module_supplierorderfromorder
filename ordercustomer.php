@@ -54,13 +54,7 @@ $langs->load("orders");
 $langs->load("supplierorderfromorder@supplierorderfromorder");
 $hookmanager->initHooks(array('ordercustomer')); // Note that conf->hooks_modules contains array
 
-$dolibarr_version35 = false;
 $week_to_replenish = 0;
-
-if ((float)DOL_VERSION >= 3.5) {
-	$dolibarr_version35 = true;
-}
-/*echo "<form name=\"formCreateSupplierOrder\" method=\"post\" action=\"ordercustomer.php\">";*/
 
 // Security check
 if (!empty($user->societe_id)) {
@@ -74,6 +68,7 @@ $action = GETPOST('action', 'alpha');
 $sref = GETPOST('sref', 'alpha');
 $snom = GETPOST('snom', 'alpha');
 $search_all = GETPOST('search_all', 'alpha');
+$canvas = GETPOST('canvas', 'alpha');
 $type = GETPOST('type', 'int');
 $tobuy = GETPOST('tobuy', 'int');
 $salert = GETPOST('salert', 'alpha');
@@ -83,9 +78,9 @@ $sortorder = GETPOST('sortorder', 'alpha');
 $page = GETPOST('page', 'int');
 $page = intval($page);
 $selectedSupplier = GETPOST('useSameSupplier', 'int');
-$group_lines_by_product = GETPOSTISSET('group_lines_by_product', 'int') ? GETPOST('group_lines_by_product', 'int') : ( getDolGlobalInt('SOFO_GROUP_LINES_BY_PRODUCT') );
+$groupLinesByProduct = GETPOSTISSET('group_lines_by_product', 'int') ? GETPOST('group_lines_by_product', 'int') : (getDolGlobalInt('SOFO_GROUP_LINES_BY_PRODUCT'));
 
-$id = GETPOST('id','int');
+$id = GETPOST('id', 'int');
 $origin_page = 'ordercustomer';
 
 
@@ -106,7 +101,7 @@ $TCategories = array();
 if (isModEnabled('categorie')) {
 
 	if (!isset($_REQUEST['categorie']) && getDolGlobalString('SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER')) {
-		$TCategories = unserialize(getDolGlobalString('SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER') );
+		$TCategories = unserialize(getDolGlobalString('SOFO_DEFAULT_PRODUCT_CATEGORY_FILTER'));
 	} else {
 		$categories = GETPOST('categorie', 'none');
 
@@ -153,9 +148,8 @@ $parameters = array('id' => $id);
 $reshook = $hookmanager->executeHooks('doActions', $parameters, $object, $action); // Note that $action and $object may have been modified by some hooks
 if ($reshook < 0) setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
 
-if(empty($reshook))
-{
-    if($action == 'valid-propal') $getNomUrlConcat = '';
+if (empty($reshook)) {
+	if ($action == 'valid-propal') $getNomUrlConcat = '';
 	if (isset($_POST['button_removefilter']) || in_array($action, array('valid-propal', 'valid-order'))) {
 		$sref = '';
 		$snom = '';
@@ -165,37 +159,27 @@ if(empty($reshook))
 		$TCategories = array(-1);
 	}
 
-	/*echo "<pre>";
-	print_r($_REQUEST);
-	echo "</pre>";
-	exit;*/
-
 
 	//orders creation
 	//FIXME: could go in the lib
 	if (in_array($action, array('valid-propal', 'valid-order'))) {
-
 
 		$actionTarget = 'order';
 		if ($action == 'valid-propal') {
 			$actionTarget = 'propal';
 		}
 
-
 		$linecount = GETPOST('linecount', 'int');
 		$box = false;
 		unset($_POST['linecount']);
+
 		if ($linecount > 0) {
-
 			$suppliers = array();
-
 			for ($i = 0; $i < $linecount; $i++) {
-
 				if (GETPOST('check' . $i, 'alpha') === 'on' && (GETPOST('fourn' . $i, 'int') > 0 || GETPOST('fourn_free' . $i, 'int') > 0)) { //one line
 					_prepareLine($i, $actionTarget);
 				}
 				unset($_POST[$i]);
-
 			}
 
 			//we now know how many orders we need and what lines they have
@@ -207,8 +191,6 @@ if(empty($reshook))
 			$projectid = GETPOST('projectid', 'int');
 
 			foreach ($suppliers as $idsupplier => $supplier) {
-
-
 				if ($actionTarget == 'propal') {
 					$order = new SupplierProposal($db);
 					$obj = _getSupplierProposalInfos($idsupplier, $projectid);
@@ -218,7 +200,7 @@ if(empty($reshook))
 				}
 
 				$commandeClient = new Commande($db);
-				$commandeClient->fetch(GETPOST('id','int'));
+				$commandeClient->fetch(GETPOST('id', 'int'));
 
 				// Test recupération contact livraison
 				if (getDolGlobalString('SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY')) {
@@ -228,10 +210,8 @@ if(empty($reshook))
 					$contact_ship = null;
 				}
 
-
 				//Si une commande au statut brouillon existe déjà et que l'option SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME
 				if ($obj && !getDolGlobalString('SOFO_CREATE_NEW_SUPPLIER_ODER_ANY_TIME')) {
-
 					$order->fetch($obj->rowid);
 					$order->socid = $idsupplier;
 
@@ -242,17 +222,14 @@ if(empty($reshook))
 					// On vérifie qu'il n'existe pas déjà un lien entre la commande client et la commande fournisseur dans la table element_element.
 					// S'il n'y en a pas, on l'ajoute, sinon, on ne l'ajoute pas
 					$order->fetchObjectLinked('', 'commande', $order->id, 'order_supplier');
-					$order->add_object_linked('commande', GETPOST('id','int'));
+					$order->add_object_linked('commande', GETPOST('id', 'int'));
 
 					// cond reglement, mode reglement, delivery date
 					_appliCond($order, $commandeClient);
 
-
 					$id++; //$id doit être renseigné dans tous les cas pour que s'affiche le message 'Vos commandes ont été générées'
 					$newCommande = false;
-
 				} else {
-
 					$order->socid = $idsupplier;
 					if (!empty($projectid)) {
 						$order->fk_project = GETPOST('projectid', 'int');
@@ -262,52 +239,47 @@ if(empty($reshook))
 
 					$id = $order->create($user);
 
-					if (getDolGlobalInt('SUPPLIERORDER_FROM_ORDER_NOTES_PUBLIC')){
+					if (getDolGlobalInt('SUPPLIERORDER_FROM_ORDER_NOTES_PUBLIC')) {
 						$publicNote = $commandeClient->note_public;
-						$order->update_note($publicNote,'_public');
+						$order->update_note($publicNote, '_public');
 					}
 
-					if (getDolGlobalInt('SUPPLIERORDER_FROM_ORDER_NOTES_PRIVATE')){
+					if (getDolGlobalInt('SUPPLIERORDER_FROM_ORDER_NOTES_PRIVATE')) {
 						$privateNote = $commandeClient->note_private;
-						$order->update_note($privateNote,'_private');
+						$order->update_note($privateNote, '_private');
 					}
-
 
 					if ($contact_ship && getDolGlobalString('SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY'))
 						$order->add_contact($contact_ship, 'SHIPPING');
-					$order->add_object_linked('commande', GETPOST('id','int'));
+					$order->add_object_linked('commande', GETPOST('id', 'int'));
 					$newCommande = true;
 
 					$nb_orders_created++;
 				}
 
-
 				$order_id = $order->id;
-                if(!empty($order_id) && $action == 'valid-propal') $getNomUrlConcat .=' '.$order->getNomUrl();
+				if (!empty($order_id) && $action == 'valid-propal') $getNomUrlConcat .= ' ' . $order->getNomUrl();
 				//trick to know which orders have been generated this way
 				$order->source = 42;
 				$MaxAvailability = 0;
 
 				foreach ($supplier['lines'] as $line) {
-
 					$done = false;
 
 					$prodfourn = new ProductFournisseur($db);
 					$prodfourn->fetch_product_fournisseur_price($_REQUEST['fourn' . $i]);
 
 					foreach ($order->lines as $lineOrderFetched) {
-
-
 						$q = 'SELECT ee.rowid
-						 		FROM '.$db->prefix().'element_element ee
+						 		FROM ' . $db->prefix() . 'element_element ee
 								WHERE ee.sourcetype="commandedet"
 								AND ee.targettype = "commande_fournisseurdet"
-								AND ee.fk_source = '.((int)$line->id).'
-								AND ee.fk_target = '.((int)$lineOrderFetched->id);
+								AND ee.fk_source = ' . ((int)$line->id) . '
+								AND ee.fk_target = ' . ((int)$lineOrderFetched->id);
 						$resultquery = $db->query($q);
 
-						$id_line_element_element=0;
-						if(!empty($resultquery)) {
+						$id_line_element_element = 0;
+						if (!empty($resultquery)) {
 							$res = $db->fetch_object($resultquery);
 							$id_line_element_element = $res->rowid;
 						}
@@ -340,32 +312,16 @@ if(empty($reshook))
 									0, //$txlocaltax1=0,
 									0, //$txlocaltax2=0,
 									$lineOrderFetched->desc
-								//$price_base_type='HT',
-								//$info_bits=0,
-								//$special_code=0,
-								//$fk_parent_line=0,
-								//$skip_update_total=0,
-								//$fk_fournprice=0,
-								//$pa_ht=0,
-								//$label='',
-								//$type=0,
-								//$array_option=0,
-								//$ref_fourn='',
-								//$fk_unit=''
 								);
 							}
 
 							$done = true;
 							break;
-
 						}
-
 					}
 
 					// On ajoute une ligne seulement si un "updateline()" n'a pas été fait et si la quantité souhaitée est supérieure à zéro
-
 					if (!$done) {
-
 						if ($order->element == 'order_supplier') {
 							$cf_line_id = $order->addline(
 								$line->desc,
@@ -398,7 +354,6 @@ if(empty($reshook))
 							$cf_line->element = 'commande_fournisseurdet';
 							$cf_line->id = $cf_line_id;
 							$cf_line->add_object_linked('commandedet', $line->origin_id);
-
 						} else if ($order->element == 'supplier_proposal') {
 							$order->addline(
 								$line->desc,
@@ -425,24 +380,18 @@ if(empty($reshook))
 								$line->origin, //$origin='', ,
 								$line->origin_id//$origin_id=0
 							);
-
-
 						}
-
 					}
 
 					$nb_day = (int)TSOFO::getMinAvailability($line->fk_product, $line->qty, 1, $prodfourn->fourn_id);
 					if ($MaxAvailability < $nb_day) {
 						$MaxAvailability = $nb_day;
 					}
-
-
 				}
 
 				if (getDolGlobalString('SOFO_USE_MAX_DELIVERY_DATE')) {
 					$order->delivery_date = dol_now() + $MaxAvailability * 86400;
 					$order->setDeliveryDate($user, $order->delivery_date);
-
 				}
 
 				$order->cond_reglement_id = 0;
@@ -457,24 +406,23 @@ if(empty($reshook))
 					// CODE de redirection s'il y a un seul fournisseur (évite de le laisser sur la page sans comprendre)
 					if (getDolGlobalString('SUPPLIERORDER_FROM_ORDER_HEADER_SUPPLIER_ORDER')) {
 						if (count($suppliersid) == 1) {
-							if ($action === 'valid-order'){
+							if ($action === 'valid-order') {
 								$link = dol_buildpath('/fourn/commande/card.php?id=' . $order_id, 1);
-							}
-							else{
+							} else {
 								$link = dol_buildpath('/supplier_proposal/card.php?id=' . $order_id, 1);
 							}
-							header('Location:' . $link);exit();
-
+							header('Location:' . $link);
+							exit();
 						}
 					}
 				}
 				$i++;
 			}
 
-			$id = GETPOST('id','int');
+			$id = GETPOST('id', 'int');
 			$origin_page = 'ordercustomer';
-            if($action == 'valid-order') header("Location: ".DOL_URL_ROOT."/fourn/commande/list.php?id=".$id.'&origin_page='.$origin_page);
-            else if($action == 'valid-propal' && !empty($getNomUrlConcat)) setEventMessage($langs->trans('SupplierProposalSuccessfullyCreated').$getNomUrlConcat, 'mesgs');
+			if ($action == 'valid-order') header("Location: " . DOL_URL_ROOT . "/fourn/commande/list.php?id=" . $id . '&origin_page=' . $origin_page);
+			else if ($action == 'valid-propal' && !empty($getNomUrlConcat)) setEventMessage($langs->trans('SupplierProposalSuccessfullyCreated') . $getNomUrlConcat, 'mesgs');
 		}
 
 		if ($nb_orders_created > 0) {
@@ -484,7 +432,6 @@ if(empty($reshook))
 		if ($box === false) {
 			setEventMessage($langs->trans('SelectProduct'), 'warnings');
 		} else {
-
 			foreach ($suppliers as $idSupplier => $lines) {
 				$j = 0;
 				foreach ($lines as $line) {
@@ -497,9 +444,6 @@ if(empty($reshook))
 					$resql = $db->query($sql);
 					if ($resql) {
 						$resql = $db->fetch_object($resql);
-
-						//echo $j;
-
 						if ($line[$j]->qty < $resql->quantity) {
 							$p = new Product($db);
 							$p->fetch($line[$j]->fk_product);
@@ -514,13 +458,6 @@ if(empty($reshook))
 							$ajoutes[$f->name] = $p->label;
 						}
 					}
-
-					/*echo "<pre>";
-					print_r($rates);
-					echo "</pre>";
-					echo "<pre>";
-					print_r($ajoutes);
-					echo "</pre>";*/
 					$j++;
 				}
 			}
@@ -534,7 +471,6 @@ if(empty($reshook))
 					} else {
 						$mess .= $langs->trans('ProductAddToSupplierOrder', $nomProd, $nomFournisseur) . '<br />';
 					}
-
 				}
 			}
 			// FIXME: same as $ajoutes.
@@ -551,16 +487,15 @@ if(empty($reshook))
 		}
 	}
 
-
 	if (in_array($action, array('view-valid-order'))) {
-
-		header("Location: ".DOL_URL_ROOT."/fourn/commande/list.php?id=".$id.'&origin_page='.$origin_page);
+		header("Location: " . DOL_URL_ROOT . "/fourn/commande/list.php?id=" . $id . '&origin_page=' . $origin_page);
 	}
 }
+
 /*
  * View
  */
-$param = (isset($type) ? '&type=' . $type : '');
+$listParam = (isset($type) ? '&type=' . $type : '');
 $TCachedProductId =& $_SESSION['TCachedProductId'];
 if (empty($TCachedProductId))
 	$TCachedProductId = array();
@@ -577,112 +512,22 @@ if (!getDolGlobalString('SOFO_CHECK_STOCK_ON_SHARED_STOCK')) {
 $title = $langs->trans('ProductsToOrder');
 $db->query("SET SQL_MODE=''");
 
-$sql = 'SELECT prod.rowid, prod.ref, prod.label, cd.description, prod.price, cd.qty as qty, COALESCE(SUM(ed.qty), 0) as qty_shipped, cd.buy_price_ht';
-$sql .= ', prod.price_ttc, prod.price_base_type,prod.fk_product_type';
-$sql .= ', prod.tms as datem, prod.duration, prod.tobuy, prod.seuil_stock_alerte, cd.rang,';
-
-if (in_array($db->type, array('pgsql'))) {
-	$sql .= ' string_agg(DISTINCT cd.rowid::character varying, \'@\') as lineid,';
-} else {
-	$sql .= ' GROUP_CONCAT(cd.rowid SEPARATOR "@") as lineid,';
-}
-
-$sql .= ' ( SELECT SUM(s.reel) FROM ' . $db->prefix() . 'product_stock s';
-$sql .= ' INNER JOIN ' . $db->prefix() . 'entrepot as entre ON entre.rowid=s.fk_entrepot';
-$sql .= ' WHERE s.fk_product=prod.rowid AND entre.entity IN (' . $entityToTest . ')) as stock_physique';
-
-$sql .= $dolibarr_version35 ? ', prod.desiredstock' : "";
-$sql .= ' FROM ' . $db->prefix() . 'product as prod';
-
-// Inclure fk_commande dans la sous-requête
-$sql .= ' LEFT OUTER JOIN (';
-$sql .= ' SELECT fk_product, fk_commande, SUM(qty) as qty, description, MAX(buy_price_ht) as buy_price_ht, MAX(rang) as rang, GROUP_CONCAT(rowid SEPARATOR "@") as rowid';
-$sql .= ' FROM ' . $db->prefix() . 'commandedet';
-$sql .= ' GROUP BY fk_product, fk_commande';
-$sql .= ') as cd ON prod.rowid = cd.fk_product';
-
-
-if ((float)DOL_VERSION >= 20.0) {
-	$sql .= ' LEFT JOIN ' . $db->prefix() . 'expeditiondet as ed ON (cd.rowid = ed.fk_elementdet)';
-}else{
-	$sql .= ' LEFT JOIN ' . $db->prefix() . 'expeditiondet as ed ON (cd.rowid = ed.fk_origin_line)';
-}
-
-if (!empty($TCategoriesQuery)) {
-	$sql .= ' LEFT OUTER JOIN ' . $db->prefix() . 'categorie_product as cp ON (prod.rowid = cp.fk_product)';
-}
-
-$sql .= ' WHERE prod.fk_product_type IN (0,1) AND prod.entity IN (' . getEntity("product", 1) . ')';
-
 $fk_commande = GETPOST('id', 'int');
-
-if (intval($fk_commande) > 0) {
-	// Appliquer le filtre sur fk_commande
-	$sql .= ' AND cd.fk_commande = ' . $fk_commande;
-}
-
-if (!empty($TCategoriesQuery)) {
-	$sql .= ' AND cp.fk_categorie IN ( ' . implode(',', $TCategoriesQuery) . ' ) ';
-}
-
-if ($search_all) {
-	$sql .= ' AND (prod.ref LIKE "%' . $db->escape($search_all) . '%" ';
-	$sql .= 'OR prod.label LIKE "%' . $db->escape($search_all) . '%" ';
-	$sql .= 'OR prod.description LIKE "%' . $db->escape($search_all) . '%" ';
-	$sql .= 'OR prod.note LIKE "%' . $db->escape($search_all) . '%")';
-}
-// if the type is not 1, we show all products (type = 0,2,3)
-if (dol_strlen($type)) {
-	if ($type == 1) {
-		$sql .= ' AND prod.fk_product_type = 1';
-	} else {
-		$sql .= ' AND prod.fk_product_type != 1';
-	}
-}
-if ($sref) {
-	//natural search
-	$scrit = explode(' ', $sref);
-	foreach ($scrit as $crit) {
-		$sql .= ' AND prod.ref LIKE "%' . $crit . '%"';
-	}
-}
-if ($snom) {
-	//natural search
-	$scrit = explode(' ', $snom);
-	foreach ($scrit as $crit) {
-		$sql .= ' AND prod.label LIKE "%' . $db->escape($crit) . '%"';
-	}
-}
-
-$sql .= ' AND prod.tobuy = 1';
-
-if (!empty($canvas)) {
-	$sql .= ' AND prod.canvas = "' . $db->escape($canvas) . '"';
-}
+$sql = !empty($groupLinesByProduct)
+	? sofoBuildGroupedQuery($db, $entityToTest, $TCategoriesQuery, $fk_commande, $search_all, $type, $sref, $snom, $canvas, $salert)
+	: sofoBuildUngroupedQuery($db, $entityToTest, $TCategoriesQuery, $fk_commande, $search_all, $type, $sref, $snom, $canvas, $salert);
 
 if ($salert == 'on') {
-	$sql .= " AND prod.seuil_stock_alerte is not NULL ";
-}
-
-$sql .= ' GROUP BY prod.rowid, prod.ref, prod.label, prod.price';
-$sql .= ', prod.price_ttc, prod.price_base_type,prod.fk_product_type, prod.tms';
-$sql .= ', prod.duration, prod.tobuy, prod.seuil_stock_alerte';
-//$sql .= ', cd.rang';
-//$sql .= ', prod.desiredstock';
-//$sql .= ', s.fk_product';
-
-if ($salert == 'on') {
-	$sql .= ' HAVING stock_physique < prod.seuil_stock_alerte ';
 	$alertchecked = 'checked="checked"';
 }
 
 $sql2 = '';
 //On prend les lignes libre
-if (GETPOST('id','int') && getDolGlobalString('SOFO_ADD_FREE_LINES')) {
+if (GETPOST('id', 'int') && getDolGlobalString('SOFO_ADD_FREE_LINES')) {
 	$sql2 .= 'SELECT cd.rowid, cd.description, cd.qty as qty, cd.product_type, cd.price, cd.buy_price_ht
 			 FROM ' . $db->prefix() . 'commandedet as cd
-			 	LEFT JOIN ' . $db->prefix() . 'commande as c ON (cd.fk_commande = c.rowid)
-			 WHERE c.rowid = ' . GETPOST('id','int') . ' AND cd.product_type IN(0,1) AND fk_product IS NULL';
+			 LEFT JOIN ' . $db->prefix() . 'commande as c ON (cd.fk_commande = c.rowid)
+			 WHERE c.rowid = ' . GETPOST('id', 'int') . ' AND cd.product_type IN(0,1) AND fk_product IS NULL';
 	if (getDolGlobalString('SUPPORDERFROMORDER_USE_ORDER_DESC')) {
 		$sql2 .= ' GROUP BY cd.description';
 	}
@@ -711,7 +556,7 @@ if ($resql || $resql2) {
 
 	//pour chaque produit de la commande client on récupère ses sous-produits
 
-	$TProducts= array(); //on rassemble produit et sous-produit dans ce tableau
+	$TProducts = array(); //on rassemble produit et sous-produit dans ce tableau
 	$i = 0;
 
 	while ($i < min($num, $limit)) {
@@ -724,7 +569,7 @@ if ($resql || $resql2) {
 		$product = new Product($db);
 		$product->fetch($objp->rowid);
 
-		if(getDolGlobalString('PRODUIT_SOUSPRODUITS') && getDolGlobalString('SOFO_VIRTUAL_PRODUCTS')) {
+		if (getDolGlobalString('PRODUIT_SOUSPRODUITS') && getDolGlobalString('SOFO_VIRTUAL_PRODUCTS')) {
 
 			//récupération des sous-produits
 			$product->get_sousproduits_arbo();
@@ -767,7 +612,7 @@ if ($resql || $resql2) {
 					$objsp->tobuy = $sousproduit->status_buy;
 					$objsp->seuil_stock_alert = $sousproduit->seuil_stock_alerte;
 					$objsp->stock_physique = $sousproduit->stock_reel;
-					$objsp->qty =  $qtyParentToHave * $value['nb'];			//qty du produit = quantité du produit parent commandé * nombre du sous-produit nécessaire pour le produit parent
+					$objsp->qty = $qtyParentToHave * $value['nb'];            //qty du produit = quantité du produit parent commandé * nombre du sous-produit nécessaire pour le produit parent
 					$objsp->desiredstock = $sousproduit->desiredstock;
 					$objsp->fk_parent = $value['id_parent'];
 					$objsp->level = $value['level'];
@@ -797,17 +642,17 @@ if ($resql || $resql2) {
 	$includeProduct = '';
 	if (getDolGlobalInt('INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK') == 1) {
 		$includeProduct = '&show_stock_no_need=yes';
-		$param .= '&show_stock_no_need=yes';
+		$listParam .= '&show_stock_no_need=yes';
 	}
 
 	$head = array();
-	$head[0][0] = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id=' . GETPOST('id','int').'&origin_page='.$origin_page.$includeProduct, 2);
+	$head[0][0] = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id=' . GETPOST('id', 'int') . '&origin_page=' . $origin_page . $includeProduct, 2);
 	$head[0][1] = $title;
 	$head[0][2] = 'supplierorderfromorder';
 
 
 	if (getDolGlobalString('SOFO_USE_NOMENCLATURE')) {
-		$head[1][0] = dol_buildpath('/supplierorderfromorder/dispatch_to_supplier_order.php?from=commande&fromid=' . GETPOST('id','int'), 2);
+		$head[1][0] = dol_buildpath('/supplierorderfromorder/dispatch_to_supplier_order.php?from=commande&fromid=' . GETPOST('id', 'int'), 2);
 		$head[1][1] = $langs->trans('ProductsAssetsToOrder');
 		$head[1][2] = 'supplierorderfromorder_dispatch';
 	}
@@ -817,19 +662,16 @@ if ($resql || $resql2) {
 	$head[1][2] = 'replenishorders';*/
 	dol_fiche_head($head, 'supplierorderfromorder', $langs->trans('Replenishment'), -1, 'stock');
 
-	$origin = New Commande($db);
-	$id = GETPOST('id','int');
+	$origin = new Commande($db);
+	$id = GETPOST('id', 'int');
 	$res = $origin->fetch($id);
 
-	if ($res > 0 ){
-		$morehtmlref='<div class="refidno">';
-		$morehtmlref.= $langs->trans('InitialCommande').$origin->getNomUrl();
-		$morehtmlref.='</div>';
-		dol_banner_tab($origin, 'ref', '', 0, 'ref', 'ref', $morehtmlref );
+	if ($res > 0) {
+		$morehtmlref = '<div class="refidno">';
+		$morehtmlref .= $langs->trans('InitialCommande') . $origin->getNomUrl();
+		$morehtmlref .= '</div>';
+		dol_banner_tab($origin, 'ref', '', 0, 'ref', 'ref', $morehtmlref);
 	}
-
-
-
 
 
 	if ($sref || $snom || $search_all || $salert || GETPOST('search', 'alpha')) {
@@ -837,7 +679,7 @@ if ($resql || $resql2) {
 		$filters .= '&search_all=' . $search_all;
 		$filters .= '&salert=' . $salert;
 
-		if (!getDolGlobalInt('SOFO_USE_DELIVERY_TIME') ) {
+		if (!getDolGlobalInt('SOFO_USE_DELIVERY_TIME')) {
 
 			print_barre_liste(
 				$title,
@@ -873,44 +715,44 @@ if ($resql || $resql2) {
 	}
 
 
-	if(getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY')) {
-		print '<br>'.img_warning().'&nbsp;<STRONG><span style="color:red">' . $langs->trans('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') . '</span></STRONG><br>';
+	if (getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY')) {
+		print '<br>' . img_warning() . '&nbsp;<STRONG><span style="color:red">' . $langs->trans('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') . '</span></STRONG><br>';
 	}
 
 	$yesno = getDolGlobalString('INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK') ? '&show_stock_no_need=yes' : '';
 
 	print'</div>';
-	print '<form action="' . $_SERVER['PHP_SELF'] . '?id=' . GETPOST('id','int') . '&projectid=' . (!empty($_REQUEST['projectid'])?$_REQUEST['projectid']:'') . $yesno .'" method="post" name="formulaire">' .
-		'<input type="hidden" name="id" value="' . GETPOST('id','int') . '">' .
+	print '<form action="' . $_SERVER['PHP_SELF'] . '?id=' . GETPOST('id', 'int') . '&projectid=' . (!empty($_REQUEST['projectid']) ? $_REQUEST['projectid'] : '') . $yesno . '" method="post" name="formulaire">' .
+		'<input type="hidden" name="id" value="' . GETPOST('id', 'int') . '">' .
 		'<input type="hidden" name="token" value="' . $_SESSION['newtoken'] . '">' .
 		'<input type="hidden" name="sortfield" value="' . $sortfield . '">' .
 		'<input type="hidden" name="sortorder" value="' . $sortorder . '">' .
 		'<input type="hidden" name="type" value="' . $type . '">' .
 		'<input type="hidden" name="linecount" value="' . ($num + $num2) . '">' .
-		'<input type="hidden" name="group_lines_by_product" value="' . $group_lines_by_product . '">' .
+		'<input type="hidden" name="group_lines_by_product" value="' . $groupLinesByProduct . '">' .
 		'<input type="hidden" name="fk_commande" value="' . GETPOST('fk_commande', 'int') . '">' .
-		'<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need', 'none') . '">' ;
+		'<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need', 'none') . '">';
 
-		if (getDolGlobalInt('INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK') == 0) {
-				echo '<div style="text-align:right"><a href="'.$_SERVER["PHP_SELF"].'?'.$_SERVER["QUERY_STRING"].'&show_stock_no_need=yes">'.$langs->trans('ShowLineEvenIfStockIsSuffisant').'</a></div><br>';
-		}
+	if (getDolGlobalInt('INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK') == 0) {
+		echo '<div style="text-align:right"><a href="' . $_SERVER["PHP_SELF"] . '?' . $_SERVER["QUERY_STRING"] . '&show_stock_no_need=yes">' . $langs->trans('ShowLineEvenIfStockIsSuffisant') . '</a></div><br>';
+	}
 
 
 	if (!empty($TCachedProductId)) {
 		echo '<a style="color:red; font-weight:bold;" href="' . $_SERVER["PHP_SELF"] . '?' . $_SERVER["QUERY_STRING"] . '&purge_cached_product=yes">' . $langs->trans('PurgeSessionForCachedProduct') . '</a><br>';
 	}
 
-	if(!empty($group_lines_by_product)) {
-		print '<STRONG>'.$langs->trans('SOFO_GROUP_LINES_BY_PRODUCT').'</STRONG> / <a href="'.$_SERVER['PHP_SELF'].'?id='.$id.'&group_lines_by_product=0'.$param.'">'.$langs->trans('DontGroupByProduct').'</a>'.img_help(1, $langs->trans('GroupByProductHelp')).'<br><br>';
+	if (!empty($groupLinesByProduct)) {
+		print '<STRONG>' . $langs->trans('SOFO_GROUP_LINES_BY_PRODUCT') . '</STRONG> / <a href="' . $_SERVER['PHP_SELF'] . '?id=' . $id . '&group_lines_by_product=0' . $listParam . '">' . $langs->trans('DontGroupByProduct') . '</a>' . img_help(1, $langs->trans('GroupByProductHelp')) . '<br><br>';
 	} else {
-		print '<a href="'.$_SERVER['PHP_SELF'].'?id='.$id.'&group_lines_by_product=1'.$param.'">'.$langs->trans('SOFO_GROUP_LINES_BY_PRODUCT').'</a> / <STRONG>'.$langs->trans('DontGroupByProduct').'</STRONG>'.img_help(1, $langs->trans('GroupByProductHelp')).'<br><br>';
+		print '<a href="' . $_SERVER['PHP_SELF'] . '?id=' . $id . '&group_lines_by_product=1' . $listParam . '">' . $langs->trans('SOFO_GROUP_LINES_BY_PRODUCT') . '</a> / <STRONG>' . $langs->trans('DontGroupByProduct') . '</STRONG>' . img_help(1, $langs->trans('GroupByProductHelp')) . '<br><br>';
 	}
 
 	print '<div style="text-align:right">	  </div>' .
 		'<table class="liste" width="100%">';
 
 
-	$colspan = 9;
+	$colspan = 10; // desiredstock column always available on supported versions
 	if (getDolGlobalString('FOURN_PRODUCT_AVAILABILITY'))
 		$colspan++;
 	if (getDolGlobalString('SOFO_USE_DELIVERY_TIME')) {
@@ -922,15 +764,12 @@ if ($resql || $resql2) {
 	if (isModEnabled('service') && $type == 1) {
 		$colspan++;
 	}
-	if ($dolibarr_version35) {
-		$colspan++;
+	$colspan++;
+	$parameters = array();
+	$reshook = $hookmanager->executeHooks('printFieldPreListTitle', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
+	if (!empty($reshook)) {
+		print $hookmanager->resPrint;
 	}
-		$colspan++;
-    $parameters = array();
-    $reshook = $hookmanager->executeHooks('printFieldPreListTitle', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
-    if (!empty($reshook)) {
-        print $hookmanager->resPrint;
-    }
 	if (getDolGlobalString('SOFO_USE_DELIVERY_TIME')) {
 		$week_to_replenish = (int)GETPOST('week_to_replenish', 'int');
 
@@ -967,9 +806,9 @@ if ($resql || $resql2) {
 	}
 
 
-	$param .= '&fourn_id=' . $fourn_id . '&snom=' . $snom . '&salert=' . $salert;
-	$param .= '&sref=' . $sref;
-	$param .= '&group_lines_by_product='.$group_lines_by_product;
+	$listParam .= '&fourn_id=' . $fourn_id . '&snom=' . $snom . '&salert=' . $salert;
+	$listParam .= '&sref=' . $sref;
+	$listParam .= '&group_lines_by_product=' . $groupLinesByProduct;
 
 	// Lignes des titres
 	print '<tr class="liste_titre_filter">' .
@@ -978,8 +817,8 @@ if ($resql || $resql2) {
 		$langs->trans('Ref'),
 		'ordercustomer.php',
 		'prod.ref',
-		$param,
-		'id=' . GETPOST('id','int'),
+		$listParam,
+		'id=' . GETPOST('id', 'int'),
 		'',
 		$sortfield,
 		$sortorder
@@ -988,8 +827,8 @@ if ($resql || $resql2) {
 		$langs->trans('Label'),
 		'ordercustomer.php',
 		'prod.label',
-		$param,
-		'id=' . GETPOST('id','int'),
+		$listParam,
+		'id=' . GETPOST('id', 'int'),
 		'',
 		$sortfield,
 		$sortorder
@@ -999,8 +838,8 @@ if ($resql || $resql2) {
 			$langs->trans("Categories"),
 			'ordercustomer.php',
 			'cp.fk_categorie',
-			$param,
-			'id=' . GETPOST('id','int'),
+			$listParam,
+			'id=' . GETPOST('id', 'int'),
 			'',
 			$sortfield,
 			$sortorder
@@ -1011,28 +850,26 @@ if ($resql || $resql2) {
 			$langs->trans('Duration'),
 			'ordercustomer.php',
 			'prod.duration',
-			$param,
-			'id=' . GETPOST('id','int'),
+			$listParam,
+			'id=' . GETPOST('id', 'int'),
 			'align="center"',
 			$sortfield,
 			$sortorder
 		);
 	}
 
-	if ($dolibarr_version35) {
-		print_liste_field_titre(
-			$langs->trans('DesiredStock'),
-			'ordercustomer.php',
-			'prod.desiredstock',
-			$param,
-			'id=' . GETPOST('id','int'),
-			'align="right"',
-			$sortfield,
-			$sortorder
-		);
-	}
+	print_liste_field_titre(
+		$langs->trans('DesiredStock'),
+		'ordercustomer.php',
+		'prod.desiredstock',
+		$listParam,
+		'id=' . GETPOST('id', 'int'),
+		'align="right"',
+		$sortfield,
+		$sortorder
+	);
 
-	if ( ($week_to_replenish > 0 || getDolGlobalString('USE_VIRTUAL_STOCK') || getDolGlobalString('SOFO_USE_VIRTUAL_ORDER_STOCK') || !getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER'))) {
+	if (($week_to_replenish > 0 || getDolGlobalString('USE_VIRTUAL_STOCK') || getDolGlobalString('SOFO_USE_VIRTUAL_ORDER_STOCK') || !getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER'))) {
 		$stocklabel = $langs->trans('VirtualStock');
 	} else {
 		$stocklabel = $langs->trans('PhysicalStock');
@@ -1041,30 +878,30 @@ if ($resql || $resql2) {
 		$stocklabel,
 		'ordercustomer.php',
 		'stock_physique',
-		$param,
-		'id=' . GETPOST('id','int'),
+		$listParam,
+		'id=' . GETPOST('id', 'int'),
 		'align="right"',
 		$sortfield,
 		$sortorder
 	);
 
-		print_liste_field_titre(
-			$langs->trans('Diff'),
-			'ordercustomer.php',
-			'',
-			$param,
-			'',
-			'align="right"',
-			$sortfield,
-			$sortorder
-		);
+	print_liste_field_titre(
+		$langs->trans('Diff'),
+		'ordercustomer.php',
+		'',
+		$listParam,
+		'',
+		'align="right"',
+		$sortfield,
+		$sortorder
+	);
 
 	print_liste_field_titre(
 		$langs->trans('Ordered'),
 		'ordercustomer.php',
 		'',
-		$param,
-		'id=' . GETPOST('id','int'),
+		$listParam,
+		'id=' . GETPOST('id', 'int'),
 		'align="right"',
 		$sortfield,
 		$sortorder
@@ -1074,7 +911,7 @@ if ($resql || $resql2) {
 			$langs->trans('AlreadyShipped'),
 			'ordercustomer.php',
 			'',
-			$param,
+			$listParam,
 			'id=' . GETPOST('id', 'int'),
 			'align="right"',
 			$sortfield,
@@ -1085,8 +922,8 @@ if ($resql || $resql2) {
 		$langs->trans('StockToBuy'),
 		'ordercustomer.php',
 		'',
-		$param,
-		'id=' . GETPOST('id','int'),
+		$listParam,
+		'id=' . GETPOST('id', 'int'),
 		'align="right"',
 		$sortfield,
 		$sortorder
@@ -1099,8 +936,8 @@ if ($resql || $resql2) {
 		$langs->trans('Supplier'),
 		'ordercustomer.php',
 		'',
-		$param,
-		'id=' . GETPOST('id','int'),
+		$listParam,
+		'id=' . GETPOST('id', 'int'),
 		'align="right"',
 		$sortfield,
 		$sortorder
@@ -1117,7 +954,7 @@ if ($resql || $resql2) {
 		'</td>' .
 		'<td class="liste_titre">' .
 		'<input class="flat" type="text" name="snom" value="' . $snom . '">';
-		'</td>';
+	'</td>';
 
 	if (isModEnabled('service') && $type == 1) {
 		print '<td class="liste_titre">' .
@@ -1131,11 +968,11 @@ if ($resql || $resql2) {
 		$liste_titre .= '</td>';
 	}
 
-	$liste_titre .= $dolibarr_version35 ? '<td class="liste_titre">&nbsp;</td>' : '';
-    if(empty($alertchecked)) $alertchecked = '';
+	$liste_titre .= '<td class="liste_titre">&nbsp;</td>';
+	if (empty($alertchecked)) $alertchecked = '';
 	$liste_titre .= '<td class="liste_titre" align="right">' . $langs->trans('AlertOnly') . '&nbsp;<input type="checkbox" name="salert" ' . $alertchecked . '></td>';
 
-		$liste_titre .= '<td class="liste_titre" align="right"></td>';
+	$liste_titre .= '<td class="liste_titre" align="right"></td>';
 
 	$liste_titre .= '<td class="liste_titre" align="right">&nbsp;</td>' .
 		'<td class="liste_titre">&nbsp;</td>' .
@@ -1163,26 +1000,24 @@ if ($resql || $resql2) {
 
 	$TSupplier = array();
 	$TProductIDAlreadyChecked = array();
-    //On regroupe les quantités pas produit si la conf est active
-	if(! empty($group_lines_by_product)  && !empty($TProducts)) {
-        $TProductQtyChecked = array();
-        $TProductSubLevel = array();
-		foreach($TProducts as $key => $objp) {
-            if(empty($objp->level)) {
-				if(array_key_exists($objp->rowid, $TProductQtyChecked)) {
+	//On regroupe les quantités pas produit si la conf est active
+	if (!empty($groupLinesByProduct) && !empty($TProducts)) {
+		$TProductQtyChecked = array();
+		$TProductSubLevel = array();
+		foreach ($TProducts as $key => $objp) {
+			if (empty($objp->level)) {
+				if (array_key_exists($objp->rowid, $TProductQtyChecked)) {
 					$TProductQtyChecked[$objp->rowid]->qty += $objp->qty;
-				}
-				else $TProductQtyChecked[$objp->rowid] = $objp;
+				} else $TProductQtyChecked[$objp->rowid] = $objp;
 			} else $TProductSubLevel[] = $objp;
 		}
 
-        $TProducts = array_merge($TProductQtyChecked, $TProductSubLevel);
+		$TProducts = array_merge($TProductQtyChecked, $TProductSubLevel);
 	}
 
-	foreach($TProducts as $objp){
-
+	foreach ($TProducts as $objp) {
 		// Cas où on a plusieurs fois le même produit dans la même commande : dédoublonnage (les sous produits ne sont pas concernés)
-		if(!empty($group_lines_by_product) && empty($objp->level)) {
+		if (!empty($groupLinesByProduct) && empty($objp->level)) {
 			if (in_array($objp->rowid, $TProductIDAlreadyChecked)) continue;
 			else $TProductIDAlreadyChecked[$objp->rowid] = $objp->rowid;
 		}
@@ -1206,12 +1041,9 @@ if ($resql || $resql2) {
 				}
 			}
 
-
 			$prod->ref = $objp->ref;
 			$prod->id = $objp->rowid;
 			$prod->type = $objp->fk_product_type;
-			//$ordered = ordered($prod->id);
-
 			$help_stock = $langs->trans('PhysicalStock') . ' : ' . (float)$objp->stock_physique;
 
 			$stock_commande_client = 0;
@@ -1219,20 +1051,20 @@ if ($resql || $resql2) {
 
 			if ($week_to_replenish > 0) {
 				/* là ça déconne pas, on s'en fout, on dépote ! */
-				if (! getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER')) {
+				if (!getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER')) {
 					$stock_commande_client = _load_stats_commande_date($prod->id, date('Y-m-d', strtotime('+' . $week_to_replenish . 'week')));
-					$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float) $stock_commande_client;
+					$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float)$stock_commande_client;
 				}
 
 				$stock_commande_fournisseur = _load_stats_commande_fournisseur($prod->id, date('Y-m-d', strtotime('+' . $week_to_replenish . 'week')), $objp->stock_physique - $stock_commande_client);
-				$help_stock .= ', ' . $langs->trans('SupplierOrders') . ' : ' . (float) $stock_commande_fournisseur;
+				$help_stock .= ', ' . $langs->trans('SupplierOrders') . ' : ' . (float)$stock_commande_fournisseur;
 
 				$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur;
 			} else if (getDolGlobalString('USE_VIRTUAL_STOCK') || getDolGlobalString('SOFO_USE_VIRTUAL_ORDER_STOCK')) {
 				//compute virtual stockshow_stock_no_need
 				$prod->fetch($prod->id);
-				if ((! getDolGlobalString('STOCK_CALCULATE_ON_VALIDATE_ORDER') || getDolGlobalString('SOFO_USE_VIRTUAL_ORDER_STOCK'))
-					&& ! getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER')) {
+				if ((!getDolGlobalString('STOCK_CALCULATE_ON_VALIDATE_ORDER') || getDolGlobalString('SOFO_USE_VIRTUAL_ORDER_STOCK'))
+					&& !getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER')) {
 					$result = $prod->load_stats_commande(0, '1,2');
 					if ($result < 0) {
 						dol_print_error($db, $prod->error);
@@ -1240,12 +1072,12 @@ if ($resql || $resql2) {
 					$stock_commande_client = $prod->stats_commande['qty'];
 
 					//si c'est un sous-produit, on ajoute la quantité à commander calculée plus tôt en plus
-					if (! empty($objp->level)) $stock_commande_client = $stock_commande_client + $objp->qty;
+					if (!empty($objp->level)) $stock_commande_client = $stock_commande_client + $objp->qty;
 				} else {
 					$stock_commande_client = 0;
 				}
 
-				if (! getDolGlobalString('STOCK_CALCULATE_ON_SUPPLIER_VALIDATE_ORDER') || getDolGlobalInt('SOFO_USE_VIRTUAL_ORDER_STOCK')) {
+				if (!getDolGlobalString('STOCK_CALCULATE_ON_SUPPLIER_VALIDATE_ORDER') || getDolGlobalInt('SOFO_USE_VIRTUAL_ORDER_STOCK')) {
 					if (getDolGlobalString('SUPPLIER_ORDER_STATUS_FOR_VIRTUAL_STOCK')) {
 						$result = $prod->load_stats_commande_fournisseur(0, getDolGlobalInt('SUPPLIER_ORDER_STATUS_FOR_VIRTUAL_STOCK', 1));
 					} else {
@@ -1257,7 +1089,7 @@ if ($resql || $resql2) {
 
 					//Requête qui récupère la somme des qty ventilés pour les cmd reçu partiellement
 					$sqlQ = "SELECT SUM(rec.qty) as qty";
-					if ((float) DOL_VERSION < 20) {
+					if ((float)DOL_VERSION < 20) {
 						$sqlQ .= " FROM " . $db->prefix() . "commande_fournisseur_dispatch as rec";
 						$sqlQ .= " INNER JOIN " . $db->prefix() . "commande_fournisseur cf ON (cf.rowid = rec.fk_commande) AND cf.entity IN (" . getEntity('commande_fournisseur') . ")";
 					} else {
@@ -1292,29 +1124,27 @@ if ($resql || $resql2) {
 					$result = $prod->load_stats_sending(0, '1,2', 1, $filterShipmentStatus);
 					if ($result < 0) dol_print_error($this->db, $this->error);
 					$stock_sending_client = $prod->stats_expedition['qty'];
-					$help_stock .= ', ' . $langs->trans('Expeditions') . ' : ' . (float) $stock_sending_client;
+					$help_stock .= ', ' . $langs->trans('Expeditions') . ' : ' . (float)$stock_sending_client;
 				} else $stock_sending_client = 0;
 
 				if ($stock_commande_client > 0) {
-					$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float) $stock_commande_client;
+					$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float)$stock_commande_client;
 				}
 
-				$help_stock .= ', ' . $langs->trans('SupplierOrders') . ' : ' . (float) $stock_commande_fournisseur;
+				$help_stock .= ', ' . $langs->trans('SupplierOrders') . ' : ' . (float)$stock_commande_fournisseur;
 
 				$stock = $objp->stock_physique - $stock_commande_client + $stock_commande_fournisseur + $stock_sending_client;
 			} else {
 
-				if (! getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER')) {
+				if (!getDolGlobalString('SOFO_DO_NOT_USE_CUSTOMER_ORDER')) {
 					$stock_commande_client = $objp->qty;
-					$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float) $stock_commande_client;
+					$help_stock .= ', ' . $langs->trans('Orders') . ' : ' . (float)$stock_commande_client;
 				}
 
 				$stock = $objp->stock_physique - $stock_commande_client;
 			}
 
-
 			$ordered = $stock_commande_client;
-
 
 			$warning = '';
 			if (!empty($objp->seuil_stock_alerte)
@@ -1342,15 +1172,7 @@ if ($resql || $resql2) {
 			}
 
 			// La quantité à commander correspond au stock désiré sur le produit additionné à la quantité souhaitée dans la commande :
-
-
 			$stocktobuy = $objp->desiredstock - $stock;
-
-
-			/*			if($stocktobuy<=0 && $prod->ref!='A0000753') {
-							$i++;
-							continue; // le stock est suffisant on passe
-							}*/
 
 			$help_stock .= ', ' . $langs->trans('DesiredStock') . ' : ' . (float)$objp->desiredstock;
 
@@ -1361,7 +1183,7 @@ if ($resql || $resql2) {
 
 			//si le produit parent n'a pas besoin d'être commandé, alors les produits fils non plus
 			if (empty($objp->fk_parent)) $objp->fk_parent = 0;
-			if(!empty($objnottobuy) && !empty($objp->fk_parent) && $objnottobuy == $objp->fk_parent) {
+			if (!empty($objnottobuy) && !empty($objp->fk_parent) && $objnottobuy == $objp->fk_parent) {
 				$stocktobuy = 0;
 			}
 
@@ -1372,9 +1194,9 @@ if ($resql || $resql2) {
 			}
 
 			// on load les commandes fournisseur liées
-			$id = GETPOST('id','int');
-			if(!empty($objp->lineid)) {
-				$objLineNewQty = TSOFO::getAvailableQty($objp->lineid, !empty($group_lines_by_product) ? $ordered : $objp->qty);
+			$id = GETPOST('id', 'int');
+			if (!empty($objp->lineid)) {
+				$objLineNewQty = TSOFO::getAvailableQty($objp->lineid, !empty($groupLinesByProduct) ? $ordered : $objp->qty);
 			}
 
 			$var = !$var;
@@ -1383,18 +1205,18 @@ if ($resql || $resql2) {
 			 *  passage en conf si demande client
 			 *
 			 *  $checked = ($objLineNewQty->qty > 0) ? ' checked' : '';
-			 *	$disabled = ($objLineNewQty->qty  ==  0)  ? 'disabled' : '';
+			 *    $disabled = ($objLineNewQty->qty  ==  0)  ? 'disabled' : '';
 			 */
-            $checked = '';
-            $disabled = '';
-			if(getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY')) {
+			$checked = '';
+			$disabled = '';
+			if (getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY')) {
 				$checked = (!empty($objLineNewQty->qty) && $objLineNewQty->qty > 0) ? ' checked' : '';
 				$disabled = (!empty($objLineNewQty->qty) && $objLineNewQty->qty == 0) ? 'disabled' : '';
 			}
 
 			print '<tr ' . $bc[$var] . ' data-productid="' . $objp->rowid . '"  data-i="' . $i . '"   >
 						<td>
-							<input type="checkbox" class="check" name="check' . $i . '" ' . $disabled .' '. $checked .'>';
+							<input type="checkbox" class="check" name="check' . $i . '" ' . $disabled . ' ' . $checked . '>';
 
 			$lineid = '';
 
@@ -1412,7 +1234,7 @@ if ($resql || $resql2) {
 				$produit->fetch($objp->rowid);
 
 				$description = $produit->description;
-				if ($description)  print '<input type="hidden" name="desc' . $i . '" value="' . $description . '" >';
+				if ($description) print '<input type="hidden" name="desc' . $i . '" value="' . $description . '" >';
 			}
 			print '</td>';
 
@@ -1433,17 +1255,16 @@ if ($resql || $resql2) {
 			print '</td>';
 
 			// on check si une cmd fourn existe pour ce produit et on affiche la ref avec link
-			$TcurrentCmdFourn =   TSOFO::getCmdFournFromCmdCustomer($objp->lineid ?? null, $objp->rowid);
+			$TcurrentCmdFourn = TSOFO::getCmdFournFromCmdCustomer($objp->lineid ?? null, $objp->rowid);
 			$r = '';
 
 			if (!empty($TcurrentCmdFourn)) {
-				foreach ($TcurrentCmdFourn as $currentCmdFourn){
-					$r .= 	'<br>' . $currentCmdFourn->getNomUrl(1) ;
+				foreach ($TcurrentCmdFourn as $currentCmdFourn) {
+					$r .= '<br>' . $currentCmdFourn->getNomUrl(1);
 				}
 			}
 
 			print '<td>' . $objp->label . $r . '</td>';
-
 
 			if (isModEnabled('categorie') && getDolGlobalString('SOFO_DISPLAY_CAT_COLUMN')) {
 				print '<td >';
@@ -1469,22 +1290,20 @@ if ($resql || $resql2) {
 					'</td>';
 			}
 
-
-
 			$champs = "";
-			$champs .= $dolibarr_version35 ? '<td align="right">' . $objp->desiredstock . '</td>' : '';
+			$champs .= '<td align="right">' . $objp->desiredstock . '</td>';
 			$prod->load_stock();
 			$champs .= '<td align="right" >' .
 				$warning . (((getDolGlobalString('STOCK_SUPPORTS_SERVICES') && $prod->type == 1) || empty($prod->type)) ? $prod->stock_theorique : img_picto('', './img/no', '', 1)) . //$stocktobuy
 				'</td>';
 
 			// déjà present
-				$champs .= '<td align="right">' .
-                    ($objLineNewQty->oldQty ?? '').
-					'</td>';
-				//Commandé
+			$champs .= '<td align="right">' .
+				($objLineNewQty->oldQty ?? '') .
+				'</td>';
+			//Commandé
 			$champs .= '<td align="right">';
-			$champs .=  $objp->qty;
+			$champs .= $objp->qty;
 			$champs .= '</td>';
 			if (getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY')) {
 				// Déja expédié
@@ -1493,12 +1312,12 @@ if ($resql || $resql2) {
 			}
 			// A commander
 			$stocktobuy = ($objp->qty - $objp->qty_shipped) > 0 ? ($objp->qty - $objp->qty_shipped) : 0;
-			$champs .='<td align="right">' .
+			$champs .= '<td align="right">' .
 				'<input type="text" name="tobuy' . $i .
-				'" value="' . (getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $stocktobuy : (empty($group_lines_by_product) ? $objp->qty : $objLineNewQty->qty ?? 0)) . '" ' . $disabled . ' size="3"> </td>';
-			$champs .='<td align="center">' .
+				'" value="' . (getDolGlobalString('SOFO_QTY_LINES_COMES_FROM_ORIGIN_ORDER_ONLY') ? $stocktobuy : (empty($groupLinesByProduct) ? $objp->qty : $objLineNewQty->qty ?? 0)) . '" ' . $disabled . ' size="3"> </td>';
+			$champs .= '<td align="center">' .
 				'<span class="stock_details" prod-id="' . $prod->id . '" week-to-replenish="' . $week_to_replenish . '">' . img_help(1, $help_stock) . '</span>';
-			$champs .='</td>';
+			$champs .= '</td>';
 
 			if (getDolGlobalString('SOFO_USE_DELIVERY_TIME')) {
 
@@ -1507,7 +1326,6 @@ if ($resql || $resql2) {
 				$champs .= '<td data-info="availability" >' . ($nb_day == 0 ? $langs->trans('Unknown') : $nb_day . ' ' . $langs->trans('Days')) . '</td>';
 
 			}
-
 
 			$selectedPrice = !empty($objp->buy_price_ht) && $objp->buy_price_ht > 0 ? $objp->buy_price_ht : 0;
 
@@ -1526,79 +1344,71 @@ if ($resql || $resql2) {
 
 			if (empty($fk_commande))
 				$TCachedProductId[] = $prod->id; //mise en cache
-
 		}
-
 		$i++;
-		//	if($prod->ref=='A0000753') exit;
 	}
 
 	//Lignes libre
 	$j = $j ?? 0;
 	if (!empty($resql2)) {
 		while ($j < min($num2, $limit)) {
-				$objp = $db->fetch_object($resql2);
-				if ($objp->product_type == 0)
-					$picto = img_object($langs->trans("ShowProduct"), 'product');
-				if ($objp->product_type == 1)
-					$picto = img_object($langs->trans("ShowService"), 'service');
+			$objp = $db->fetch_object($resql2);
+			if ($objp->product_type == 0)
+				$picto = img_object($langs->trans("ShowProduct"), 'product');
+			if ($objp->product_type == 1)
+				$picto = img_object($langs->trans("ShowService"), 'service');
 
-				print '<tr ' . $bc[$var] . '>' .
-					'<td><input type="checkbox" class="check" name="check' . $i . '"' . ($disabled ?? '' ). '></td>' .
-					'<td>' .
-					$picto . " " . $objp->description .
-					'</td>' .
-					'<td>' . $objp->description;
-				$picto = img_picto('', './img/no', '', 1);
+			print '<tr ' . $bc[$var] . '>' .
+				'<td><input type="checkbox" class="check" name="check' . $i . '"' . ($disabled ?? '') . '></td>' .
+				'<td>' .
+				$picto . " " . $objp->description .
+				'</td>' .
+				'<td>' . $objp->description;
+			$picto = img_picto('', './img/no', '', 1);
 
-				//pre($conf->global,1);
-				//if(!empty(getDolGlobalString('SUPPORDERFROMORDER_USE_ORDER_DESC'))) {
-				//var_dump('toto');
-				print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" />';
-				print '<input type="hidden" name="product_type' . $i . '" value="' . $objp->product_type . '" >';
-				//	}
+			print '<input type="hidden" name="desc' . $i . '" value="' . $objp->description . '" />';
+			print '<input type="hidden" name="product_type' . $i . '" value="' . $objp->product_type . '" >';
 
-				print '</td>';
+			print '</td>';
 
-				print '<td></td>'; // Nature
-				if (isModEnabled('categorie'))
-					print '<td></td>'; // Categories
+			print '<td></td>'; // Nature
+			if (isModEnabled('categorie'))
+				print '<td></td>'; // Categories
 
-				if (isModEnabled('service') && $type == 1) {
-					if (preg_match('/([0-9]+)y/i', $objp->duration, $regs)) {
-						$duration = $regs[1] . ' ' . $langs->trans('DurationYear');
-					} elseif (preg_match('/([0-9]+)m/i', $objp->duration, $regs)) {
-						$duration = $regs[1] . ' ' . $langs->trans('DurationMonth');
-					} elseif (preg_match('/([0-9]+)d/i', $objp->duration, $regs)) {
-						$duration = $regs[1] . ' ' . $langs->trans('DurationDay');
-					} else {
-						$duration = $objp->duration;
-					}
-					print '<td align="center">' .
-						$duration .
-						'</td>';
+			if (isModEnabled('service') && $type == 1) {
+				if (preg_match('/([0-9]+)y/i', $objp->duration, $regs)) {
+					$duration = $regs[1] . ' ' . $langs->trans('DurationYear');
+				} elseif (preg_match('/([0-9]+)m/i', $objp->duration, $regs)) {
+					$duration = $regs[1] . ' ' . $langs->trans('DurationMonth');
+				} elseif (preg_match('/([0-9]+)d/i', $objp->duration, $regs)) {
+					$duration = $regs[1] . ' ' . $langs->trans('DurationDay');
+				} else {
+					$duration = $objp->duration;
 				}
+				print '<td align="center">' .
+					$duration .
+					'</td>';
+			}
 
-				if ($dolibarr_version35)
-					print '<td align="right">' . $picto . '</td>'; // Desired stock
-				print '<td align="right">' . $picto . '</td>'; // Physical/virtual stock
+			print '<td align="right">' . $picto . '</td>'; // Desired stock
+			print '<td align="right">' . $picto . '</td>'; // Physical/virtual stock
 
-				print '<td align="right">
+			print '<td align="right">
 						<input type="text" name="tobuy_free' . $i . '" value="' . $objp->qty . '">
 						<input type="hidden" name="lineid_free' . $i . '" value="' . $objp->rowid . '" >
 					</td>'; // Ordered
-				print '<td align="right" id="test">
+			print '<td align="right" id="test">
 							<input type="text" name="tobuy_free' . $i . '" value="' . $objp->qty_shipped . '">
 							<input type="hidden" name="lineid_free' . $i . '" value="' . $objp->rowid . '" >
 						</td>'; // OrderShipped
-				print '<td align="right">
+			print '<td align="right">
 						<input type="text" name="price_free' . $i . '" value="' . (!getDolGlobalString('SOFO_COST_PRICE_AS_BUYING') ? $objp->price : price($objp->buy_price_ht)) . '" size="5" style="text-align:right">€
 						' . $form->select_company((empty($socid) ? '' : $socid), 'fourn_free' . $i, 's.fournisseur = 1', 1, 0, 0, array(), 0, 'minwidth100 maxwidth300') . '
 				   </td>'; // Supplier
-				print '<td></td>'; // Action
-				print '</tr>';
-				$i++;
-				$j++;
+			print '<td></td>'; // Action
+			print '</tr>';
+			$i++;
+			$j++;
 		}
 	}
 
@@ -1642,7 +1452,7 @@ if ($resql || $resql2) {
 	print ' <script type="text/javascript">';
 
 
-	if (getDolGlobalInt('SOFO_USE_DELIVERY_TIME') ) {
+	if (getDolGlobalInt('SOFO_USE_DELIVERY_TIME')) {
 
 		print '
 	$( document ).ready(function() {
@@ -1669,7 +1479,6 @@ if ($resql || $resql2) {
 	';
 	}
 
-
 	print ' function toggle(source)
      {
        var checkboxes = document.getElementsByClassName("check");
@@ -1688,7 +1497,6 @@ if ($resql || $resql2) {
 
 ?>
 	<script type="text/javascript">
-
 		var mouseX;
 		var mouseY;
 
@@ -1730,17 +1538,15 @@ if ($resql || $resql2) {
 			});
 
 		});
-
-
 	</script>
 <?php
 //Debugbar is making page loading non stop
-if(!empty($user->rights->debugbar)) {
-	$saveRight = $user->hasRight('debugbar','read');
+if (!empty($user->rights->debugbar)) {
+	$saveRight = $user->hasRight('debugbar', 'read');
 	$user->rights->debugbar->read = 0;
 }
 llxFooter();
-if(!empty($user->rights->debugbar)) $user->rights->debugbar->read = $saveRight;
+if (!empty($user->rights->debugbar)) $user->rights->debugbar->read = $saveRight;
 
 function _prepareLine($i, $actionTarget = 'order')
 {
@@ -1797,7 +1603,7 @@ function _prepareLine($i, $actionTarget = 'order')
 			$line->total_ttc = $line->total_ht + $line->total_tva;
 			$line->ref_fourn = $obj->ref_fourn;
 			$line->remise_percent = $obj->remise_percent;
-			if(empty($line->remise_percent) && !empty($obj->remise_supplier)) $line->remise_percent = $obj->remise_supplier;
+			if (empty($line->remise_percent) && !empty($obj->remise_supplier)) $line->remise_percent = $obj->remise_supplier;
 			// FIXME: Ugly hack to get the right purchase price since supplier references can collide
 			// (eg. same supplier ref for multiple suppliers with different prices).
 			$line->fk_prod_fourn_price = $supplierpriceid;
@@ -1860,15 +1666,14 @@ function _prepareLine($i, $actionTarget = 'order')
 
 }
 
-
 function _getSupplierPriceInfos($supplierpriceid)
 {
 	global $db;
-    $sql = 'SELECT pfp.fk_product, pfp.fk_soc, pfp.ref_fourn';
-    $sql .= ', pfp.tva_tx, pfp.unitprice, pfp.remise_percent, soc.remise_supplier FROM ';
-    $sql .= $db->prefix().'product_fournisseur_price pfp';
-    $sql .= ' LEFT JOIN '.$db->prefix().'societe soc ON (soc.rowid = pfp.fk_soc)';
-    $sql .= ' WHERE pfp.rowid = '.$supplierpriceid;
+	$sql = 'SELECT pfp.fk_product, pfp.fk_soc, pfp.ref_fourn';
+	$sql .= ', pfp.tva_tx, pfp.unitprice, pfp.remise_percent, soc.remise_supplier FROM ';
+	$sql .= $db->prefix() . 'product_fournisseur_price pfp';
+	$sql .= ' LEFT JOIN ' . $db->prefix() . 'societe soc ON (soc.rowid = pfp.fk_soc)';
+	$sql .= ' WHERE pfp.rowid = ' . $supplierpriceid;
 	$resql = $db->query($sql);
 
 	if ($resql && $db->num_rows($resql) > 0) {
@@ -1878,7 +1683,6 @@ function _getSupplierPriceInfos($supplierpriceid)
 
 	return false;
 }
-
 
 function _getSupplierOrderInfos($idsupplier, $projectid = '')
 {
@@ -1906,7 +1710,6 @@ function _getSupplierOrderInfos($idsupplier, $projectid = '')
 
 	return false;
 }
-
 
 function _getSupplierProposalInfos($idsupplier, $projectid = '')
 {
@@ -1971,7 +1774,7 @@ function _appliCond($order, $commandeClient)
 	}
 
 	if (getDolGlobalString('SOFO_GET_EXTRAFIELDS_FROM_ORDER')) {
-		require_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
+		require_once DOL_DOCUMENT_ROOT . '/core/class/extrafields.class.php';
 		$extrafieldsOrderSupplier = new ExtraFields($db);
 		$extrafieldsOrderSupplier->fetch_name_optionals_label($order->table_element);
 		$extrafieldsCustomerOrder = new ExtraFields($db);
@@ -1980,18 +1783,22 @@ function _appliCond($order, $commandeClient)
 		if (!empty($commandeClient->array_options) && !empty($extrafieldsOrderSupplier->attributes)
 			&& array_key_exists($order->table_element, $extrafieldsOrderSupplier->attributes)
 			&& array_key_exists('label', $extrafieldsOrderSupplier->attributes[$order->table_element])
-			   && !empty($extrafieldsOrderSupplier->attributes[$order->table_element]['label'])) {
-			foreach ($commandeClient->array_options as $key=>$val) {
+			&& !empty($extrafieldsOrderSupplier->attributes[$order->table_element]['label'])) {
+			foreach ($commandeClient->array_options as $key => $val) {
 				$key = str_replace('options_', '', $key);
 				if (array_key_exists($key, $extrafieldsOrderSupplier->attributes[$order->table_element]['type']) &&
 					$extrafieldsOrderSupplier->attributes[$order->table_element]['type'][$key] == $extrafieldsCustomerOrder->attributes[$commandeClient->table_element]['type'][$key]) {
-					$order->array_options['options_'.$key] = $commandeClient->array_options['options_'.$key];
+					$order->array_options['options_' . $key] = $commandeClient->array_options['options_' . $key];
 				}
 			}
 		}
 	}
-}
 
+	if (getDolGlobalString('SOFO_GET_REF_SUPPLIER_FROM_ORDER') && !empty($commandeClient->ref_client)) {
+		$order->ref_supplier = $commandeClient->ref_client;
+	}
+
+}
 
 $db->close();
 
