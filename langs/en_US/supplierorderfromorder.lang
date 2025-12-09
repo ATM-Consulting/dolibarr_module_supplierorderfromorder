@@ -75,6 +75,7 @@ SOFO_DISABLE_ORDER_POSIBILITY_TO_PRODUCT_WITH_NOMENCLATURE=Disable the possibili
 ParametersNeedSOFO_USE_NOMENCLATURE=Parameters: the "Components to order" tab is necessary to use these parameters
 SOFO_ADD_QUANTITY_RATHER_THAN_CREATE_LINES=Favor adding quantity to a supplier order line instead of adding a line for each customer order line
 Fabriquer = Create
+SOFO_GET_REF_SUPPLIER_FROM_ORDER=Transfer the customer reference to the supplier order.
 SOFO_GROUP_LINES_BY_PRODUCT=Group lines by product
 DontGroupByProduct=Don't group lines by product
 GroupByProductHelp=Default value can be set in configuration page

@@ -757,15 +757,132 @@ function supplierorderfromorderAdminPrepareHead()
 	$head[$h][2] = 'about';
 	$h++;
 
-    // Show more tabs from modules
-    // Entries must be declared in modules descriptor with line
-    //$this->tabs = array(&
-    //	'entity:+tabname:Title:@supplierorderfromorder:/supplierorderfromorder/mypage.php?id=__ID__'
-    //); // to add new tab
-    //$this->tabs = array(
-    //	'entity:-tabname:Title:@supplierorderfromorder:/supplierorderfromorder/mypage.php?id=__ID__'
-    //); // to remove a tab
     complete_head_from_modules($conf, $langs, new stdClass(), $head, $h, 'supplierorderfromorderadmin');
 
     return $head;
+}
+
+/**
+ * Build SQL query for ordercustomer view (grouped by product or not).
+ *
+ * @param DoliDB $db              Database handler.
+ * @param int|string $entityToTest List of entities to filter stock on (numeric list or comma string).
+ * @param array $TCategoriesQuery Category ids to restrict products.
+ * @param int $fk_commande        Customer order id to filter on.
+ * @param string $search_all      Global search term applied to ref/label/description/note.
+ * @param int|string $type        Product type filter (1 service, 0/other product).
+ * @param string $sref            Product ref search (space separated tokens).
+ * @param string $snom            Product label search (space separated tokens).
+ * @param string $canvas          Product canvas filter.
+ * @param string $salert          Whether to filter by stock alert threshold ('on').
+ * @param bool $groupByProduct    Group lines by product (true) or keep one line per order line.
+ * @return string
+ */
+function sofoBuildOrderCustomerQuery($db, $entityToTest, $TCategoriesQuery, $fk_commande, $search_all, $type, $sref, $snom, $canvas, $salert, $groupByProduct = true) : string
+{
+	$sql = 'SELECT prod.rowid, prod.ref, prod.label, cd.description, prod.price, cd.qty as qty, COALESCE(SUM(ed.qty), 0) as qty_shipped, cd.buy_price_ht';
+	$sql .= ', prod.price_ttc, prod.price_base_type,prod.fk_product_type';
+	$sql .= ', prod.tms as datem, prod.duration, prod.tobuy, prod.seuil_stock_alerte, cd.rang,';
+
+	if ($groupByProduct) {
+		if (in_array($db->type, array('pgsql'))) {
+			$sql .= ' string_agg(DISTINCT cd.rowid::character varying, \'@\') as lineid,';
+		} else {
+			$sql .= ' GROUP_CONCAT(cd.rowid SEPARATOR "@") as lineid,';
+		}
+	} else {
+		$sql .= ' cd.rowid as lineid,';
+	}
+
+	$sql .= ' ( SELECT SUM(s.reel) FROM ' . $db->prefix() . 'product_stock s';
+	$sql .= ' INNER JOIN ' . $db->prefix() . 'entrepot as entre ON entre.rowid=s.fk_entrepot';
+	$sql .= ' WHERE s.fk_product=prod.rowid AND entre.entity IN (' . $entityToTest . ')) as stock_physique';
+
+	$sql .= ', prod.desiredstock';
+	if ($groupByProduct) {
+		$sql .= ' FROM ' . $db->prefix() . 'product as prod';
+
+		$sql .= ' LEFT OUTER JOIN (';
+		$sql .= ' SELECT fk_product, fk_commande, SUM(qty) as qty, description, MAX(buy_price_ht) as buy_price_ht, MAX(rang) as rang, GROUP_CONCAT(rowid SEPARATOR "@") as rowid';
+		$sql .= ' FROM ' . $db->prefix() . 'commandedet';
+		$sql .= ' GROUP BY fk_product, fk_commande';
+		$sql .= ') as cd ON prod.rowid = cd.fk_product';
+	} else {
+		$sql .= ' FROM ' . $db->prefix() . 'commandedet as cd';
+		$sql .= ' INNER JOIN ' . $db->prefix() . 'product as prod ON prod.rowid = cd.fk_product';
+	}
+
+	if ((float)DOL_VERSION >= 20.0) {
+		$sql .= ' LEFT JOIN ' . $db->prefix() . 'expeditiondet as ed ON (cd.rowid = ed.fk_elementdet)';
+	} else {
+		$sql .= ' LEFT JOIN ' . $db->prefix() . 'expeditiondet as ed ON (cd.rowid = ed.fk_origin_line)';
+	}
+
+	if (!empty($TCategoriesQuery)) {
+		$sql .= ' LEFT OUTER JOIN ' . $db->prefix() . 'categorie_product as cp ON (prod.rowid = cp.fk_product)';
+	}
+
+	$sql .= ' WHERE prod.fk_product_type IN (0,1) AND prod.entity IN (' . getEntity("product", 1) . ')';
+
+	if (intval($fk_commande) > 0) {
+		$sql .= ' AND cd.fk_commande = ' . intval($fk_commande);
+	}
+
+	if (!empty($TCategoriesQuery)) {
+		$sql .= ' AND cp.fk_categorie IN ( ' . implode(',', $TCategoriesQuery) . ' ) ';
+	}
+
+	if ($search_all) {
+		$sql .= ' AND (prod.ref LIKE "%' . $db->escape($search_all) . '%" ';
+		$sql .= 'OR prod.label LIKE "%' . $db->escape($search_all) . '%" ';
+		$sql .= 'OR prod.description LIKE "%' . $db->escape($search_all) . '%" ';
+		$sql .= 'OR prod.note LIKE "%' . $db->escape($search_all) . '%")';
+	}
+
+	if (dol_strlen($type)) {
+		if ($type == 1) {
+			$sql .= ' AND prod.fk_product_type = 1';
+		} else {
+			$sql .= ' AND prod.fk_product_type != 1';
+		}
+	}
+
+	if ($sref) {
+		$scrit = explode(' ', $sref);
+		foreach ($scrit as $crit) {
+			$sql .= ' AND prod.ref LIKE "%' . $db->escape($crit) . '%"';
+		}
+	}
+
+	if ($snom) {
+		$scrit = explode(' ', $snom);
+		foreach ($scrit as $crit) {
+			$sql .= ' AND prod.label LIKE "%' . $db->escape($crit) . '%"';
+		}
+	}
+
+	$sql .= ' AND prod.tobuy = 1';
+
+	if (!empty($canvas)) {
+		$sql .= ' AND prod.canvas = "' . $db->escape($canvas) . '"';
+	}
+
+	if ($salert == 'on') {
+		$sql .= " AND prod.seuil_stock_alerte is not NULL ";
+	}
+
+	$sql .= ' GROUP BY prod.rowid, prod.ref, prod.label, prod.price';
+	$sql .= ', prod.price_ttc, prod.price_base_type,prod.fk_product_type, prod.tms';
+	$sql .= ', prod.duration, prod.tobuy, prod.seuil_stock_alerte';
+
+	if (!$groupByProduct) {
+		$sql .= ', cd.description, cd.qty, cd.buy_price_ht';
+		$sql .= ', cd.rang, cd.rowid';
+	}
+
+	if ($salert == 'on') {
+		$sql .= ' HAVING stock_physique < prod.seuil_stock_alerte ';
+	}
+
+	return $sql;
 }
