@@ -69,18 +69,17 @@ $sref = GETPOST('sref', 'alpha');
 $snom = GETPOST('snom', 'alpha');
 $search_all = GETPOST('search_all', 'alpha');
 $canvas = GETPOST('canvas', 'alpha');
-$type = GETPOST('type', 'int');
-$tobuy = GETPOST('tobuy', 'int');
+$type = GETPOSTINT('type');
+$tobuy = GETPOSTINT('tobuy');
 $salert = GETPOST('salert', 'alpha');
 $fourn_id = GETPOST('fourn_id', 'intcomma');
 $sortfield = GETPOST('sortfield', 'alpha');
 $sortorder = GETPOST('sortorder', 'alpha');
-$page = GETPOST('page', 'int');
+$page = GETPOSTINT('page');
 $page = intval($page);
-$selectedSupplier = GETPOST('useSameSupplier', 'int');
-$groupLinesByProduct = GETPOSTISSET('group_lines_by_product', 'int') ? GETPOST('group_lines_by_product', 'int') : (getDolGlobalInt('SOFO_GROUP_LINES_BY_PRODUCT'));
-
-$id = GETPOST('id', 'int');
+$selectedSupplier = GETPOSTINT('useSameSupplier');
+$groupLinesByProduct = GETPOSTISSET('group_lines_by_product', 'int') ? GETPOSTINT('group_lines_by_product') : (getDolGlobalInt('SOFO_GROUP_LINES_BY_PRODUCT'));
+$id = GETPOSTINT('id');
 $origin_page = 'ordercustomer';
 
 
@@ -169,14 +168,14 @@ if (empty($reshook)) {
 			$actionTarget = 'propal';
 		}
 
-		$linecount = GETPOST('linecount', 'int');
+		$linecount = GETPOSTINT('linecount');
 		$box = false;
 		unset($_POST['linecount']);
 
 		if ($linecount > 0) {
 			$suppliers = array();
 			for ($i = 0; $i < $linecount; $i++) {
-				if (GETPOST('check' . $i, 'alpha') === 'on' && (GETPOST('fourn' . $i, 'int') > 0 || GETPOST('fourn_free' . $i, 'int') > 0)) { //one line
+				if (GETPOST('check' . $i, 'alpha') === 'on' && (GETPOSTINT('fourn' . $i ) > 0 || GETPOSTINT('fourn_free' . $i) > 0)) { //one line
 					_prepareLine($i, $actionTarget);
 				}
 				unset($_POST[$i]);
@@ -188,7 +187,7 @@ if (empty($reshook)) {
 			$nb_orders_created = 0;
 			$orders = array();
 			$suppliersid = array_keys($suppliers);
-			$projectid = GETPOST('projectid', 'int');
+			$projectid = GETPOSTINT('projectid');
 
 			foreach ($suppliers as $idsupplier => $supplier) {
 				if ($actionTarget == 'propal') {
@@ -200,7 +199,7 @@ if (empty($reshook)) {
 				}
 
 				$commandeClient = new Commande($db);
-				$commandeClient->fetch(GETPOST('id', 'int'));
+				$commandeClient->fetch(GETPOSTINT('id'));
 
 				// Test recupération contact livraison
 				if (getDolGlobalString('SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY')) {
@@ -216,13 +215,13 @@ if (empty($reshook)) {
 					$order->socid = $idsupplier;
 
 					if (!empty($projectid)) {
-						$order->fk_project = GETPOST('projectid', 'int');
+						$order->fk_project = GETPOSTINT('projectid');
 					}
 
 					// On vérifie qu'il n'existe pas déjà un lien entre la commande client et la commande fournisseur dans la table element_element.
 					// S'il n'y en a pas, on l'ajoute, sinon, on ne l'ajoute pas
 					$order->fetchObjectLinked('', 'commande', $order->id, 'order_supplier');
-					$order->add_object_linked('commande', GETPOST('id', 'int'));
+					$order->add_object_linked('commande', GETPOSTINT('id'));
 
 					// cond reglement, mode reglement, delivery date
 					_appliCond($order, $commandeClient);
@@ -232,7 +231,7 @@ if (empty($reshook)) {
 				} else {
 					$order->socid = $idsupplier;
 					if (!empty($projectid)) {
-						$order->fk_project = GETPOST('projectid', 'int');
+						$order->fk_project = GETPOSTINT('projectid');
 					}
 					// cond reglement, mode reglement, delivery date
 					_appliCond($order, $commandeClient);
@@ -251,7 +250,7 @@ if (empty($reshook)) {
 
 					if ($contact_ship && getDolGlobalString('SUPPLIERORDER_FROM_ORDER_CONTACT_DELIVERY'))
 						$order->add_contact($contact_ship, 'SHIPPING');
-					$order->add_object_linked('commande', GETPOST('id', 'int'));
+					$order->add_object_linked('commande', GETPOSTINT('id'));
 					$newCommande = true;
 
 					$nb_orders_created++;
@@ -419,7 +418,7 @@ if (empty($reshook)) {
 				$i++;
 			}
 
-			$id = GETPOST('id', 'int');
+			$id = GETPOSTINT('id');
 			$origin_page = 'ordercustomer';
 			if ($action == 'valid-order') header("Location: " . DOL_URL_ROOT . "/fourn/commande/list.php?id=" . $id . '&origin_page=' . $origin_page);
 			else if ($action == 'valid-propal' && !empty($getNomUrlConcat)) setEventMessage($langs->trans('SupplierProposalSuccessfullyCreated') . $getNomUrlConcat, 'mesgs');
@@ -512,10 +511,8 @@ if (!getDolGlobalString('SOFO_CHECK_STOCK_ON_SHARED_STOCK')) {
 $title = $langs->trans('ProductsToOrder');
 $db->query("SET SQL_MODE=''");
 
-$fk_commande = GETPOST('id', 'int');
-$sql = !empty($groupLinesByProduct)
-	? sofoBuildGroupedQuery($db, $entityToTest, $TCategoriesQuery, $fk_commande, $search_all, $type, $sref, $snom, $canvas, $salert)
-	: sofoBuildUngroupedQuery($db, $entityToTest, $TCategoriesQuery, $fk_commande, $search_all, $type, $sref, $snom, $canvas, $salert);
+$fk_commande = GETPOSTINT('id');
+$sql = sofoBuildOrderCustomerQuery($db, $entityToTest, $TCategoriesQuery, $fk_commande, $search_all, $type, $sref, $snom, $canvas, $salert, $groupLinesByProduct);
 
 if ($salert == 'on') {
 	$alertchecked = 'checked="checked"';
@@ -523,11 +520,11 @@ if ($salert == 'on') {
 
 $sql2 = '';
 //On prend les lignes libre
-if (GETPOST('id', 'int') && getDolGlobalString('SOFO_ADD_FREE_LINES')) {
+if (GETPOSTINT('id') && getDolGlobalString('SOFO_ADD_FREE_LINES')) {
 	$sql2 .= 'SELECT cd.rowid, cd.description, cd.qty as qty, cd.product_type, cd.price, cd.buy_price_ht
 			 FROM ' . $db->prefix() . 'commandedet as cd
 			 LEFT JOIN ' . $db->prefix() . 'commande as c ON (cd.fk_commande = c.rowid)
-			 WHERE c.rowid = ' . GETPOST('id', 'int') . ' AND cd.product_type IN(0,1) AND fk_product IS NULL';
+			 WHERE c.rowid = ' . GETPOSTINT('id') . ' AND cd.product_type IN(0,1) AND fk_product IS NULL';
 	if (getDolGlobalString('SUPPORDERFROMORDER_USE_ORDER_DESC')) {
 		$sql2 .= ' GROUP BY cd.description';
 	}
@@ -580,16 +577,17 @@ if ($resql || $resql2) {
 				$TProductToHaveQtys = array();        //tableau des dernières quantités à commander par niveau
 
 				foreach ($prods_arbo as $key => $value) {
+					$level = (int) $value['level'];
 
 					//si on est au premier niveau, on réinitialise
-					if ($value['level'] == 1) {
-						$TProductToHaveQtys[$value['level']] = $objp->qty;
-						$qtyParentToHave = $TProductToHaveQtys[$value['level']];
+					if ($level === 1) {
+						$TProductToHaveQtys[$level] = isset($objp->qty) ? (float) $objp->qty : 0;
+						$qtyParentToHave = $TProductToHaveQtys[$level];
 					}
 
 					//si on est au niveau supérieur à 1, alors on récupère la quantité de produit parent à avoir
-					if ($value['level'] > 1) {
-						$qtyParentToHave = $TProductToHaveQtys[$value['level'] - 1];
+					if ($level > 1) {
+						$qtyParentToHave = isset($TProductToHaveQtys[$level - 1]) ? $TProductToHaveQtys[$level - 1] : 0;
 					}
 
 
@@ -612,13 +610,14 @@ if ($resql || $resql2) {
 					$objsp->tobuy = $sousproduit->status_buy;
 					$objsp->seuil_stock_alert = $sousproduit->seuil_stock_alerte;
 					$objsp->stock_physique = $sousproduit->stock_reel;
-					$objsp->qty = $qtyParentToHave * $value['nb'];            //qty du produit = quantité du produit parent commandé * nombre du sous-produit nécessaire pour le produit parent
+					$childNeeded = !empty($value['nb']) ? (float) $value['nb'] : 0;
+					$objsp->qty = $qtyParentToHave * $childNeeded;            // qty du produit = quantité du produit parent commandé * nombre du sous-produit nécessaire pour le produit parent
 					$objsp->desiredstock = $sousproduit->desiredstock;
 					$objsp->fk_parent = $value['id_parent'];
-					$objsp->level = $value['level'];
+					$objsp->level = $level;
 
 					//Sauvegarde du dernier stock commandé pour le niveau du sous-produit
-					$TProductToHaveQtys[$value['level']] = $objsp->qty;
+					$TProductToHaveQtys[$level] = $objsp->qty;
 
 					//ajout du sous-produit dans le tableau
 					array_push($TProducts, $objsp);
@@ -646,13 +645,13 @@ if ($resql || $resql2) {
 	}
 
 	$head = array();
-	$head[0][0] = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id=' . GETPOST('id', 'int') . '&origin_page=' . $origin_page . $includeProduct, 2);
+	$head[0][0] = dol_buildpath('/supplierorderfromorder/ordercustomer.php?id=' . GETPOSTINT('id') . '&origin_page=' . $origin_page . $includeProduct, 2);
 	$head[0][1] = $title;
 	$head[0][2] = 'supplierorderfromorder';
 
 
 	if (getDolGlobalString('SOFO_USE_NOMENCLATURE')) {
-		$head[1][0] = dol_buildpath('/supplierorderfromorder/dispatch_to_supplier_order.php?from=commande&fromid=' . GETPOST('id', 'int'), 2);
+		$head[1][0] = dol_buildpath('/supplierorderfromorder/dispatch_to_supplier_order.php?from=commande&fromid=' . GETPOSTINT('id'), 2);
 		$head[1][1] = $langs->trans('ProductsAssetsToOrder');
 		$head[1][2] = 'supplierorderfromorder_dispatch';
 	}
@@ -663,7 +662,7 @@ if ($resql || $resql2) {
 	dol_fiche_head($head, 'supplierorderfromorder', $langs->trans('Replenishment'), -1, 'stock');
 
 	$origin = new Commande($db);
-	$id = GETPOST('id', 'int');
+	$id = GETPOSTINT('id');
 	$res = $origin->fetch($id);
 
 	if ($res > 0) {
@@ -722,15 +721,15 @@ if ($resql || $resql2) {
 	$yesno = getDolGlobalString('INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK') ? '&show_stock_no_need=yes' : '';
 
 	print'</div>';
-	print '<form action="' . $_SERVER['PHP_SELF'] . '?id=' . GETPOST('id', 'int') . '&projectid=' . (!empty($_REQUEST['projectid']) ? $_REQUEST['projectid'] : '') . $yesno . '" method="post" name="formulaire">' .
-		'<input type="hidden" name="id" value="' . GETPOST('id', 'int') . '">' .
+	print '<form action="' . $_SERVER['PHP_SELF'] . '?id=' . GETPOSTINT('id') . '&projectid=' . GETPOSTINT('projectid') . $yesno . '" method="post" name="formulaire">' .
+		'<input type="hidden" name="id" value="' . GETPOSTINT('id') . '">' .
 		'<input type="hidden" name="token" value="' . $_SESSION['newtoken'] . '">' .
 		'<input type="hidden" name="sortfield" value="' . $sortfield . '">' .
 		'<input type="hidden" name="sortorder" value="' . $sortorder . '">' .
 		'<input type="hidden" name="type" value="' . $type . '">' .
 		'<input type="hidden" name="linecount" value="' . ($num + $num2) . '">' .
 		'<input type="hidden" name="group_lines_by_product" value="' . $groupLinesByProduct . '">' .
-		'<input type="hidden" name="fk_commande" value="' . GETPOST('fk_commande', 'int') . '">' .
+		'<input type="hidden" name="fk_commande" value="' . GETPOSTINT('fk_commande') . '">' .
 		'<input type="hidden" name="show_stock_no_need" value="' . GETPOST('show_stock_no_need', 'none') . '">';
 
 	if (getDolGlobalInt('INCLUDE_PRODUCT_LINES_WITH_ADEQUATE_STOCK') == 0) {
@@ -771,7 +770,7 @@ if ($resql || $resql2) {
 		print $hookmanager->resPrint;
 	}
 	if (getDolGlobalString('SOFO_USE_DELIVERY_TIME')) {
-		$week_to_replenish = (int)GETPOST('week_to_replenish', 'int');
+		$week_to_replenish = GETPOSTINT('week_to_replenish');
 
 
 		print '<tr class="liste_titre">' .
@@ -818,7 +817,7 @@ if ($resql || $resql2) {
 		'ordercustomer.php',
 		'prod.ref',
 		$listParam,
-		'id=' . GETPOST('id', 'int'),
+		'id=' . GETPOSTINT('id'),
 		'',
 		$sortfield,
 		$sortorder
@@ -828,7 +827,7 @@ if ($resql || $resql2) {
 		'ordercustomer.php',
 		'prod.label',
 		$listParam,
-		'id=' . GETPOST('id', 'int'),
+		'id=' . GETPOSTINT('id'),
 		'',
 		$sortfield,
 		$sortorder
@@ -839,7 +838,7 @@ if ($resql || $resql2) {
 			'ordercustomer.php',
 			'cp.fk_categorie',
 			$listParam,
-			'id=' . GETPOST('id', 'int'),
+			'id=' . GETPOSTINT('id'),
 			'',
 			$sortfield,
 			$sortorder
@@ -851,7 +850,7 @@ if ($resql || $resql2) {
 			'ordercustomer.php',
 			'prod.duration',
 			$listParam,
-			'id=' . GETPOST('id', 'int'),
+			'id=' . GETPOSTINT('id'),
 			'align="center"',
 			$sortfield,
 			$sortorder
@@ -863,7 +862,7 @@ if ($resql || $resql2) {
 		'ordercustomer.php',
 		'prod.desiredstock',
 		$listParam,
-		'id=' . GETPOST('id', 'int'),
+		'id=' . GETPOSTINT('id'),
 		'align="right"',
 		$sortfield,
 		$sortorder
@@ -879,7 +878,7 @@ if ($resql || $resql2) {
 		'ordercustomer.php',
 		'stock_physique',
 		$listParam,
-		'id=' . GETPOST('id', 'int'),
+		'id=' . GETPOSTINT('id'),
 		'align="right"',
 		$sortfield,
 		$sortorder
@@ -901,7 +900,7 @@ if ($resql || $resql2) {
 		'ordercustomer.php',
 		'',
 		$listParam,
-		'id=' . GETPOST('id', 'int'),
+		'id=' . GETPOSTINT('id'),
 		'align="right"',
 		$sortfield,
 		$sortorder
@@ -912,7 +911,7 @@ if ($resql || $resql2) {
 			'ordercustomer.php',
 			'',
 			$listParam,
-			'id=' . GETPOST('id', 'int'),
+			'id=' . GETPOSTINT('id'),
 			'align="right"',
 			$sortfield,
 			$sortorder
@@ -923,7 +922,7 @@ if ($resql || $resql2) {
 		'ordercustomer.php',
 		'',
 		$listParam,
-		'id=' . GETPOST('id', 'int'),
+		'id=' . GETPOSTINT('id'),
 		'align="right"',
 		$sortfield,
 		$sortorder
@@ -937,7 +936,7 @@ if ($resql || $resql2) {
 		'ordercustomer.php',
 		'',
 		$listParam,
-		'id=' . GETPOST('id', 'int'),
+		'id=' . GETPOSTINT('id'),
 		'align="right"',
 		$sortfield,
 		$sortorder
@@ -1194,7 +1193,7 @@ if ($resql || $resql2) {
 			}
 
 			// on load les commandes fournisseur liées
-			$id = GETPOST('id', 'int');
+			$id = GETPOSTINT('id');
 			if (!empty($objp->lineid)) {
 				$objLineNewQty = TSOFO::getAvailableQty($objp->lineid, !empty($groupLinesByProduct) ? $ordered : $objp->qty);
 			}
@@ -1561,11 +1560,11 @@ function _prepareLine($i, $actionTarget = 'order')
 	//Lignes de produit
 	if (!GETPOST('tobuy_free' . $i, 'none')) {
 		$box = $i;
-		$supplierpriceid = GETPOST('fourn' . $i, 'int');
+		$supplierpriceid = GETPOSTINT('fourn' . $i);
 		//get all the parameters needed to create a line
-		$qty = GETPOST('tobuy' . $i, 'int');
+		$qty = GETPOSTINT('tobuy' . $i);
 		$desc = GETPOST('desc' . $i, 'alpha');
-		$lineid = GETPOST('lineid' . $i, 'int');
+		$lineid = GETPOSTINT('lineid' . $i);
 		$array_options = array();
 
 		if (!empty($lineid)) {
@@ -1624,12 +1623,12 @@ function _prepareLine($i, $actionTarget = 'order')
 	else {
 
 		$box = $i;
-		$qty = GETPOST('tobuy_free' . $i, 'int');
+		$qty = GETPOSTINT('tobuy_free' . $i);
 		$desc = GETPOST('desc' . $i, 'alpha');
-		$product_type = GETPOST('product_type' . $i, 'int');
+		$product_type = GETPOSTINT('product_type' . $i);
 		$price = price2num(GETPOST('price_free' . $i, 'none'));
-		$lineid = GETPOST('lineid_free' . $i, 'int');
-		$fournid = GETPOST('fourn_free' . $i, 'int');
+		$lineid = GETPOSTINT('lineid_free' . $i);
+		$fournid = GETPOSTINT('fourn_free' . $i);
 		$commandeline = new OrderLine($db);
 		$commandeline->fetch($lineid);
 		if (empty($desc) && !getDolGlobalString('SOFO_DONT_ADD_LINEDESC_ON_SUPPLIERORDER_LINE'))
