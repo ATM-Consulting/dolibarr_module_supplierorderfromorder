@@ -1,8 +1,11 @@
 # ChangeLog
 
 ## [Unreleased]
+
+## RELEASES 2.10
 - NEW : Add conf SOFO_GET_REF_SUPPLIER_FROM_ORDER - *09/12/2025* - 2.10.0
   + FIX : group lines by product, alls group product when conf SOFO_GROUP_LINES_BY_PRODUCT was set to no
+  
 ## RELEASES 2.9
 - FIX : Warning activation module- **07/07/2025* - 2.9.5
 - FIX : COMPAT V22 - **07/07/2025* - 2.9.4

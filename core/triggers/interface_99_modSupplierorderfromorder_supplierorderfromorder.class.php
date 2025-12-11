@@ -42,128 +42,108 @@ class InterfaceSupplierorderfromorder extends DolibarrTriggers
 	 */
 	protected $db;
 
-    /**
-     * Constructor
-     *
-     * 	@param		DoliDB		$db		Database handler
-     */
-    public function __construct($db)
-    {
-        $this->db = $db;
-
-        $this->name = preg_replace('/^Interface/i', '', get_class($this));
-        $this->family = "ATM";
-        $this->description = "Triggers pour ajouter le code de lavage à la description d'un produit lors de l'ajout d'une ligne de commande, de facture ou de propale.";
-        // 'development', 'experimental', 'dolibarr' or version
-        $this->version = 'dolibarr';
-        $this->picto = 'clipastel@clipastel';
-    }
-
-    /**
-     * Trigger name
-     *
-     * 	@return		string	Name of trigger file
-     */
-    public function getName()
-    {
-        return $this->name;
-    }
-
-    /**
-     * Trigger description
-     *
-     * 	@return		string	Description of trigger file
-     */
-    public function getDesc()
-    {
-        return $this->description;
-    }
-
-    /**
-     * Trigger version
-     *
-     * 	@return		string	Version of trigger file
-     */
-    public function getVersion()
-    {
-        global $langs;
-        $langs->load("admin");
-
-        if ($this->version == 'development') {
-            return $langs->trans("Development");
-        } elseif ($this->version == 'experimental')
-
-                return $langs->trans("Experimental");
-        elseif ($this->version == 'dolibarr') return DOL_VERSION;
-        elseif ($this->version) return $this->version;
-        else {
-            return $langs->trans("Unknown");
-        }
-    }
-
 	/**
-	 * @param string    $action
-	 * @param Object    $object
-	 * @param User      $user
-	 * @param Translate $langs
-	 * @param Conf      $conf
-	 * @return int
+	 * Constructor
+	 *
+	 * 	@param		DoliDB		$db		Database handler
 	 */
-	public function runTrigger($action, $object, User $user, Translate $langs, Conf $conf) {
-		return $this->run_trigger($action, $object, $user, $langs, $conf);
+	public function __construct($db)
+	{
+		$this->db = $db;
+
+		$this->name = preg_replace('/^Interface/i', '', get_class($this));
+		$this->family = "ATM";
+		$this->description = "Triggers pour ajouter le code de lavage à la description d'un produit lors de l'ajout d'une ligne de commande, de facture ou de propale.";
+		// 'development', 'experimental', 'dolibarr' or version
+		$this->version = 'dolibarr';
+		$this->picto = 'object_supplierorderfromorder.png';
 	}
 
 	/**
-     * Function called when a Dolibarrr business event is done.
-     * All functions "run_trigger" are triggered if file
-     * is inside directory core/triggers
-     *
-     * 	@param		string		$action		Event action code
-     * 	@param		Object		$object		Object
-     * 	@param		User		$user		Object user
-     * 	@param		Translate	$langs		Object langs
-     * 	@param		conf		$conf		Object conf
-     * 	@return		int						<0 if KO, 0 if no triggered ran, >0 if OK
-     */
-    public function run_trigger($action, $object, $user, $langs, $conf)
-    {
-        // Put here code you want to execute when a Dolibarr business events occurs.
-        // Data and type of action are stored into $object and $action
-        // Users
-        global $db;
-        //dol_include_once('/product/class/product.class.php');
-        if ($action == 'ORDER_SUPPLIER_DELETE') {
-            
-            dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id );
-            
-            if(!empty($object->lines))
-            {
-                foreach ($object->lines as $line)
-                {
-                    // Delete linked object
-                    $res = $line->deleteObjectLinked();
-                }
-            }
-            
+	 * Trigger name
+	 *
+	 * 	@return		string	Name of trigger file
+	 */
+	public function getName()
+	{
+		return $this->name;
+	}
+
+	/**
+	 * Trigger description
+	 *
+	 * 	@return		string	Description of trigger file
+	 */
+	public function getDesc()
+	{
+		return $this->description;
+	}
+
+	/**
+	 * Trigger version
+	 *
+	 * 	@return		string	Version of trigger file
+	 */
+	public function getVersion()
+	{
+		global $langs;
+		$langs->load("admin");
+
+		if ($this->version == 'development') {
+			return $langs->trans("Development");
+		} elseif ($this->version == 'experimental')
+
+				return $langs->trans("Experimental");
+		elseif ($this->version == 'dolibarr') return DOL_VERSION;
+		elseif ($this->version) return $this->version;
+		else {
+			return $langs->trans("Unknown");
+		}
+	}
+
+	/**
+	 * Function called when a Dolibarrr business event is done.
+	 * All functions "run_trigger" are triggered if file
+	 * is inside directory core/triggers
+	 *
+	 * 	@param		string		$action		Event action code
+	 * 	@param		Object		$object		Object
+	 * 	@param		User		$user		Object user
+	 * 	@param		Translate	$langs		Object langs
+	 * 	@param		conf		$conf		Object conf
+	 * 	@return		int						<0 if KO, 0 if no triggered ran, >0 if OK
+	 */
+	public function runTrigger($action, $object, $user, $langs, $conf)
+	{
+		// Put here code you want to execute when a Dolibarr business events occurs.
+		// Data and type of action are stored into $object and $action
+		// Users
+		global $db;
+		//dol_include_once('/product/class/product.class.php');
+		if ($action == 'ORDER_SUPPLIER_DELETE') {
+			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
+
+			if (!empty($object->lines)) {
+				foreach ($object->lines as $line) {
+					// Delete linked object
+					$res = $line->deleteObjectLinked();
+				}
+			}
+
 			$object->deleteObjectLinked('', 'commande', $object->id, 'order_supplier');
-			
-
 		}
 
-		if($action == 'LINEORDER_DELETE' || $action == 'LINEORDER_SUPPLIER_DELETE') {
-		    
-		    dol_syslog( "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id );
-		    
-		    // Delete linked object
-		    if($object->element == 'commandedet'){
-		        return $object->deleteObjectLinked();
-		    }
-		    elseif($object->element == 'commande_fournisseurdet'){
-		        return $object->deleteObjectLinked();
-		    }
-		    
+		if ($action == 'LINEORDER_DELETE' || $action == 'LINEORDER_SUPPLIER_DELETE') {
+			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
+
+			// Delete linked object
+			if ($object->element == 'commandedet') {
+				return $object->deleteObjectLinked();
+			} elseif ($object->element == 'commande_fournisseurdet') {
+				return $object->deleteObjectLinked();
+			}
 		}
-		
-        return 0;
-    }
+
+		return 0;
+	}
 }
