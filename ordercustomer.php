@@ -264,6 +264,26 @@ if (empty($reshook)) {
 
 				foreach ($supplier['lines'] as $line) {
 					$done = false;
+					if (empty($line->array_options)) {
+						$line->array_options = array();
+					}
+
+					if (getDolGlobalInt('SOFO_ENABLE_LINKED_EXTRAFIELDS') && (!isset($line->product_type) || (int) $line->product_type === 0)) {
+						if (empty($commandeClient->thirdparty)) {
+							$commandeClient->fetch_thirdparty();
+						}
+						$linkOptions = array(
+							'options_sofo_linked_order' => $commandeClient->getNomUrl(1),
+						);
+						if (!empty($commandeClient->thirdparty)) {
+							$linkOptions['options_sofo_linked_thirdparty'] = $commandeClient->thirdparty->getNomUrl(1);
+						}
+						$line->array_options = array_merge($line->array_options, $linkOptions);
+						$linkOptionsForUpdate = $linkOptions;
+					} else {
+						$linkOptionsForUpdate = array();
+					}
+
 
 					$prodfourn = new ProductFournisseur($db);
 					$prodfourn->fetch_product_fournisseur_price($_REQUEST['fourn' . $i]);
@@ -289,6 +309,10 @@ if (empty($reshook)) {
 							if ($line->remise_percent > $remise_percent)
 								$remise_percent = $line->remise_percent;
 
+							$arrayOptionsUpdate = (array) $lineOrderFetched->array_options;
+							if (!empty($linkOptions)) {
+								$arrayOptionsUpdate = array_merge($arrayOptionsUpdate, $linkOptions);
+							}
 							if ($order->element == 'order_supplier') {
 								$order->updateline(
 									$lineOrderFetched->id,
@@ -298,7 +322,17 @@ if (empty($reshook)) {
 
 									$lineOrderFetched->qty + $line->qty,
 									$remise_percent,
-									$lineOrderFetched->tva_tx
+									$lineOrderFetched->tva_tx,
+									0,
+									0,
+									'HT',
+									0,
+									(int) $lineOrderFetched->product_type,
+									0,
+									0,
+									0,
+									$arrayOptionsUpdate,
+									$lineOrderFetched->fk_unit
 								);
 							} else if ($order->element == 'supplier_proposal') {
 
@@ -310,7 +344,15 @@ if (empty($reshook)) {
 									$lineOrderFetched->tva_tx,
 									0, //$txlocaltax1=0,
 									0, //$txlocaltax2=0,
-									$lineOrderFetched->desc
+									$lineOrderFetched->desc,
+									'HT',
+									0,
+									(int) $lineOrderFetched->product_type,
+									0,
+									0,
+									0,
+									$arrayOptionsUpdate,
+									$lineOrderFetched->fk_unit
 								);
 							}
 

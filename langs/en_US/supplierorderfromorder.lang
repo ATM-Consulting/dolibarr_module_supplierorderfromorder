@@ -80,3 +80,5 @@ SOFO_GROUP_LINES_BY_PRODUCT=Group lines by product
 DontGroupByProduct=Don't group lines by product
 GroupByProductHelp=Default value can be set in configuration page
 AlreadyShipped = Already shipped
+SOFO_ENABLE_LINKED_EXTRAFIELDS=Store read-only links to supplier order and thirdparty on supplier order lines and receptions
+SOFO_ENABLE_LINKED_EXTRAFIELDS_HELP=If enabled, supplier order lines (and receptions) keep non-editable HTML links (getNomUrl) to the supplier order and its thirdparty

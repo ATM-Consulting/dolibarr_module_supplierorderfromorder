@@ -24,6 +24,7 @@
  * 	\brief		Description and activation file for module MyModule
  */
 include_once DOL_DOCUMENT_ROOT . "/core/modules/DolibarrModules.class.php";
+require_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
 
 /**
  * Description and activation class for module MyModule
@@ -207,6 +208,17 @@ class modSupplierorderfromorder extends DolibarrModules
         $sql = array();
 
         $result = $this->loadTables();
+
+		// Create extrafields (idempotent) on supplier order lines and receptions
+		global $langs, $conf;
+		$langs->loadLangs(array('main', 'order', 'companies', 'supplierorderfromorder@supplierorderfromorder'));
+		$extrafields = new ExtraFields($this->db);
+		$elements = array('commande_fournisseurdet', 'receptiondet_batch');
+		foreach ($elements as $elementtype) {
+			// Visibility/list = 2 (view only, hidden on create/edit forms)
+			$extrafields->addExtraField('sofo_linked_order', $langs->transnoentities('Order'), 'html',101, '', $elementtype, 0, 0, '', '', 0, '', 2, '', '', $conf->entity, 'supplierorderfromorder@supplierorderfromorder', 'isModEnabled("supplierorderfromorder")', 0, 0);
+			$extrafields->addExtraField('sofo_linked_thirdparty', $langs->transnoentities('ThirdParty'), 'html', 102, '', $elementtype, 0, 0, '', '', 0, '', 2, '', '', $conf->entity, 'supplierorderfromorder@supplierorderfromorder', 'isModEnabled("supplierorderfromorder")', 0, 0);
+		}
 
         return $this->_init($sql, $options);
     }
