@@ -103,6 +103,5 @@ GroupByProductHelp=La valeur par défaut peut être modifiée dans la configurat
 SUPPLIERORDER_FROM_ORDER_NOTES_PUBLIC = Importer les notes privées des commandes vers les commandes fournisseurs
 SUPPLIERORDER_FROM_ORDER_NOTES_PRIVATE = Importer les notes publiques des commandes vers les commandes fournisseurs
 AlreadyShipped = Déjà expédié
-SOFO_ENABLE_LINKED_EXTRAFIELDS=Stocker des liens en lecture seule vers la commande fournisseur et le tiers sur les lignes et réceptions
-SOFO_ENABLE_LINKED_EXTRAFIELDS_HELP=Si activé, les lignes de commande fournisseur (et de réception) conservent des liens HTML non éditables (getNomUrl) vers la commande fournisseur et son tiers
-
+SOFO_ENABLE_LINKED_EXTRAFIELDS=Afficher les champs complémentaires Commande et Tiers sur les commandes fournisseur et les réceptions fournisseur
+SOFO_ENABLE_LINKED_EXTRAFIELDS_HELP=Si activé, ajoute des champs complémentaires "Commande" et "Tiers" sur les lignes des commandes fournisseur et des réceptions fournisseur (type lien vers objet)
