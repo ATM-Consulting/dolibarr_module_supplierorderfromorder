@@ -1,6 +1,7 @@
 # ChangeLog
 
 ## [Unreleased]
+- NEW : ADD extrafields Order + Thirdparty on SupplierOrderFromOrder Card and reception card - *23/12/2025* - 2.11.0
 
 ## RELEASES 2.10
 - FIX : Currently, decimals are not taken into account in quantities when creating supplier orders. - *19/12/2025* - 2.10.1

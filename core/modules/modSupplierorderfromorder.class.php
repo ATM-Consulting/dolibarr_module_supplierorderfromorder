@@ -65,7 +65,7 @@ class modSupplierorderfromorder extends DolibarrModules
         $this->description = "Module commande fournisseur à partir d'une commande client";
         // Possible values for version are: 'development', 'experimental' or version
 
-        $this->version = '2.10.1';
+        $this->version = '2.11.0';
 		// Url to the file with your last numberversion of this module
 		require_once __DIR__ . '/../../class/techatm.class.php';
 		$this->url_last_version = \supplierorderfromorder\TechATM::getLastModuleVersionUrl($this);
