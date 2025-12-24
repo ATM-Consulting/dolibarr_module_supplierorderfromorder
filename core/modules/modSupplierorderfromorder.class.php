@@ -216,10 +216,11 @@ class modSupplierorderfromorder extends DolibarrModules
 		$elements = array('commande_fournisseurdet', 'receptiondet_batch');
 		$linkOrderParams = array('options' => array('Commande:commande/class/commande.class.php' => null));
 		$linkThirdpartyParams = array('options' => array('Societe:societe/class/societe.class.php' => null));
+		$enabledCondition = 'isModEnabled("supplierorderfromorder") && getDolGlobalInt("SOFO_ENABLE_LINKED_EXTRAFIELDS")';
 		foreach ($elements as $elementtype) {
 			// Visibility/list = 2 (view only, hidden on create/edit forms)
-			$extrafields->addExtraField('SOFO_linked_order', $langs->transnoentities('Order'), 'link', 101, '', $elementtype, 0, 0, '', $linkOrderParams, 0, '', 2, '', '', $conf->entity, 'supplierorderfromorder@supplierorderfromorder', 'isModEnabled("supplierorderfromorder")', 0, 0);
-			$extrafields->addExtraField('SOFO_linked_thirdparty', $langs->transnoentities('ThirdParty'), 'link', 102, '', $elementtype, 0, 0, '', $linkThirdpartyParams, 0, '', 2, '', '', $conf->entity, 'supplierorderfromorder@supplierorderfromorder', 'isModEnabled("supplierorderfromorder")', 0, 0);
+			$extrafields->addExtraField('SOFO_linked_order', $langs->transnoentities('Order'), 'link', 101, '', $elementtype, 0, 0, '', $linkOrderParams, 0, '', 2, '', '', $conf->entity, 'supplierorderfromorder@supplierorderfromorder', $enabledCondition, 0, 0);
+			$extrafields->addExtraField('SOFO_linked_thirdparty', $langs->transnoentities('ThirdParty'), 'link', 102, '', $elementtype, 0, 0, '', $linkThirdpartyParams, 0, '', 2, '', '', $conf->entity, 'supplierorderfromorder@supplierorderfromorder', $enabledCondition, 0, 0);
 		}
 
         return $this->_init($sql, $options);
