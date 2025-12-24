@@ -24,6 +24,7 @@
  * 	\brief		Description and activation file for module MyModule
  */
 include_once DOL_DOCUMENT_ROOT . "/core/modules/DolibarrModules.class.php";
+require_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
 
 /**
  * Description and activation class for module MyModule
@@ -64,7 +65,7 @@ class modSupplierorderfromorder extends DolibarrModules
         $this->description = "Module commande fournisseur à partir d'une commande client";
         // Possible values for version are: 'development', 'experimental' or version
 
-        $this->version = '2.10.1';
+        $this->version = '2.11.0';
 		// Url to the file with your last numberversion of this module
 		require_once __DIR__ . '/../../class/techatm.class.php';
 		$this->url_last_version = \supplierorderfromorder\TechATM::getLastModuleVersionUrl($this);
@@ -207,6 +208,19 @@ class modSupplierorderfromorder extends DolibarrModules
         $sql = array();
 
         $result = $this->loadTables();
+
+		// Create extrafields (idempotent) on supplier order lines and receptions
+		global $langs, $conf;
+		$langs->loadLangs(array('main', 'order', 'companies', 'supplierorderfromorder@supplierorderfromorder'));
+		$extrafields = new ExtraFields($this->db);
+		$elements = array('commande_fournisseurdet', 'receptiondet_batch');
+		$linkOrderParams = array('options' => array('Commande:commande/class/commande.class.php' => null));
+		$linkThirdpartyParams = array('options' => array('Societe:societe/class/societe.class.php' => null));
+		foreach ($elements as $elementtype) {
+			// Visibility/list = 2 (view only, hidden on create/edit forms)
+			$extrafields->addExtraField('SOFO_linked_order', $langs->transnoentities('Order'), 'link', 101, '', $elementtype, 0, 0, '', $linkOrderParams, 0, '', 2, '', '', $conf->entity, 'supplierorderfromorder@supplierorderfromorder', 'isModEnabled("supplierorderfromorder")', 0, 0);
+			$extrafields->addExtraField('SOFO_linked_thirdparty', $langs->transnoentities('ThirdParty'), 'link', 102, '', $elementtype, 0, 0, '', $linkThirdpartyParams, 0, '', 2, '', '', $conf->entity, 'supplierorderfromorder@supplierorderfromorder', 'isModEnabled("supplierorderfromorder")', 0, 0);
+		}
 
         return $this->_init($sql, $options);
     }
