@@ -273,10 +273,10 @@ if (empty($reshook)) {
 							$commandeClient->fetch_thirdparty();
 						}
 						$linkOptions = array(
-							'options_sofo_linked_order' => $commandeClient->id,
+							'options_SOFO_linked_order' => $commandeClient->id,
 						);
 						if (!empty($commandeClient->thirdparty)) {
-							$linkOptions['options_sofo_linked_thirdparty'] = $commandeClient->thirdparty->id;
+							$linkOptions['options_SOFO_linked_thirdparty'] = $commandeClient->thirdparty->id;
 						}
 						$line->array_options = array_merge($line->array_options, $linkOptions);
 						$linkOptionsForUpdate = $linkOptions;
