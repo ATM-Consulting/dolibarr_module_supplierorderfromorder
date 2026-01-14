@@ -1613,7 +1613,7 @@ function _prepareLine($i, $actionTarget = 'order')
 		if (!empty($lineid)) {
 			$commandeline = new OrderLine($db);
 			$commandeline->fetch($lineid);
-			if (empty($desc) && !getDolGlobalString('SOFO_DONT_ADD_LINEDESC_ON_SUPPLIERORDER_LINE'))
+			if (!getDolGlobalString('SOFO_DONT_ADD_LINEDESC_ON_SUPPLIERORDER_LINE'))
 				$desc = $commandeline->desc;
 			if (empty($commandeline->id) && !empty($commandeline->rowid)) {
 				$commandeline->id = $commandeline->rowid; // Pas positionné par OrderLine::fetch() donc le fetch_optionals() foire...
@@ -1675,7 +1675,7 @@ function _prepareLine($i, $actionTarget = 'order')
 		$fournid = GETPOSTINT('fourn_free' . $i);
 		$commandeline = new OrderLine($db);
 		$commandeline->fetch($lineid);
-		if (empty($desc) && !getDolGlobalString('SOFO_DONT_ADD_LINEDESC_ON_SUPPLIERORDER_LINE'))
+		if (!getDolGlobalString('SOFO_DONT_ADD_LINEDESC_ON_SUPPLIERORDER_LINE'))
 			$desc = $commandeline->desc;
 
 		if (empty($commandeline->id) && !empty($commandeline->rowid)) {
