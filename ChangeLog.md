@@ -1,6 +1,9 @@
 # ChangeLog
 
 ## [Unreleased]
+
+## RELEASES 2.11
+- FIX : DA027559 - Desc empty - *14/01/2026* - 2.11.1
 - NEW : ADD extrafields Order + Thirdparty on SupplierOrderFromOrder Card and reception card - *23/12/2025* - 2.11.0
 
 ## RELEASES 2.10
