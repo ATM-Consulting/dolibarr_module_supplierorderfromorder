@@ -1335,7 +1335,7 @@ if ($resql || $resql2) {
 			$champs .= '<td align="right">' . $objp->desiredstock . '</td>';
 			$prod->load_stock();
 			$champs .= '<td align="right" >' .
-				$warning . (((getDolGlobalString('STOCK_SUPPORTS_SERVICES') && $prod->type == 1) || empty($prod->type)) ? $prod->stock_theorique : img_picto('', './img/no', '', 1)) . //$stocktobuy
+				$warning . (((getDolGlobalString('STOCK_SUPPORTS_SERVICES') && $prod->type == 1) || empty($prod->type)) ? $stock : img_picto('', './img/no', '', 1)) . //$stocktobuy
 				'</td>';
 
 			// déjà present
