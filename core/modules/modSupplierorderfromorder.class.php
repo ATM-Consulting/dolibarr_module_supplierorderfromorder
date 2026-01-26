@@ -24,6 +24,7 @@
  * 	\brief		Description and activation file for module MyModule
  */
 include_once DOL_DOCUMENT_ROOT . "/core/modules/DolibarrModules.class.php";
+require_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
 
 /**
  * Description and activation class for module MyModule
@@ -64,7 +65,7 @@ class modSupplierorderfromorder extends DolibarrModules
         $this->description = "Module commande fournisseur à partir d'une commande client";
         // Possible values for version are: 'development', 'experimental' or version
 
-        $this->version = '2.10.1';
+        $this->version = '2.11.1';
 		// Url to the file with your last numberversion of this module
 		require_once __DIR__ . '/../../class/techatm.class.php';
 		$this->url_last_version = \supplierorderfromorder\TechATM::getLastModuleVersionUrl($this);
@@ -187,53 +188,69 @@ class modSupplierorderfromorder extends DolibarrModules
 		);
 
 
-		// Exports
-		$r = 1;
-	}
+        // Exports
+        $r = 1;
 
-	/**
-	 * Function called when module is enabled.
-	 * The init function add constants, boxes, permissions and menus
-	 * (defined in constructor) into Dolibarr database.
-	 * It also creates data directories
-	 *
-	 * 	@param		string	$options	Options when enabling module ('', 'noboxes')
-	 * 	@return		int					1 if OK, 0 if KO
-	 */
-	public function init($options = '')
-	{
-		$sql = array();
 
-		$result = $this->loadTables();
+    }
 
-		return $this->_init($sql, $options);
-	}
+    /**
+     * Function called when module is enabled.
+     * The init function add constants, boxes, permissions and menus
+     * (defined in constructor) into Dolibarr database.
+     * It also creates data directories
+     *
+     * 	@param		string	$options	Options when enabling module ('', 'noboxes')
+     * 	@return		int					1 if OK, 0 if KO
+     */
+    public function init($options = '')
+    {
+        $sql = array();
 
-	/**
-	 * Function called when module is disabled.
-	 * Remove from database constants, boxes and permissions from Dolibarr database.
-	 * Data directories are not deleted
-	 *
-	 * 	@param		string	$options	Options when enabling module ('', 'noboxes')
-	 * 	@return		int					1 if OK, 0 if KO
-	 */
-	public function remove($options = '')
-	{
-		$sql = array();
+        $result = $this->loadTables();
 
-		return $this->_remove($sql, $options);
-	}
+		// Create extrafields (idempotent) on supplier order lines and receptions
+		global $langs, $conf;
+		$langs->loadLangs(array('main', 'order', 'companies', 'supplierorderfromorder@supplierorderfromorder'));
+		$extrafields = new ExtraFields($this->db);
+		$elements = array('commande_fournisseurdet', 'receptiondet_batch');
+		$linkOrderParams = array('options' => array('Commande:commande/class/commande.class.php' => null));
+		$linkThirdpartyParams = array('options' => array('Societe:societe/class/societe.class.php' => null));
+		$enabledCondition = 'isModEnabled("supplierorderfromorder") && getDolGlobalInt("SOFO_ENABLE_LINKED_EXTRAFIELDS")';
+		foreach ($elements as $elementtype) {
+			// Visibility/list = 2 (view only, hidden on create/edit forms)
+			$extrafields->addExtraField('SOFO_linked_order', $langs->transnoentities('Order'), 'link', 101, '', $elementtype, 0, 0, '', $linkOrderParams, 0, '', 2, '', '', $conf->entity, 'supplierorderfromorder@supplierorderfromorder', $enabledCondition, 0, 0);
+			$extrafields->addExtraField('SOFO_linked_thirdparty', $langs->transnoentities('ThirdParty'), 'link', 102, '', $elementtype, 0, 0, '', $linkThirdpartyParams, 0, '', 2, '', '', $conf->entity, 'supplierorderfromorder@supplierorderfromorder', $enabledCondition, 0, 0);
+		}
 
-	/**
-	 * Create tables, keys and data required by module
-	 * Files llx_table1.sql, llx_table1.key.sql llx_data.sql with create table, create keys
-	 * and create data commands must be stored in directory /mymodule/sql/
-	 * This function is called by this->init
-	 *
-	 * 	@return		int		<=0 if KO, >0 if OK
-	 */
-	private function loadTables()
-	{
-		return $this->_load_tables('/supplierorderfromorder/sql/');
-	}
+        return $this->_init($sql, $options);
+    }
+
+    /**
+     * Function called when module is disabled.
+     * Remove from database constants, boxes and permissions from Dolibarr database.
+     * Data directories are not deleted
+     *
+     * 	@param		string	$options	Options when enabling module ('', 'noboxes')
+     * 	@return		int					1 if OK, 0 if KO
+     */
+    public function remove($options = '')
+    {
+        $sql = array();
+
+        return $this->_remove($sql, $options);
+    }
+
+    /**
+     * Create tables, keys and data required by module
+     * Files llx_table1.sql, llx_table1.key.sql llx_data.sql with create table, create keys
+     * and create data commands must be stored in directory /mymodule/sql/
+     * This function is called by this->init
+     *
+     * 	@return		int		<=0 if KO, >0 if OK
+     */
+    private function loadTables()
+    {
+        return $this->_load_tables('/supplierorderfromorder/sql/');
+    }
 }

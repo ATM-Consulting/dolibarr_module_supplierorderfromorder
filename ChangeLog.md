@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## RELEASES 2.11
+- FIX : DA027559 - Desc empty - *14/01/2026* - 2.11.1
+- NEW : ADD extrafields Order + Thirdparty on SupplierOrderFromOrder Card and reception card - *23/12/2025* - 2.11.0
+
 ## RELEASES 2.10
 - FIX : Currently, decimals are not taken into account in quantities when creating supplier orders. - *19/12/2025* - 2.10.1
 - NEW : Add conf SOFO_GET_REF_SUPPLIER_FROM_ORDER - *09/12/2025* - 2.10.0
