@@ -1544,9 +1544,10 @@ function _prepareLine($i, $actionTarget = 'order')
 	if (!GETPOST('tobuy_free' . $i, 'none')) {
 		$box = $i;
 		$supplierpriceid = GETPOSTINT('fourn' . $i);
-		//get all the parameters needed to create a line
-		$qty = GETPOSTINT('tobuy' . $i);
-		$desc = GETPOST('desc' . $i, 'alpha');
+
+		// get all the parameters needed to create a line
+		$qty    = price2num(GETPOST('tobuy' . $i, 'alphanohtml'));
+		$desc   = GETPOST('desc' . $i, 'alpha');
 		$lineid = GETPOSTINT('lineid' . $i);
 		$array_options = array();
 
@@ -1590,7 +1591,8 @@ function _prepareLine($i, $actionTarget = 'order')
 			$line->fk_prod_fourn_price = $supplierpriceid;
 			$line->array_options = $array_options;
 
-			if (!empty($_REQUEST['tobuy' . $i])) {
+			// Ajout seulement si une qty a été saisie
+			if (!empty($_REQUEST['tobuy' . $i]) && $qty > 0) {
 				$suppliers[$obj->fk_soc]['lines'][] = $line;
 			}
 		} else {
@@ -1602,7 +1604,7 @@ function _prepareLine($i, $actionTarget = 'order')
 		unset($_POST['fourn' . $i]);
 	} else { //Lignes libres
 		$box = $i;
-		$qty = GETPOSTINT('tobuy_free' . $i);
+		$qty = price2num(GETPOST('tobuy_free' . $i, 'alphanohtml'));
 		$desc = GETPOST('desc' . $i, 'alpha');
 		$product_type = GETPOSTINT('product_type' . $i);
 		$price = price2num(GETPOST('price_free' . $i, 'none'));
@@ -1637,7 +1639,7 @@ function _prepareLine($i, $actionTarget = 'order')
 
 		unset($_POST['fourn_free' . $i]);
 
-		if (!empty($_REQUEST['tobuy_free' . $i])) {
+		if (!empty($_REQUEST['tobuy_free' . $i]) && $qty > 0) {
 			$suppliers[$fournid]['lines'][] = $line;
 		}
 	}
