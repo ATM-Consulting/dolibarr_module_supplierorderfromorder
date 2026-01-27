@@ -1414,10 +1414,6 @@ if ($resql || $resql2) {
 						<input type="text" name="tobuy_free' . $i . '" value="' . $objp->qty . '">
 						<input type="hidden" name="lineid_free' . $i . '" value="' . $objp->rowid . '" >
 					</td>'; // Ordered
-			print '<td align="right" id="test">
-							<input type="text" name="tobuy_free' . $i . '" value="' . $objp->qty_shipped . '">
-							<input type="hidden" name="lineid_free' . $i . '" value="' . $objp->rowid . '" >
-						</td>'; // OrderShipped
 			print '<td align="right">
 						<input type="text" name="price_free' . $i . '" value="' . (!getDolGlobalString('SOFO_COST_PRICE_AS_BUYING') ? $objp->price : price($objp->buy_price_ht)) . '" size="5" style="text-align:right">€
 						' . $form->select_company((empty($socid) ? '' : $socid), 'fourn_free' . $i, 's.fournisseur = 1', 1, 0, 0, array(), 0, 'minwidth100 maxwidth300') . '
