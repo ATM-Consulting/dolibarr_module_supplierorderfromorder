@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ## RELEASES 2.11
+- FIX : DA027559 - Desc empty - *14/01/2026* - 2.11.1
 - NEW : ADD extrafields Order + Thirdparty on SupplierOrderFromOrder Card and reception card - *23/12/2025* - 2.11.0
 
 ## RELEASES 2.10
@@ -33,6 +34,7 @@
 - NEW : compatv19 - *04/12/2023* - 2.7.0  
 
 ## RELEASES 2.6
+- FIX : add missing returns on hooks - *29/01/2026* - 2.6.8
 - FIX : remove warning error display - *30/11/2023* - 2.6.7
 - FIX : remove overwritting initial orderline product in cmdfourn create - *05/10/2023* - 2.6.6  
 - FIX : FIX: missing CSRF token in form - *28/09/2023* - 2.6.5
