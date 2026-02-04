@@ -78,6 +78,7 @@ class TSOFO {
 
 		$sql = "SELECT p.rowid, p.label, p.ref, p.price, p.duration, pfp.fk_soc,";
 		$sql.= " pfp.ref_fourn, pfp.rowid as idprodfournprice, pfp.price as fprice, pfp.remise_percent, pfp.quantity, pfp.unitprice,";
+		$sql.= " pfp.multicurrency_price, pfp.multicurrency_unitprice, pfp.multicurrency_code,";
 		$sql.= " pfp.fk_supplier_price_expression, pfp.fk_product, pfp.tva_tx, s.nom as name";
 		$sql.= " FROM ".$db->prefix()."product as p";
 		$sql.= " LEFT JOIN ".$db->prefix()."product_fournisseur_price as pfp ON p.rowid = pfp.fk_product";
@@ -88,82 +89,58 @@ class TSOFO {
 		$sql.= " AND p.rowid = ".$productid;
 		$sql.= " ORDER BY s.nom, pfp.ref_fourn DESC";
 
-		dol_syslog(get_class()."::select_product_fourn_price", LOG_DEBUG);
 		$result=$db->query($sql);
 
 		if ($result)
 		{
 			$num = $db->num_rows($result);
-
 			$form = '<select class="flat" id="select_'.$htmlname.'" name="'.$htmlname.'">';
 
-			if (! $num)
-			{
+			if (! $num) {
 				$form.= '<option value="0">-- '.$langs->trans("NoSupplierPriceDefinedForThisProduct").' --</option>';
-			}
-			else
-			{
-				require_once DOL_DOCUMENT_ROOT.'/product/dynamic_price/class/price_parser.class.php';
+			} else {
 				$form.= '<option value="0">&nbsp;</option>';
-
 				$i = 0;
 				while ($i < $num)
 				{
 					$objp = $db->fetch_object($result);
 
+					// On détermine quelle devise afficher
+					$display_currency = $conf->currency;
+					$price_to_display = $objp->fprice;
+					$unitprice_to_display = $objp->unitprice;
+
+					// Si le module multidevise est actif et qu'un prix en devise existe
+					if (isModEnabled('multicurrency') && !empty($objp->multicurrency_code)) {
+						$display_currency = $objp->multicurrency_code;
+						$price_to_display = $objp->multicurrency_price;
+						$unitprice_to_display = $objp->multicurrency_unitprice;
+					}
+
 					$opt = '<option value="'.$objp->idprodfournprice.'"';
-					//if there is only one supplier, preselect it
-					if (
-							$num == 1
-						||  ($selected_supplier > 0 && $objp->fk_soc == $selected_supplier)
-						||  (
-								getDolGlobalString('SOFO_PRESELECT_SUPPLIER_PRICE_FROM_LINE_BUY_PRICE')
-							&&	$selected_supplier <= 0
-							&&	$selected_price_ht > 0
-							&&	$selected_price_ht == $objp->unitprice * (1 - $objp->remise_percent / 100)
-						)
-					) {
+					if ($num == 1 || ($selected_supplier > 0 && $objp->fk_soc == $selected_supplier)) {
 						$opt .= ' selected';
 					}
+
 					$opt.= '>'.$objp->name.' - '.$objp->ref_fourn.' - ';
 
-					if (isModEnabled('dynamicprices') && !empty($objp->fk_supplier_price_expression)) {
-						$prod_supplier = new ProductFournisseur($db);
-						$prod_supplier->product_fourn_price_id = $objp->idprodfournprice;
-						$prod_supplier->id = $productid;
-						$prod_supplier->fourn_qty = $objp->quantity;
-						$prod_supplier->fourn_tva_tx = $objp->tva_tx;
-						$prod_supplier->fk_supplier_price_expression = $objp->fk_supplier_price_expression;
-						$priceparser = new PriceParser($db);
-						$price_result = $priceparser->parseProductSupplier($prod_supplier);
-						if ($price_result >= 0) {
-							$objp->fprice = $price_result;
-							if ($objp->quantity >= 1)
-							{
-								$objp->unitprice = $objp->fprice / $objp->quantity;
-							}
-						}
-					}
-					if ($objp->quantity == 1)
-					{
-						$opt.= price($objp->fprice * (1 - $objp->remise_percent / 100), 1, $langs, 0, 0, -1, $conf->currency)."/";
+					// Calcul avec remise
+					$final_price = $price_to_display * (1 - $objp->remise_percent / 100);
+					$final_unitprice = $unitprice_to_display * (1 - $objp->remise_percent / 100);
+
+					if ($objp->quantity == 1) {
+						// On affiche le prix avec la devise trouvée (USD au lieu de EUR)
+						$opt.= price($final_price, 1, $langs, 0, 0, -1, $display_currency)."/";
 					}
 
 					$opt.= $objp->quantity.' ';
+					$opt.= ($objp->quantity == 1 ? $langs->trans("Unit") : $langs->trans("Units"));
 
-					if ($objp->quantity == 1)
-					{
-						$opt.= $langs->trans("Unit");
-					}
-					else
-					{
-						$opt.= $langs->trans("Units");
-					}
-					if ($objp->quantity > 1)
-					{
+					if ($objp->quantity > 1) {
 						$opt.=" - ";
-						$opt.= price($objp->unitprice * (1 - $objp->remise_percent / 100), 1, $langs, 0, 0, -1, $conf->currency)."/".$langs->trans("Unit");
+						$opt.= price($final_unitprice, 1, $langs, 0, 0, -1, $display_currency)."/".$langs->trans("Unit");
 					}
+
 					if ($objp->duration) $opt .= " - ".$objp->duration;
 					$opt .= "</option>\n";
 
@@ -171,14 +148,8 @@ class TSOFO {
 					$i++;
 				}
 			}
-
 			$form.= '</select>';
-			$db->free($result);
 			return $form;
-		}
-		else
-		{
-			dol_print_error($db);
 		}
 	}
 

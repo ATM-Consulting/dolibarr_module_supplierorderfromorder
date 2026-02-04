@@ -1638,7 +1638,11 @@ function _prepareLine($i, $actionTarget = 'order')
 			$line->desc = $desc;
 			$line->fk_product = $obj->fk_product;
 			$line->tva_tx = $obj->tva_tx;
-			$line->subprice = $obj->unitprice;
+			if (!empty($obj->multicurrency_unitprice) && $obj->multicurrency_unitprice > 0) {
+				$line->subprice = $obj->multicurrency_unitprice / 1.16;
+			} else {
+				$line->subprice = $obj->unitprice;
+			}
 			$line->total_ht = $obj->unitprice * $qty;
 			$tva = $line->tva_tx / 100;
 			$line->total_tva = $line->total_ht * $tva;
@@ -1712,18 +1716,16 @@ function _prepareLine($i, $actionTarget = 'order')
 function _getSupplierPriceInfos($supplierpriceid)
 {
 	global $db;
-	$sql = 'SELECT pfp.fk_product, pfp.fk_soc, pfp.ref_fourn';
+	$sql = 'SELECT pfp.fk_product, pfp.fk_soc, pfp.ref_fourn, pfp.multicurrency_unitprice'; // Ajout ici
 	$sql .= ', pfp.tva_tx, pfp.unitprice, pfp.remise_percent, soc.remise_supplier FROM ';
 	$sql .= $db->prefix() . 'product_fournisseur_price pfp';
 	$sql .= ' LEFT JOIN ' . $db->prefix() . 'societe soc ON (soc.rowid = pfp.fk_soc)';
 	$sql .= ' WHERE pfp.rowid = ' . $supplierpriceid;
-	$resql = $db->query($sql);
 
+	$resql = $db->query($sql);
 	if ($resql && $db->num_rows($resql) > 0) {
-		//might need some value checks
 		return $db->fetch_object($resql);
 	}
-
 	return false;
 }
 
