@@ -541,6 +541,7 @@ $thisUrlStart = dol_buildpath('supplierorderfromorder/dispatch_to_supplier_order
 if ( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($origin->lines)) {
 	$origin->fetch_optionals();
 	//$TlistContact = $origin->liste_contact(-1,'external',0,'SHIPPING');
+	$allowServices = (bool) getDolGlobalInt('SOFO_DISPLAY_SERVICES');
 
 
 
@@ -603,8 +604,8 @@ if ( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($orig
 
 
 		foreach ($origin->lines as $i => $line) {
-			// do not import services
-			if ($line->product_type === 1) {
+			// Do not import services unless explicitly enabled in module setup
+			if ($line->product_type === 1 && !$allowServices) {
 				continue;
 			}
 
@@ -917,7 +918,7 @@ if ( ($action === 'prepare' || $action == 'showdispatchresult')  && !empty($orig
 							print ' <small style="cursor:pointer" class="toggle-display-nomenclature-detail" data-target="'.$line->id.'" >'.$langs->trans('DisplayNomenclature').'</small>';
 						}
 					}
-				} elseif (!$line->isModSubtotalLine && $line->product_type === 1) {
+				} elseif (!$line->isModSubtotalLine && $line->product_type === 1 && !$allowServices) {
 					print $langs->trans('servicesAreNotDispatch');
 				} elseif (!$line->isModSubtotalLine && empty($line->fk_product)) {
 					print $langs->trans('ProductToOrderManuellement');
